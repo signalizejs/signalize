@@ -1,3 +1,5 @@
+import { onDomReady } from ".";
+
 const scriptLoaderAttribute = 'data-script-loader';
 const loadedScripts = [];
 

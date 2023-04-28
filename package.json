@@ -1,0 +1,52 @@
+{
+	"name": "islands-js",
+	"version": "0.0.1",
+	"description": "",
+
+	"keywords": [
+		"islandsjs",
+		"islands",
+		"ui",
+		"reactive",
+		"components",
+		"performance",
+		"front-end",
+		"framework",
+		"web"
+	],
+	"scripts": {
+		"build": "node build.mjs",
+		"watch": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --watch"
+	},
+	"author": "Vladimír Macháček",
+	"files": [
+		"dist",
+		"esm",
+		"lib",
+		"types",
+		"package.json",
+		"LICENSE",
+		"README.md"
+	],
+	"exports": {
+		".": {
+			"import": "./esm/index.mjs",
+			"require": "./lib/index.cjs",
+			"types": "./types/*"
+		},
+		"./lib/*": "./lib/*",
+		"./esm/*": "./esm/*",
+		"./dist/*": "./dist/*",
+		"./types/*": "./types/*",
+		"./package.json": "./package.json"
+	},
+	"main": "lib/index.cjs",
+	"jsdelivr": "dist/islands.min.js",
+	"unpkg": "dist/islands.min.js",
+	"module": "esm/index.mjs",
+	"types": "types",
+	"license": "MIT",
+	"devDependencies": {
+		"esbuild": "^0.17.18"
+	}
+}

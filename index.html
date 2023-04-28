@@ -7,13 +7,12 @@
 	<title>Document</title>
 </head>
 <body>
-	<script src="./src/core.js"></script>
-	<script src="./src/script-loader.js"></script>
 
 	<input type="number" id="text">
 	<div>Double is: <span id="output"></span></div>
 
-	<script>
+	<script type="module">
+		import { signal, bind } from './dist/index.js';
 		const number = signal(0);
 		bind('#text', { value: number });
 		bind('#output', { innerHTML: [number, () => number * 2] });

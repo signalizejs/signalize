@@ -1,0 +1,9 @@
+# Root
+/node_modules/
+*.tgz
+.idea
+/.idea
+.pnpm-store
+/esm
+/cjs
+/dist
