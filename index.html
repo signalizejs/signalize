@@ -1,22 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Document</title>
 </head>
+
 <body>
 
-	<input type="number" id="text">
-	<div>Double is: <span id="output"></span></div>
+	<form data-ref="form">
+		<input data-ref="input">
+		<button>Add</button>
+	</form>
+	<ul data-ref="list"></ul>
 
 	<script type="module">
-		import { signal, bind } from './dist/index.js';
-		const number = signal(0);
-		bind('#text', { value: number });
-		bind('#output', { innerHTML: [number, () => number * 2] });
+		import { on, signal, bind, h, ref } from './dist/index.js';
+
+		const todoItems = signal([]);
+		const todoLength = signal(todoItems.get().length);
+		const paragraphColor = signal('color:green');
+
+		on('submit', ref('form'), (event) => {
+			event.preventDefault();
+			const input = ref('input');
+			todoItems.set([...todoItems.get(), h('li', {}, input.value) ]);
+			todoLength.set(todoItems.get().length);
+			input.value = '';
+			paragraphColor.set(todoLength > 3 ? 'color:red' : 'color:green');
+		});
+
+		ref('list').replaceWith(
+			h('div', {}, [
+				h('ul', {}, todoItems),
+				h(
+					'p',
+					{ style: paragraphColor },
+					'Count is: ', todoLength, ' items'
+				)
+			])
+		);
 	</script>
 
 </body>
+
 </html>
+

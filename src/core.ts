@@ -26,14 +26,14 @@ interface SignalArguments<T> {
 	equals?: boolean
 }
 
-interface SignalReturn<T> {
+/* interface SignalReturn<T> {
 	get: () => T;
 	set: (newValue: T, initializer?: string) => void;
 	watch: (callback: SignalWatcher<T>, immediate: boolean) => () => boolean;
 	valueOf: () => T;
 	toString: () => string,
 	toJSON: () => T,
-}
+} */
 
 type CustomEventListener = (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => void;
 
@@ -66,8 +66,8 @@ const booleanAttributes = [
 
 const reactiveInputAttributes = ['value', 'checked'];
 const numericInputAttributes = ['range', 'number'];
-const $signals = {};
-const $customEventListeners: Record<string, CustomEventListener> = {
+export const $signals = {};
+export const $customEventListeners: Record<string, CustomEventListener> = {
 	'clickOutside': (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => {
 		document.addEventListener('click', (listenerEvent) => {
 			let eventTarget = listenerEvent.target;
@@ -87,29 +87,36 @@ const $customEventListeners: Record<string, CustomEventListener> = {
 	}
 };
 
-const bind = (target: EventTarget, attributes: Record<string, any>) => {
+
+/* ------------------------- Signals and binding ------------------------- */
+
+export const bind = (target: EventTarget, attributes: Record<string, any>) => {
 	for (const element of normalizeTargets(target)) {
-		for (const [attribute, options] of Object.entries(attributes)) {
-			const optionsIsArray = Array.isArray(options);
+		for (const [attr, attrOptions] of Object.entries(attributes)) {
+			const optionsIsArray = Array.isArray(attrOptions);
 			let callback: CallableFunction|null = null;
-			let signalsToWatch = [options];
+			let attrOptionsAsArray = [attrOptions];
 
 			if (optionsIsArray) {
-				callback = options[options.length - 1];
-				signalsToWatch = options.slice(0, options.length -1);
-			} else if (typeof options === 'function') {
-				callback = options;
+				callback = attrOptions[attrOptions.length - 1];
+				attrOptionsAsArray = attrOptions.slice(0, attrOptions.length -1);
+			} else if (typeof attrOptions === 'function') {
+				callback = attrOptions;
 			}
 
-			for (const signalToWatch of signalsToWatch) {
-				signalToWatch.watch((data: any) => {
+			for (const attrOption of attrOptionsAsArray) {
+				if (['string', 'number'].includes(typeof attrOption)) {
+					element.setAttribute(attr, attrOption);
+					continue;
+				}
+				attrOption.watch((data: any) => {
 					const content = callback ? callback({ el: element }) : data.newValue;
-					if (textContentAttributes.includes(attribute)) {
-						element[attribute] = content;
-					} else if (booleanAttributes.includes(attribute)) {
-						element[attribute] = !!content;
+					if (textContentAttributes.includes(attr)) {
+						element[attr] = content;
+					} else if (booleanAttributes.includes(attr)) {
+						element[attr] = !!content;
 					} else {
-						element.setAttribute(attribute, content);
+						element.setAttribute(attr, content);
 					}
 				}, true)
 			}
@@ -118,21 +125,21 @@ const bind = (target: EventTarget, attributes: Record<string, any>) => {
 				continue
 			};
 
-			if (reactiveInputAttributes.includes(attribute)) {
+			if (reactiveInputAttributes.includes(attr)) {
 				const isNumericInput = numericInputAttributes.includes(element.getAttribute('type') ?? '');
 				element.addEventListener('input', () => {
-					let newValue = element[attribute];
+					let newValue = element[attr];
 					if (isNumericInput) {
 						newValue = Number(newValue)
 					};
-					signalsToWatch[0].set(newValue);
+					attrOptionsAsArray[0].set(newValue);
 				});
 			}
 		}
 	}
 }
 
-function Signal <T>({ defaultValue, globalName, globallySettable, equals }: SignalArguments<T> = { }): SignalReturn<T> {
+export function Signal<T>({ defaultValue, globalName, globallySettable, equals }: SignalArguments<T> = { }) {
 	let value = defaultValue as T;
 	const watchers: Set<SignalWatcher<T>> = new Set();
 
@@ -146,6 +153,7 @@ function Signal <T>({ defaultValue, globalName, globallySettable, equals }: Sign
 		for (const watcher of watchers) {
 			watcher({ newValue, oldValue, initializer });
 		};
+
 	};
 
 	const watch = (callback: SignalWatcher<T>, immediate = false) => {
@@ -176,27 +184,29 @@ function Signal <T>({ defaultValue, globalName, globallySettable, equals }: Sign
 		];
 	}
 
-	return {
-		get, set, watch,
-		toString: () => String(get()),
-		toJSON: get,
-		valueOf: get
-	};
+	this.watch = watch;
+	this.set = set;
+	this.get = get;
+	this.toString = () => String(get());
+	this.toJSON = get;
+	this.valueOf = get;
 };
 
-const signal = <T>(defaultValue: T, options = {}) => {
-	const signal = Signal<T>({
+export const signal = <T>(defaultValue: T, options = {}): typeof Signal<T> => {
+	return new Signal<T>({
 		defaultValue,
 		...options
 	});
-	//signal.toString = signal.get;
-	return signal;
 };
 
-const component = (name, init) => {
+/* ------------------------- Components ------------------------- */
+
+export const component = (name, init) => {
 	if (name in definedComponents) throw new Error(`Component "${name}" already defined.`);
 	definedComponents[name] = init;
 }
+
+/* ------------------------- Selectors ------------------------- */
 
 const normalizeTargets = (target: EventTarget): HTMLElement[] => {
 	let elements: HTMLElement[];
@@ -215,7 +225,49 @@ const normalizeTargets = (target: EventTarget): HTMLElement[] => {
 	return elements as HTMLElement[];
 }
 
-const on = (
+export const selectAll = <T extends HTMLElement>(selector: string, root = document.documentElement): NodeListOf<T> => {
+	return root.querySelectorAll<T>(selector);
+}
+
+export const select = <T extends HTMLElement>(selector: string, root = document.documentElement): T | null => {
+	return selectAll<T>(selector, root)[0] ?? null;
+}
+
+export const refs = <T extends HTMLElement>(
+	id: string,
+	{ root, componentId }: {root?: HTMLElement, componentId?: string} = {}
+): T | T[] => {
+	let items = selectAll<T>(`[${refAttribute}="${id}"]`, root ?? document.documentElement);
+
+	return [...items].filter((ref) => {
+		const closestComponent = ref.closest(`[${componentAttribute}]`);
+		const closestComponentName = closestComponent?.getAttribute(componentAttribute) ?? null;
+
+		if (closestComponent) {
+			if (componentId === undefined) {
+				throw new Error(`You are trying to access ref "${id}" of component "${closestComponentName}" from global scope.`)
+			} else {
+				const closestComponentIsParent = closestComponent.getAttribute(componentIdAttribute) === String(componentId);
+				if (!closestComponentIsParent) {
+					throw new Error(`You are trying to access ref "${id}" it's parent is "${closestComponentName}".`)
+				};
+			}
+		}
+
+		return true;
+	});
+}
+
+export const ref = <T extends HTMLElement>(
+	id: string,
+	{ root, componentId }: {root?: HTMLElement, componentId?: string} = {}
+): T | T[] => {
+	return refs(id, { root, componentId })[0] ?? null;
+};
+
+/* ------------------------- Events ------------------------- */
+
+export const on = (
 	event: keyof CustomEventListeners,
 	target: EventTarget, callback: CallableFunction, options: AddEventListenerOptions = {}
 ) => {
@@ -249,48 +301,33 @@ const on = (
 	}
 }
 
-const ref = <T extends HTMLElement>(
-	id: string,
-	{ root, componentId }: {root?: HTMLElement, componentId?: string} = {}
-): T | T[] => {
-	root = root ?? document.documentElement;
-	let items = [...root.querySelectorAll<T>(`[${refAttribute}="${id}"]`)];
-
-	items = items.filter((ref) => {
-		const closestComponent = ref.closest(`[${componentAttribute}]`);
-		const closestComponentName = closestComponent?.getAttribute(componentAttribute) ?? null;
-
-		if (closestComponent) {
-			if (componentId === undefined) {
-				throw new Error(`You are trying to access ref "${id}" of component "${closestComponentName}" from global scope.`)
-			} else {
-				const closestComponentIsParent = closestComponent.getAttribute(componentIdAttribute) === String(componentId);
-				if (!closestComponentIsParent) {
-					throw new Error(`You are trying to access ref "${id}" it's parent is "${closestComponentName}".`)
-				};
-			}
-		}
-
-		return true;
-	})
-
-	return items.length > 1 ? items : items[0] ?? [];
-}
-
-const dispatch = (eventName: string, eventData: any = undefined): void => {
-	document.dispatchEvent(
+export const dispatch = (eventName: string, eventData: any = undefined, target = document): void => {
+	target.dispatchEvent(
 		new window.CustomEvent(eventName, eventData === undefined ? eventData : { detail: eventData })
 	);
 };
 
-const onDomReady = (callback: CallableFunction): void => {
-	if (typeof document === 'undefined') {
-		return;
+/* ------------------------- DOM READY ------------------------- */
+
+let onDomReadyListeners: CallableFunction[] = [];
+const callOnDomReadyListeners = () => {
+	for (const onDomReadyListener of onDomReadyListeners) {
+		onDomReadyListener();
 	}
 
-	document.readyState !== 'loading'
-		? callback()
-		: document.addEventListener('DOMContentLoaded', (event) => callback(event));
+	onDomReadyListeners = [];
+}
+
+export const onDomReady = (callback: CallableFunction): void => {
+	onDomReadyListeners.push(callback);
+}
+
+if (typeof document !== 'undefined') {
+	if (document.readyState !== 'loading') {
+		callOnDomReadyListeners()
+	} else {
+		document.addEventListener('DOMContentLoaded', () => callOnDomReadyListeners())
+	}
 }
 
 onDomReady(() => {
@@ -303,43 +340,44 @@ onDomReady(() => {
 		}
 
 		const componentId = Object.keys(initializedComponents).length;
-		const props = {};
-		const onEmitListeners: Set<OnComponentEmitListener> = new Set();
+		/* const props = {}; */
+		/* const onEmitListeners: Set<OnComponentEmitListener> = new Set(); */
 		const onRemoveListeners: Set<CallableFunction> = new Set();
-		const parentComponentId = el.parentElement?.closest<HTMLElement>(`[${componentAttribute}]`)?.dataset.componentId
+		const parentComponentEl = el.parentElement?.closest<HTMLElement>(`[${componentAttribute}]`);
+		//const parentComponentId = parentComponentEl?.dataset.componentId ?? undefined;
 
-		const defineProp = <T>(name: string, defaultValue: T) => {
+		/* const defineProp = <T>(name: string, defaultValue: T) => {
 			if (typeof props[name] !== 'undefined') defaultValue = props[name];
 
 			const {get, set, watch } = signal(defaultValue);
 			props[name] = set;
 			return { get, watch }
-		}
+		} */
 
-		const setProp = <T>(name: string, value: T) => name in props ? props[name](value) : props[name] = value;
+		/* const setProp = <T>(name: string, value: T) => name in props ? props[name](value) : props[name] = value; */
 
-		initializedComponents[componentId] = {
+		/* initializedComponents[componentId] = {
 			setProp,
 			onEmit: (options: OnComponentEmitListenerArguments) => {
 				for (const listener of onEmitListeners) {
 					listener(options);
 				}
 			},
-		}
+		} */
 
-		const emit = <T>(event: string, data: T) => parentComponentId === undefined
+		/* const emit = <T>(event: string, data: T) => parentComponentId === undefined
 			? () => {}
 			: initializedComponents[parentComponentId]?.onEmit({
 				component: componentName,
 				event,
 				data
-			});
+			}); */
 
 		el.setAttribute(componentIdAttribute, String(componentId));
 
-		if (parentComponentId !== undefined) {
+		/* if (parentComponentId !== undefined) {
 			emit('beforeInit', { setProp });
-		};
+		}; */
 
 		on('remove', el, () => {
 			for (const listener of onRemoveListeners) {
@@ -349,11 +387,14 @@ onDomReady(() => {
 
 		initFn({
 			el,
-			defineProp,
-			emit,
+			/* defineProp, */
+			/* emit, */
+			parentComponentEl,
+			parentComponentId: parentComponentEl?.dataset.componentId ?? undefined,
 			id: componentId,
 			ref: (id: string) => ref.call(undefined, id, { root: el, componentId}),
-			onEmit: (listener: OnComponentEmitListener) => onEmitListeners.add(listener),
+			refs: (id: string) => refs.call(undefined, id, { root: el, componentId}),
+			/* onEmit: (listener: OnComponentEmitListener) => onEmitListeners.add(listener), */
 			onRemove: (listener: CallableFunction) => {onRemoveListeners.add(listener)}
 		});
 	}
@@ -385,14 +426,3 @@ onDomReady(() => {
 
 	}).observe(document, { childList: true, subtree: true, attributes: true });
 });
-
-export {
-	bind,
-	ref,
-	signal,
-	dispatch,
-	component,
-	onDomReady,
-	$customEventListeners,
-	$signals
-}

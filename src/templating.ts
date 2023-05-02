@@ -1,8 +1,71 @@
-const html = (string) => {
-	const nodes = new DOMParser().parseFromString(string, 'application/xhtml+xml').childNodes;
-	console.log(nodes);
-	return nodes;
-};
+import { bind, Signal  } from ".";
+
+export function h(tagName: string, attrs: Record<string, string|typeof Signal>, ...children) {
+	const el = document.createElement(tagName);
+
+	if (Object.keys(attrs)) {
+		bind(el, attrs);
+	}
+
+	const normalizeChild = (child) => {
+		const childArray = Array.isArray(child) ? child : [child];
+		return childArray.map((childArrayItem) => {
+			return childArrayItem instanceof Element || childArrayItem instanceof Node
+				? childArrayItem
+				: document.createTextNode(child);
+		});
+	}
+
+	children = children.flat(Infinity);
+
+	for (const child of children) {
+
+		if (child instanceof Signal) {
+			let currentAttachedChildren = normalizeChild(child.get());
+
+			for (const currentAttachedChild of currentAttachedChildren) {
+				el.appendChild(currentAttachedChild);
+			}
+
+			child.watch(({ newValue }) => {
+				const newNormalizedChildren = normalizeChild(newValue);
+				for (let i = 0; i < newNormalizedChildren.length; i++) {
+					const oldChildren = currentAttachedChildren[i] ?? undefined;
+
+					if (oldChildren) {
+						oldChildren.parentElement?.replaceChild(newNormalizedChildren[i], oldChildren);
+
+					} else {
+						const lastItem = currentAttachedChildren[currentAttachedChildren.length - 1];
+						const lastItemNextSibling = lastItem?.nextSibling ?? lastItem?.nextElementSibling;
+
+						for (const newNormalizedChild of newNormalizedChildren) {
+							if (lastItemNextSibling !== undefined) {
+								el.insertBefore(newNormalizedChild, lastItemNextSibling);
+							} else {
+								el.appendChild(newNormalizedChild);
+							}
+						}
+					}
+				}
+				if (currentAttachedChildren.length > newNormalizedChildren.length) {
+					for (let i = currentAttachedChildren.length; i > newNormalizedChildren.length; i--) {
+						currentAttachedChildren[i].parentElement?.removeChild(currentAttachedChildren[i]);
+					}
+				}
+
+				currentAttachedChildren = newNormalizedChildren;
+			});
+		} else {
+			const normalizedChildArray = normalizeChild(child);
+			for (const normalizedChild of normalizedChildArray) {
+				el.appendChild(normalizedChild);
+			}
+		}
+	}
+
+	return el;
+}
 
 /* const syncNodes = (element, newChildren) => {
 	if (typeof newChildren === 'string') {
