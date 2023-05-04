@@ -93,7 +93,7 @@ export const $customEventListeners: Record<string, CustomEventListener> = {
 export const bind = (target: EventTarget, attributes: Record<string, any>) => {
 	for (const element of normalizeTargets(target)) {
 		for (const [attr, attrOptions] of Object.entries(attributes)) {
-			const optionsIsArray = Array.isArray(attrOptions);
+			const optionsIsArray = attrOptions instanceof Array;
 			let callback: CallableFunction|null = null;
 			let attrOptionsAsArray = [attrOptions];
 
@@ -170,17 +170,17 @@ export function Signal<T>({ defaultValue, globalName, globallySettable, equals }
 		if (globalName in $signals) {
 			throw new Error(`Global signal "${globalName}" already defined.`);
 		}
-		const signal = signal(defaultValue);
+		const globalSignal = signal<T>(value);
 
 		$signals[globalName] = [
-			signal.get,
+			globalSignal.get,
 			(newValue: T, initializer?: string) => {
 				if (globallySettable ?? false) {
 					throw new Error(`Global signal "${globalName}" is not writable.`);
 				}
 				signal.set(newValue, initializer);
 			},
-			signal.watch
+			globalSignal.watch
 		];
 	}
 
@@ -192,12 +192,10 @@ export function Signal<T>({ defaultValue, globalName, globallySettable, equals }
 	this.valueOf = get;
 };
 
-export const signal = <T>(defaultValue: T, options = {}): typeof Signal<T> => {
-	return new Signal<T>({
-		defaultValue,
-		...options
-	});
-};
+export const signal = <T>(defaultValue: T, options = {}) => new Signal<T>({
+	defaultValue,
+	...options
+});
 
 /* ------------------------- Components ------------------------- */
 
@@ -230,7 +228,7 @@ export const selectAll = <T extends HTMLElement>(selector: string, root = docume
 }
 
 export const select = <T extends HTMLElement>(selector: string, root = document.documentElement): T | null => {
-	return selectAll<T>(selector, root)[0] ?? null;
+	return root.querySelector<T>(selector);
 }
 
 export const refs = <T extends HTMLElement>(
@@ -318,12 +316,19 @@ const callOnDomReadyListeners = () => {
 	onDomReadyListeners = [];
 }
 
+const documentIsDefined = typeof document !== 'undefined';
+const documentIsReady = documentIsDefined && document.readyState !== 'loading';
+
 export const onDomReady = (callback: CallableFunction): void => {
-	onDomReadyListeners.push(callback);
+	if (documentIsDefined) {
+		callback()
+	} else {
+		onDomReadyListeners.push(callback);
+	}
 }
 
-if (typeof document !== 'undefined') {
-	if (document.readyState !== 'loading') {
+if (documentIsDefined) {
+	if (documentIsReady) {
 		callOnDomReadyListeners()
 	} else {
 		document.addEventListener('DOMContentLoaded', () => callOnDomReadyListeners())

@@ -1,68 +1,75 @@
-import { bind, Signal  } from ".";
+import { bind, Signal } from ".";
 
-export function h(tagName: string, attrs: Record<string, string|typeof Signal>, ...children) {
+type HypertextChild = string | number | Element | Node | typeof Signal<any>;
+
+type HypertextChildAttrs = Record<string, string | typeof Signal>;
+
+export const html = (strings: string[], ...values: any): DocumentFragment => {
+	const templateString = String.raw({ raw: strings }, ...values);
+	const template = document.createElement('template');
+	template.innerHTML = templateString.trim();
+
+	return template.content;
+}
+
+
+export const h = (tagName: string, ...children: (HypertextChildAttrs | HypertextChild | HypertextChild[])[]): Element => {
+	let attrs: HypertextChildAttrs = {};
+
+	if (children[0].constructor?.name === 'Object') {
+		attrs = children.shift() as HypertextChildAttrs;
+	}
+
 	const el = document.createElement(tagName);
 
-	if (Object.keys(attrs)) {
+	if (Object.keys(attrs).length > 0) {
 		bind(el, attrs);
 	}
 
-	const normalizeChild = (child) => {
-		const childArray = Array.isArray(child) ? child : [child];
-		return childArray.map((childArrayItem) => {
-			return childArrayItem instanceof Element || childArrayItem instanceof Node
-				? childArrayItem
-				: document.createTextNode(child);
-		});
+	const normalizeChild = (child: string | number | Element | Node | typeof Signal<any>) => {
+		const result: (Node|Element)[] = [];
+
+		if (child instanceof Element || child instanceof Node) {
+			result.push(child);
+		} else if (child instanceof Signal) {
+			result.push(...normalizeChild(child.get()));
+			child.watch(({ newValue }) => {
+				const newNormalizedChildren = normalizeChild(newValue);
+				for (const newNormalizedChild of newNormalizedChildren) {
+					const oldNormalizedChild = result.shift();
+					if (oldNormalizedChild) {
+						if (oldNormalizedChild !== newNormalizedChild) {
+							el.replaceChild(newNormalizedChild, oldNormalizedChild);
+						}
+					} else {
+						el.appendChild(newNormalizedChild);
+					}
+				}
+				for (const oldNormalizedChild of result) {
+					el.removeChild(oldNormalizedChild);
+				}
+				result.push(...newNormalizedChildren);
+			});
+		} else if (child instanceof Array) {
+			for (const childItem of child) {
+				result.push(...normalizeChild(childItem));
+			}
+		} else {
+			result.push(document.createTextNode(String(child)));
+		}
+
+		return result;
 	}
 
 	children = children.flat(Infinity);
 
+	const fragment = document.createDocumentFragment();
+
 	for (const child of children) {
-
-		if (child instanceof Signal) {
-			let currentAttachedChildren = normalizeChild(child.get());
-
-			for (const currentAttachedChild of currentAttachedChildren) {
-				el.appendChild(currentAttachedChild);
-			}
-
-			child.watch(({ newValue }) => {
-				const newNormalizedChildren = normalizeChild(newValue);
-				for (let i = 0; i < newNormalizedChildren.length; i++) {
-					const oldChildren = currentAttachedChildren[i] ?? undefined;
-
-					if (oldChildren) {
-						oldChildren.parentElement?.replaceChild(newNormalizedChildren[i], oldChildren);
-
-					} else {
-						const lastItem = currentAttachedChildren[currentAttachedChildren.length - 1];
-						const lastItemNextSibling = lastItem?.nextSibling ?? lastItem?.nextElementSibling;
-
-						for (const newNormalizedChild of newNormalizedChildren) {
-							if (lastItemNextSibling !== undefined) {
-								el.insertBefore(newNormalizedChild, lastItemNextSibling);
-							} else {
-								el.appendChild(newNormalizedChild);
-							}
-						}
-					}
-				}
-				if (currentAttachedChildren.length > newNormalizedChildren.length) {
-					for (let i = currentAttachedChildren.length; i > newNormalizedChildren.length; i--) {
-						currentAttachedChildren[i].parentElement?.removeChild(currentAttachedChildren[i]);
-					}
-				}
-
-				currentAttachedChildren = newNormalizedChildren;
-			});
-		} else {
-			const normalizedChildArray = normalizeChild(child);
-			for (const normalizedChild of normalizedChildArray) {
-				el.appendChild(normalizedChild);
-			}
-		}
+		fragment.append(...normalizeChild(child));
 	}
+
+	el.appendChild(fragment);
 
 	return el;
 }
@@ -109,9 +116,9 @@ const syncElements = (newElement, oldElement) => {
 
 		if (!oldElement.hasAttribute(name)) {
 			oldElement.setAttribute(name, value);
-	 	 } else if (oldElement.getAttribute(name) !== value) {
+		   } else if (oldElement.getAttribute(name) !== value) {
 			oldElement.setAttribute(name, value);
-	 	 }
+		   }
 	}
 
 	for (let i = 0; i < oldAttrs.length; i++) {

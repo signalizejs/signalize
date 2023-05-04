@@ -11,10 +11,16 @@
 <body>
 
 	<form data-ref="form">
-		<input data-ref="input">
+		<input data-ref="input" min="0" type="number">
 		<button>Add</button>
 	</form>
 	<ul data-ref="list"></ul>
+
+	<a role="button" data-dialog-open="cart">Open cart</a>
+
+	<dialog data-dialog="cart">
+		<a role="button" data-dialog-close>Close</a>
+	</dialog>
 
 	<script type="module">
 		import { on, signal, bind, h, ref } from './dist/index.js';
@@ -26,7 +32,13 @@
 		on('submit', ref('form'), (event) => {
 			event.preventDefault();
 			const input = ref('input');
-			todoItems.set([...todoItems.get(), h('li', {}, input.value) ]);
+			const newItems = [];
+
+			while(input.value --) {
+				newItems.push(h('li', {}, input.value));
+			}
+
+			todoItems.set(newItems.reverse());
 			todoLength.set(todoItems.get().length);
 			input.value = '';
 			paragraphColor.set(todoLength > 3 ? 'color:red' : 'color:green');
@@ -47,4 +59,3 @@
 </body>
 
 </html>
-
