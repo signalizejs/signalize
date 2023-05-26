@@ -12,7 +12,6 @@ export const html = (strings: string[], ...values: any): DocumentFragment => {
 	return template.content;
 }
 
-
 export const h = (tagName: string, ...children: (HypertextChildAttrs | HypertextChild | HypertextChild[])[]): Element => {
 	let attrs: HypertextChildAttrs = {};
 
@@ -74,58 +73,74 @@ export const h = (tagName: string, ...children: (HypertextChildAttrs | Hypertext
 	return el;
 }
 
-/* const syncNodes = (element, newChildren) => {
-	if (typeof newChildren === 'string') {
-		newChildren = html(newChildren);
+export const render = ({ template, data, target } = { }) => {
+	const targetElement = typeof target === 'string' ? document.querySelector(target) : target;
+	let rendered = targetElement.hasAttribute('data-rendered');
+
+	if (targetElement.hasAttribute('data-rendered')) {
+		return;
 	}
 
-	const oldChildren = element.childNodes;
 
-	for (let i = 0; i < newChildren.length; i++) {
-		const newChild = newChildren[i];
-		const oldChild = oldChildren[i];
+	const templateData = new Proxy(data, {
+		get: (target, key) => {
+			const targetData = target[key];
 
-		if (oldChild === undefined) break;
+			if (!rendered && targetData.constructor.name === 'Signal') {
+				targetData.watch(() => redraw());
+			}
 
-		if (newChild.nodeType === Node.ELEMENT_NODE) {
-			syncElements(newChild, oldChild);
-		} else if (newChild.nodeType === Node.TEXT_NODE) {
-			oldChild.textContent = newChild.textContent;
+			return targetData;
 		}
-	}
+	});
 
-	while (oldChildren.length > newChildren.length) element.removeChild(oldChildren[oldChildren.length - 1]);
+	const redraw = () => {
+		const templateHtml = template(templateData);
+		const templateDom = html`${templateHtml}`;
+/* 		console.log(templateDom.children.length);
+		console.log(templateDom.innerHTML); */
+		syncChildren(templateDom.children, targetElement.children, target);
+		//targetElement.innerHTML = templateHtml;
+	};
 
-	for (let i = oldChildren.length; i < newChildren.length; i++) {
-		element.appendChild(newChildren[i]);
-	}
+	redraw();
+
+	targetElement.setAttribute('data-rendered', '');
+	rendered = true;
 }
 
-const syncElements = (newElement, oldElement) => {
-	if (typeof newElement === 'string') {
-		newElement = html(newElement);
+const syncElements = (newEl, oldEl) => {
+	// Copy the attributes from the new element to the old element
+	for (let i = 0; i < newEl.attributes.length; i++) {
+	  const attr = newEl.attributes[i];
+	  oldEl.setAttribute(attr.name, attr.value);
 	}
 
-	console.log(newElement, oldElement);
-	const oldAttrs = oldElement.attributes ?? [];
-	const newAttrs = newElement.attributes ?? []
-
-	for (let i = 0; i < newAttrs.length; i++) {
-		const name = newAttrs[i].name;
-		const value = newAttrs[i].value;
-
-		if (!oldElement.hasAttribute(name)) {
-			oldElement.setAttribute(name, value);
-		   } else if (oldElement.getAttribute(name) !== value) {
-			oldElement.setAttribute(name, value);
-		   }
+	// Update the text content of the old element to match the new element
+	if (newEl.textContent !== oldEl.textContent) {
+	  oldEl.textContent = newEl.textContent;
 	}
 
-	for (let i = 0; i < oldAttrs.length; i++) {
-		const name = oldAttrs[i].name;
-		if (!newElement.hasAttribute(name)) oldElement.removeAttribute(name);
-	}
+	syncChildren(newEl.children, oldEl.children, oldEl);
+}
 
-	syncNodes(oldElement, newElement.childNodes)
-};
- */
+const syncChildren = (newChildren, oldChildren, oldEl) => {
+	const len = Math.max(newChildren.length, oldChildren.length);
+	for (let i = 0; i < len; i++) {
+
+	  const newChild = newChildren[i];
+	  const oldChild = oldChildren[i];
+
+	  if ((!newChild || !oldChild) && typeof oldEl.childNodes !== 'undefined') {
+		// If one of the child elements doesn't exist, remove it from the DOM
+		if (newChild) {
+		  oldEl.removeChild(oldEl.childNodes[i]);
+		} else if (oldChild) {
+		  oldEl.removeChild(oldChild);
+		}
+	  } else {
+		// If both child elements exist, recursively sync them
+		syncElements(newChild, oldChild);
+	  }
+	}
+}

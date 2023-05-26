@@ -14,16 +14,11 @@
 		<input data-ref="input" min="0" type="number">
 		<button>Add</button>
 	</form>
-	<ul data-ref="list"></ul>
 
-	<a role="button" data-dialog-open="cart">Open cart</a>
-
-	<dialog data-dialog="cart">
-		<a role="button" data-dialog-close>Close</a>
-	</dialog>
+	<div id="app"></div>
 
 	<script type="module">
-		import { on, signal, bind, h, ref } from './dist/index.js';
+		import { on, signal, bind, h, ref, render } from './dist/index.js';
 
 		const todoItems = signal([]);
 		const todoLength = signal(todoItems.get().length);
@@ -34,26 +29,24 @@
 			const input = ref('input');
 			const newItems = [];
 
-			while(input.value --) {
-				newItems.push(h('li', {}, input.value));
+			for (let i = 0; i < input.value; i++) {
+				newItems.push(`<li>${i}</li>`);
 			}
 
 			todoItems.set(newItems.reverse());
 			todoLength.set(todoItems.get().length);
-			input.value = '';
-			paragraphColor.set(todoLength > 3 ? 'color:red' : 'color:green');
+
+			render({
+				target: '#app',
+				template: ({todoItems}) => {
+					return `<div>${todoItems.get().join('')}</div>`;
+				},
+				data: {
+					todoItems
+				}
+			})
 		});
 
-		ref('list').replaceWith(
-			h('div', {}, [
-				h('ul', {}, todoItems),
-				h(
-					'p',
-					{ style: paragraphColor },
-					'Count is: ', todoLength, ' items'
-				)
-			])
-		);
 	</script>
 
 </body>
