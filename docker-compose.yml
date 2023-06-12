@@ -7,5 +7,10 @@ services:
         volumes:
             - ./.:/var/www:delegated
         ports:
-            - 3000:3000
+            # Vite Dev Server
+            - 5173:5173
+            # Vite Preview
+            - 4173:4173
+            # Playwright Report
+            - 9323:9323
         tty: true

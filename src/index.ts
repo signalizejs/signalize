@@ -1,4 +1,5 @@
 export * from './core';
-export * from './templating';
-//export * from './script-loader';
+export * from './script-loader';
+export * from './ajaxify';
 export * from './dialog';
+export * from './h'

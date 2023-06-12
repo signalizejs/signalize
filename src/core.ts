@@ -11,31 +11,34 @@ interface InitializedComponent {
 	onEmit: OnComponentEmitListener;
 }
 
-type SignalWatcher<T> = <T>(options: SignalWatcherArguments<T>) => () => void;
+type SignalWatcher<T> = (options: SignalWatcherArguments<T>) => void;
 
 interface SignalWatcherArguments<T> {
-	newValue: T
+	newValue: T | undefined
 	oldValue?: T
 	initializer?: string
 }
 
 interface SignalArguments<T> {
-	defaultValue?: T
+	defaultValue?: T|undefined,
 	globalName?: string
 	globallySettable?: boolean
 	equals?: boolean
 }
 
-/* interface SignalReturn<T> {
-	get: () => T;
-	set: (newValue: T, initializer?: string) => void;
-	watch: (callback: SignalWatcher<T>, immediate: boolean) => () => boolean;
-	valueOf: () => T;
-	toString: () => string,
-	toJSON: () => T,
-} */
+interface ComponentInitFunctionArguments {
+	el: HTMLElement;
+	parentComponentEl: HTMLElement | undefined;
+	parentComponentId: string | undefined;
+	id: string
+	ref: <T extends HTMLElement>(id: string) => T,
+	refs: <T extends HTMLElement>(id: string) => T[],
+	onRemove: (listener: CallableFunction) => void
+}
 
-type CustomEventListener = (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => void;
+type ComponentInitFunction = (data: ComponentInitFunctionArguments) => void;
+
+export type CustomEventListener = (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => void;
 
 interface CustomEventListeners extends HTMLElementEventMap {
 	clickOutside: CustomEventListener,
@@ -46,7 +49,7 @@ const componentAttribute = 'data-component';
 const componentIdAttribute = 'data-component-id';
 const refAttribute = 'data-ref';
 const initializedComponents: Record<string, InitializedComponent> = {};
-const definedComponents = {};
+const definedComponents: Record<string, ComponentInitFunction> = {};
 const textContentAttributes = ['innerHTML', 'textContent', 'innerText'];
 const booleanAttributes = [
 	'autofocus', 'autoplay',
@@ -66,7 +69,7 @@ const booleanAttributes = [
 
 const reactiveInputAttributes = ['value', 'checked'];
 const numericInputAttributes = ['range', 'number'];
-export const $signals = {};
+export const definedSignals: Record<string, Signal<any>> = {};
 export const $customEventListeners: Record<string, CustomEventListener> = {
 	'clickOutside': (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => {
 		document.addEventListener('click', (listenerEvent) => {
@@ -79,19 +82,20 @@ export const $customEventListeners: Record<string, CustomEventListener> = {
 		}, options);
 	},
 	'remove': (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => {
-		document.addEventListener('click', ({ detail }) => {
-			if (target === detail) {
+		document.addEventListener('click', (listenerEvent) => {
+			let eventTarget = listenerEvent.target as HTMLElement
+
+			if (!eventTarget.matches(target) && !eventTarget.closest(target)) {
 				callback();
 			}
-		});
+		}, options);
 	}
 };
-
 
 /* ------------------------- Signals and binding ------------------------- */
 
 export const bind = (target: EventTarget, attributes: Record<string, any>) => {
-	for (const element of normalizeTargets(target)) {
+	for (const element of normalizeTargets(target, true) as HTMLElement[]) {
 		for (const [attr, attrOptions] of Object.entries(attributes)) {
 			const optionsIsArray = attrOptions instanceof Array;
 			let callback: CallableFunction|null = null;
@@ -138,89 +142,96 @@ export const bind = (target: EventTarget, attributes: Record<string, any>) => {
 		}
 	}
 }
+export class Signal<T> {
+	private _watchers: Set<SignalWatcher<T>> = new Set();
+	private _value: T | undefined;
 
-export function Signal<T>({ defaultValue, globalName, globallySettable, equals }: SignalArguments<T> = { }) {
-	let value = defaultValue as T;
-	const watchers: Set<SignalWatcher<T>> = new Set();
+	constructor({ defaultValue, globalName, globallySettable }: SignalArguments<T> = { }) {
+		this._value = defaultValue
 
-	const get = (): T => value;
-	const set = (newValue: T, initializer?: string): void => {
-		const oldValue = value;
-
-		if ((equals ?? true) && newValue === oldValue) return;
-
-		value = newValue;
-		for (const watcher of watchers) {
-			watcher({ newValue, oldValue, initializer });
-		};
-
-	};
-
-	const watch = (callback: SignalWatcher<T>, immediate = false) => {
-		watchers.add(callback);
-
-		if (immediate) {
-			callback({ newValue: value });
-		};
-
-		return () => watchers.delete(callback);
-	}
-
-	if (globalName !== undefined) {
-		if (globalName in $signals) {
-			throw new Error(`Global signal "${globalName}" already defined.`);
-		}
-		const globalSignal = signal<T>(value);
-
-		$signals[globalName] = [
-			globalSignal.get,
-			(newValue: T, initializer?: string) => {
+		if (globalName !== undefined) {
+			if (globalName in definedSignals) {
+				throw new Error(`Global signal "${globalName}" already defined.`);
+			}
+			const globalSignal = signal<T>(defaultValue);
+			const originalSet = globalSignal.set;
+			globalSignal.set = (newValue: T, initializer?: string) => {
 				if (globallySettable ?? false) {
 					throw new Error(`Global signal "${globalName}" is not writable.`);
 				}
-				signal.set(newValue, initializer);
-			},
-			globalSignal.watch
-		];
+				originalSet(newValue, initializer);
+			};
+			definedSignals[globalName] = globalSignal;
+		}
 	}
 
-	this.watch = watch;
-	this.set = set;
-	this.get = get;
-	this.toString = () => String(get());
-	this.toJSON = get;
-	this.valueOf = get;
-};
+	public get() {
+		return this._value;
+	}
 
-export const signal = <T>(defaultValue: T, options = {}) => new Signal<T>({
+	public set(newValue: T, initializer?: string) {
+		const oldValue = this._value;
+
+		if (newValue === oldValue) return;
+
+		this._value = newValue;
+		for (const watcher of this._watchers) {
+			watcher({ newValue, oldValue, initializer });
+		};
+	}
+
+	public watch(callback: SignalWatcher<T>, immediate = false) {
+		this._watchers.add(callback);
+
+		if (immediate) {
+			callback({ newValue: this._value });
+		};
+
+		return () => this._watchers.delete(callback);
+	}
+
+	public toString() {
+		return String(this.get());
+	}
+
+	public toJSON() {
+		return this.get();
+	}
+
+	public valueOf() {
+		return this.get();
+	}
+}
+
+export const signal = <T>(defaultValue: T|undefined, options = {}) => new Signal<T>({
 	defaultValue,
 	...options
 });
 
 /* ------------------------- Components ------------------------- */
 
-export const component = (name, init) => {
+export const component = (name: string, init: ComponentInitFunction) => {
 	if (name in definedComponents) throw new Error(`Component "${name}" already defined.`);
 	definedComponents[name] = init;
 }
 
 /* ------------------------- Selectors ------------------------- */
 
-const normalizeTargets = (target: EventTarget): HTMLElement[] => {
-	let elements: HTMLElement[];
+const normalizeTargets = (target: EventTarget, normalizeDocument = false): (HTMLElement|Document)[] => {
+	let elements: (HTMLElement|Document)[];
 
 	if (typeof target === 'string') {
 		elements = [...document.querySelectorAll<HTMLElement>(target)];
 	} else {
 		const targetIsDocument = target instanceof Document;
 		if (target instanceof HTMLElement || targetIsDocument) {
-			elements = [targetIsDocument ? target.documentElement : target]
+			elements = [targetIsDocument && normalizeDocument ? target.documentElement : target]
 		} else {
 			elements = [...target];
 		}
 	}
 
-	return elements as HTMLElement[];
+	return elements as (HTMLElement|Document)[];
 }
 
 export const selectAll = <T extends HTMLElement>(selector: string, root = document.documentElement): NodeListOf<T> => {
@@ -234,7 +245,7 @@ export const select = <T extends HTMLElement>(selector: string, root = document.
 export const refs = <T extends HTMLElement>(
 	id: string,
 	{ root, componentId }: {root?: HTMLElement, componentId?: string} = {}
-): T | T[] => {
+): T[] => {
 	let items = selectAll<T>(`[${refAttribute}="${id}"]`, root ?? document.documentElement);
 
 	return [...items].filter((ref) => {
@@ -259,15 +270,17 @@ export const refs = <T extends HTMLElement>(
 export const ref = <T extends HTMLElement>(
 	id: string,
 	{ root, componentId }: {root?: HTMLElement, componentId?: string} = {}
-): T | T[] => {
-	return refs(id, { root, componentId })[0] ?? null;
+): T => {
+	return (refs(id, { root, componentId })[0] ?? null) as T
 };
 
 /* ------------------------- Events ------------------------- */
 
 export const on = (
 	event: keyof CustomEventListeners,
-	target: EventTarget, callback: CallableFunction, options: AddEventListenerOptions = {}
+	target: EventTarget,
+	callback: CallableFunction,
+	options: AddEventListenerOptions = {}
 ) => {
 	const events = event.split(',');
 	const listenerType = typeof target === 'string' ? 'global' : 'direct';
@@ -304,6 +317,26 @@ export const dispatch = (eventName: string, eventData: any = undefined, target =
 		new window.CustomEvent(eventName, eventData === undefined ? eventData : { detail: eventData })
 	);
 };
+
+/* ------------------------- HTML ------------------------- */
+
+export const createHtml = (html: string): DocumentFragment => {
+	const template = document.createElement('template');
+	html = html.trim();
+	template.innerHTML = html;
+	return template.content;
+}
+
+/* ------------------------- JSON ------------------------- */
+
+export const isJson = (content: any): boolean => {
+	try {
+		JSON.parse(content);
+	} catch (e) {
+		return false;
+	}
+	return true;
+}
 
 /* ------------------------- DOM READY ------------------------- */
 
@@ -344,45 +377,11 @@ onDomReady(() => {
 			throw new Error(`Component "${componentName}" is not defined.`);
 		}
 
-		const componentId = Object.keys(initializedComponents).length;
-		/* const props = {}; */
-		/* const onEmitListeners: Set<OnComponentEmitListener> = new Set(); */
+		const componentId = String(Object.keys(initializedComponents).length);
 		const onRemoveListeners: Set<CallableFunction> = new Set();
-		const parentComponentEl = el.parentElement?.closest<HTMLElement>(`[${componentAttribute}]`);
-		//const parentComponentId = parentComponentEl?.dataset.componentId ?? undefined;
+		const parentComponentEl = el.parentElement?.closest<HTMLElement>(`[${componentAttribute}]`) ?? undefined;
 
-		/* const defineProp = <T>(name: string, defaultValue: T) => {
-			if (typeof props[name] !== 'undefined') defaultValue = props[name];
-
-			const {get, set, watch } = signal(defaultValue);
-			props[name] = set;
-			return { get, watch }
-		} */
-
-		/* const setProp = <T>(name: string, value: T) => name in props ? props[name](value) : props[name] = value; */
-
-		/* initializedComponents[componentId] = {
-			setProp,
-			onEmit: (options: OnComponentEmitListenerArguments) => {
-				for (const listener of onEmitListeners) {
-					listener(options);
-				}
-			},
-		} */
-
-		/* const emit = <T>(event: string, data: T) => parentComponentId === undefined
-			? () => {}
-			: initializedComponents[parentComponentId]?.onEmit({
-				component: componentName,
-				event,
-				data
-			}); */
-
-		el.setAttribute(componentIdAttribute, String(componentId));
-
-		/* if (parentComponentId !== undefined) {
-			emit('beforeInit', { setProp });
-		}; */
+		el.setAttribute(componentIdAttribute, componentId);
 
 		on('remove', el, () => {
 			for (const listener of onRemoveListeners) {
@@ -392,14 +391,11 @@ onDomReady(() => {
 
 		initFn({
 			el,
-			/* defineProp, */
-			/* emit, */
 			parentComponentEl,
 			parentComponentId: parentComponentEl?.dataset.componentId ?? undefined,
 			id: componentId,
-			ref: (id: string) => ref.call(undefined, id, { root: el, componentId}),
-			refs: (id: string) => refs.call(undefined, id, { root: el, componentId}),
-			/* onEmit: (listener: OnComponentEmitListener) => onEmitListeners.add(listener), */
+			ref: <T>(id: string) => ref.call(undefined, id, { root: el, componentId}) as T,
+			refs: <T>(id: string) => refs.call(undefined, id, { root: el, componentId}) as T,
 			onRemove: (listener: CallableFunction) => {onRemoveListeners.add(listener)}
 		});
 	}
@@ -412,22 +408,44 @@ onDomReady(() => {
 		for (const mutation of mutationList) {
 			dispatch('domMutation', mutation);
 
-			if (mutation.type === 'attributes') {
-				continue;
-			} else {
-				for (const node of mutation.removedNodes) {
-					dispatch('domMutation:nodeRemoved', node)
-				};
+			for (const node of mutation.removedNodes) {
+				dispatch('domMutation:nodeRemoved', node)
+			};
 
-				for (const node of mutation.addedNodes) {
-					dispatch('domMutation:nodeAdded', node)
-				};
-			}
 			for (const node of mutation.addedNodes) {
-				if (!(node instanceof HTMLElement) || !node.hasAttribute(componentAttribute)) continue;
+				dispatch('domMutation:nodeAdded', node)
+
+				if (!(node instanceof HTMLElement) || !node.hasAttribute(componentAttribute)) {
+					continue;
+				}
+
 				createComponent(node);
-			}
+			};
 		}
 
 	}).observe(document, { childList: true, subtree: true, attributes: true });
 });
+
+const Islands = {
+	$customEventListeners,
+	Signal,
+	bind,
+	component,
+	createHtml,
+	dispatch,
+	isJson,
+	ref,
+	refs,
+	select,
+	selectAll,
+	signal,
+	on,
+	onDomReady
+}
+
+if (typeof window !== 'undefined') {
+	window.Islands = Islands
+	window.$i = Islands
+}
+
+export default Islands;

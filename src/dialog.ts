@@ -1,4 +1,4 @@
-import { onDomReady, on, dispatch } from ".";
+import { onDomReady, on, dispatch } from "./core";
 
 const dialogAttribute = 'data-dialog';
 const dialogModelessAttribute = `${dialogAttribute}-modeless`;
@@ -28,7 +28,6 @@ export const closeDialog = (dialogOrId: string|HTMLDialogElement): HTMLDialogEle
 
 	if (dialog) {
 		dialog.close();
-		console.log(window.location.hash.substring(1), dialog.getAttribute(dialogAttribute));
 
 		if (dialog.getAttribute(dialogAttribute) === window.location.hash.substring(1)) {
 			window.history.replaceState(null, '', window.location.href.substring(0, window.location.href.indexOf('#')));

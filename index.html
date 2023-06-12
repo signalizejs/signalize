@@ -5,47 +5,13 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title data-ajaxify-block="title">Document</title>
+	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
 <body>
-
-	<form data-ref="form">
-		<input data-ref="input" min="0" type="number">
-		<button>Add</button>
-	</form>
-
-	<div id="app"></div>
-
 	<script type="module">
-		import { on, signal, bind, h, ref, render } from './dist/index.js';
-
-		const todoItems = signal([]);
-		const todoLength = signal(todoItems.get().length);
-		const paragraphColor = signal('color:green');
-
-		on('submit', ref('form'), (event) => {
-			event.preventDefault();
-			const input = ref('input');
-			const newItems = [];
-
-			for (let i = 0; i < input.value; i++) {
-				newItems.push(`<li>${i}</li>`);
-			}
-
-			todoItems.set(newItems.reverse());
-			todoLength.set(todoItems.get().length);
-
-			render({
-				target: '#app',
-				template: ({todoItems}) => {
-					return `<div>${todoItems.get().join('')}</div>`;
-				},
-				data: {
-					todoItems
-				}
-			})
-		});
+		import { on, signal, bind, ref } from './packages/islands/src/index.ts';
 
 	</script>
 

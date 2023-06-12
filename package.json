@@ -1,7 +1,7 @@
 {
-	"name": "islands-js",
-	"version": "0.0.1",
-	"description": "",
+	"name": "islandsjs",
+	"version": "0.1.0",
+	"description": "A microframework inspired by SolidJS and Svelte, designed to easily create optimized and interactive websites with minimal JavaScript.",
 	"keywords": [
 		"islandsjs",
 		"islands",
@@ -13,42 +13,69 @@
 		"framework",
 		"web"
 	],
+	"type": "module",
 	"scripts": {
-		"build": "node build.mjs",
-		"watch": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js --watch"
+		"repo:init": "npm run repo:install-playwright && npm install",
+		"repo:install-playwright": "npx playwright install --with-deps",
+		"dev": "vite",
+		"preview": "vite preview",
+		"build": "rollup -c rollup.config.js",
+		"lint": "",
+		"tests:run": "npx playwright test",
+		"tests:report": "npx playwright show-report --host 0.0.0.0"
 	},
 	"author": "Vladimír Macháček",
 	"files": [
 		"dist",
-		"esm",
-		"lib",
-		"types",
 		"package.json",
 		"LICENSE",
 		"README.md"
 	],
 	"exports": {
 		".": {
-			"import": "./esm/index.mjs",
-			"require": "./lib/index.cjs",
-			"types": "./types/*"
+			"import": "./dist/islands.js",
+			"require": "./lib/islands.cjs",
+			"types": "./dist/index.d.ts"
 		},
-		"./lib/*": "./lib/*",
-		"./esm/*": "./esm/*",
-		"./dist/*": "./dist/*",
-		"./types/*": "./types/*",
+		"./ajaxify": {
+			"import": "./dist/ajaxify.js",
+			"require": "./dist/ajaxify.cjs",
+			"types": "./dist/ajaxify.d.ts"
+		},
+		"./core": {
+			"import": "./dist/core.js",
+			"require": "./dist/core.cjs",
+			"types": "./dist/core.d.ts"
+		},
+		"./dialog": {
+			"import": "./dist/dialog.js",
+			"require": "./dist/dialog.cjs",
+			"types": "./dist/dialog.d.ts"
+		},
+		"./h": {
+			"import": "./dist/h.js",
+			"require": "./dist/h.cjs",
+			"types": "./dist/h.d.ts"
+		},
+		"./script-loader": {
+			"import": "./dist/script-loader.js",
+			"require": "./dist/script-loader.cjs",
+			"types": "./dist/script-loader.d.ts"
+		},
 		"./package.json": "./package.json"
 	},
-	"main": "lib/index.cjs",
-	"jsdelivr": "dist/islands.min.js",
-	"unpkg": "dist/islands.min.js",
-	"module": "esm/index.mjs",
-	"types": "types",
+	"main": "dist/islands.cjs",
+	"jsdelivr": "dist/islands.js",
+	"unpkg": "dist/islands.js",
+	"module": "dist/islands.js",
+	"types": "dist/index.d.ts",
 	"license": "MIT",
 	"devDependencies": {
-		"esbuild": "^0.17.18"
-	},
-	"dependencies": {
-		"solid-js": "^1.7.3"
+		"@playwright/test": "^1.35.0",
+		"@rollup/plugin-commonjs": "^25.0.1",
+		"@rollup/plugin-typescript": "^11.1.1",
+		"rollup": "^3.25.0",
+		"tslib": "^2.5.3",
+		"vite": "^4.3"
 	}
 }

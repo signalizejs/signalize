@@ -3,8 +3,6 @@
 *.lerna_backup
 *.tgz
 /coverage
-/scripts/build.js
-lerna-debug.log
 .idea
 /.idea
 
@@ -16,12 +14,3 @@ lerna-debug.log
 /packages/**/lib
 /packages/**/tmp
 /packages/**/types
-
-# @stylify/nuxt
-/packages/nuxt/.nuxt
-/packages/nuxt/.output
-/packages/nuxt/.output
-/packages/nuxt/playground/assets
-/packages/nuxt/playground/.nuxt
-/packages/nuxt/playground/.output
-/packages/nuxt/playground/workspaces

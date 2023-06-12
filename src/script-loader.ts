@@ -1,47 +1,119 @@
-import { onDomReady } from ".";
+import { onDomReady, dispatch, selectAll } from './core';
+
+interface ScriptToLoad extends Partial<HTMLScriptElement> {
+	src: string
+}
 
 const scriptLoaderAttribute = 'data-script-loader';
-const loadedScripts = [];
+const scriptLoaderInitedAttribute = `${scriptLoaderAttribute}-inited`;
+const scriptLoaderScriptEventAttribute = `${scriptLoaderAttribute}-trigger-event`;
+
+let loadedScripts: Record<string, ScriptToLoad> = {};
 
 const customEventTriggers = {};
 
-const injectScript = (attributes = {}, onLoadCallback = undefined) => {
-	const scriptElement = document.createElement('script');
+const injectScripts = async (
+	scripts: ScriptToLoad[],
+	onLoadCallback?: CallableFunction,
+	onErrorCallback?: CallableFunction
+) => {
+	const scriptsToLoad: string[] = [];
 
-	for (const [key, value] of Object.entries(attributes)) scriptElement.setAttribute(key, value);
+	for (const script of scripts) {
+		if (script.src in loadedScripts) {
+			continue;
+		}
 
-	if (typeof onLoadCallback === 'function') scriptElement.onload = onLoadCallback;
+		const scriptElement = document.createElement('script');
 
-	document.head.appendChild(scriptElement);
+		for (const [key, value] of Object.entries(script)) {
+			scriptElement.setAttribute(key, value)
+		};
+
+		scriptElement.onload = () => {
+			scriptsToLoad.push(script.src);
+
+			if (scriptsToLoad.length === scripts.length && onLoadCallback !== undefined) {
+				onLoadCallback();
+			}
+		}
+
+		scriptElement.onerror = () => {
+			if (onErrorCallback !== undefined) {
+				onErrorCallback();
+			}
+		}
+
+		document.head.appendChild(scriptElement);
+	}
 }
 
-const attachListeners = (element) => {
-	const config = element.getAttribute(`${scriptLoaderAttribute}`);
-	const configFn = new Function(`return {${config}}`);
+const attachListeners = (element: HTMLElement) => {
+	if (element.hasAttribute(scriptLoaderInitedAttribute)) {
+		return;
+	}
 
-	for (const [triggerEvent, script] of Object.entries(configFn)) {
+	const config = element.getAttribute(`${scriptLoaderAttribute}`);
+	const configData = new Function(`return {${config}}`)() as Record<string, string|string[]>
+
+	const prepareScripts = (triggerEvent: string, scripts: string|string[]|ScriptToLoad|ScriptToLoad[]): ScriptToLoad[] => {
+		return (Array.isArray(scripts) ? scripts : [scripts]).map((item) =>  {
+			item = typeof item === 'string' ? { src: item } : item;
+			item[scriptLoaderScriptEventAttribute] = triggerEvent;
+			return item;
+		});
+	}
+
+	for (const [triggerEvent, scripts] of Object.entries(configData)) {
+
 		const triggerEventToArray = triggerEvent.split(',');
 		for (const eventName of triggerEventToArray) {
 			if (eventName in customEventTriggers) {
-				customEventTriggers[eventName](script);
-				continue;
-			}
+				const preparedScripts = prepareScripts(eventName, scripts).filter((script) => {
+					return !(script.src in loadedScripts);
+				})
 
-			element.addEventListener(eventName, () => {
-				injectScript(script, () => dispatchEvent('scriptLoader:scriptLoaded', {}))
-			})
+				if (!prepareScripts.length) {
+					continue;
+				}
+
+				customEventTriggers[eventName]({
+					injectScripts,
+					scripts: preparedScripts
+				});
+			} else {
+				const handler = () => {
+					injectScripts(
+						prepareScripts(eventName, scripts),
+						() => {
+							dispatch('scriptLoader:scriptLoaded', {});
+							element.removeEventListener(eventName, handler);
+						},
+						() => dispatch('scriptLoader:scriptNotLoaded', {})
+					)
+				};
+
+				element.addEventListener(eventName, handler);
+				element.setAttribute(scriptLoaderInitedAttribute, 'true');
+			}
 		}
 	}
 }
 
 onDomReady(() => {
-	for (const element of document.querySelectorAll(`[${scriptLoaderAttribute}]`)) {
-		attachListeners(element);
+	const init = () => {
+		for (const element of selectAll<HTMLElement>(`[${scriptLoaderAttribute}]:not([${scriptLoaderInitedAttribute}])`)) {
+			attachListeners(element);
+		}
 	}
 
-	/* document.addEventListener('domMutation', ({detail}) => {
-		if (!['childList', 'subtree'].includes(detail.type)) return;
+	init();
 
-		console.log(detail);
-	}) */
+	document.addEventListener('domMutation', ({ detail }) => {
+		if (!['childList', 'subtree', 'attributes'].includes(detail.type)) {
+			return
+		};
+
+		init();
+	})
 });

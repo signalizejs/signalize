@@ -3,7 +3,7 @@
 *.tgz
 .idea
 /.idea
-.pnpm-store
-/esm
-/cjs
-/dist
+**/dist
+/test-results/
+/playwright-report/
+/playwright/.cache/

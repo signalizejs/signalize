@@ -1,9 +1,5 @@
-FROM node:alpine
+FROM node
 
-RUN npm i -g pnpm
+RUN node -v && npm -v
 
-RUN node -v && \
-	pnpm -v && \
-	npm -v
-
-EXPOSE 3000
+EXPOSE 5173 9323 4173
