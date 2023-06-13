@@ -1,5 +1,8 @@
 FROM node
 
-RUN node -v && npm -v
+RUN npm install -g pnpm &&\
+	node -v &&\
+	npm -v &&\
+	pnpm -v
 
-EXPOSE 5173 9323 4173
+EXPOSE 3000 4173 5173 9323

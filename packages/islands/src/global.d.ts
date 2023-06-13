@@ -1,8 +1,8 @@
-import type islands from './core';
+import type islands from '.';
 
 declare global {
 	interface Window {
-		Islands: typeof islands,
+		Islands: typeof islands
 		$i: typeof islands
 	}
 }

@@ -1,18 +1,18 @@
-import { onDomReady, on, dispatch } from "./core";
+import { onDomReady, on, dispatch } from 'islandsjs';
 
 const dialogAttribute = 'data-dialog';
 const dialogModelessAttribute = `${dialogAttribute}-modeless`;
 const dialogCloseButtonAttribute = `${dialogAttribute}-close`;
 const dialogOpenButtonAttribute = `${dialogAttribute}-open`;
 
-export const getDialog = (id: string): HTMLDialogElement|null => {
+export const getDialog = (id: string): HTMLDialogElement | null => {
 	return document.querySelector(`[${dialogAttribute}=${id}]`);
 };
 
-export const openDialog = (dialogOrId: string|HTMLDialogElement, modelessly = false): HTMLDialogElement|null => {
+export const openDialog = (dialogOrId: string | HTMLDialogElement, modelessly = false): HTMLDialogElement | null => {
 	const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
 
-	if (dialog) {
+	if (dialog != null) {
 		modelessly = dialog.hasAttribute(dialogModelessAttribute) ?? modelessly;
 		modelessly ? dialog.show() : dialog.showModal();
 		window.location.hash = `#${dialog.getAttribute(dialogAttribute)}`;
@@ -23,10 +23,10 @@ export const openDialog = (dialogOrId: string|HTMLDialogElement, modelessly = fa
 	return dialog;
 }
 
-export const closeDialog = (dialogOrId: string|HTMLDialogElement): HTMLDialogElement|null => {
+export const closeDialog = (dialogOrId: string | HTMLDialogElement): HTMLDialogElement | null => {
 	const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
 
-	if (dialog) {
+	if (dialog != null) {
 		dialog.close();
 
 		if (dialog.getAttribute(dialogAttribute) === window.location.hash.substring(1)) {
@@ -39,7 +39,7 @@ export const closeDialog = (dialogOrId: string|HTMLDialogElement): HTMLDialogEle
 	return dialog;
 }
 
-const openDialogByUrlHash = () => {
+const openDialogByUrlHash = (): void => {
 	const id = window.location.hash.substring(1);
 
 	if (id.length === 0 || !/^#[-\w.:]+$/.test(id)) {
@@ -61,7 +61,7 @@ onDomReady(() => {
 	on('click', `[${dialogOpenButtonAttribute}]`, ({ target }) => {
 		const dialog = getDialog(target.getAttribute(dialogOpenButtonAttribute));
 
-		if (dialog) {
+		if (dialog != null) {
 			openDialog(dialog);
 		}
 	});

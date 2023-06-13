@@ -1,13 +1,13 @@
-import { bind, Signal } from "./core";
+import { bind, Signal } from 'islandsjs';
 
 type HypertextChild = string | number | Element | Node | typeof Signal<any>;
 
 type HypertextChildAttrs = Record<string, string | typeof Signal>;
 
-export const h = (tagName: string, ...children: (HypertextChildAttrs | HypertextChild | HypertextChild[])[]): Element => {
+export const h = (tagName: string, ...children: Array<HypertextChildAttrs | HypertextChild | HypertextChild[]>): Element => {
 	let attrs: HypertextChildAttrs = {};
 
-	if (children[0].constructor?.name === 'Object') {
+	if (children[0]?.constructor?.name === 'Object') {
 		attrs = children.shift() as HypertextChildAttrs;
 	}
 
@@ -18,7 +18,7 @@ export const h = (tagName: string, ...children: (HypertextChildAttrs | Hypertext
 	}
 
 	const normalizeChild = (child: string | number | Element | Node | Signal<any>) => {
-		const result: (Node|Element)[] = [];
+		const result: Array<Node | Element> = [];
 
 		if (child instanceof Element || child instanceof Node) {
 			result.push(child);
@@ -28,7 +28,7 @@ export const h = (tagName: string, ...children: (HypertextChildAttrs | Hypertext
 				const newNormalizedChildren = normalizeChild(newValue);
 				for (const newNormalizedChild of newNormalizedChildren) {
 					const oldNormalizedChild = result.shift();
-					if (oldNormalizedChild) {
+					if (oldNormalizedChild != null) {
 						if (oldNormalizedChild !== newNormalizedChild) {
 							el.replaceChild(newNormalizedChild, oldNormalizedChild);
 						}

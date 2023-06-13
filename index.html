@@ -10,9 +10,21 @@
 </head>
 
 <body>
+	<input id="text">
+	<div class="js-div"></div>
 	<script type="module">
-		import { on, signal, bind, ref } from './packages/islands/src/index.ts';
+		import { signal, bind, select } from 'islandsjs';
+		import { h } from 'islandsjs/h';
 
+		const input = signal('');
+		bind(select('#text'), { value: input});
+		document.body.append(
+			h('div', { 'data-text': input }, [
+				h('span', 'Text in span:', input),
+				h('br'),
+				h('strong', 'Text in bold:', input)
+			])
+		)
 	</script>
 
 </body>

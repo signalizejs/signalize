@@ -1,4 +1,4 @@
-import { onDomReady, dispatch, selectAll } from './core';
+import { onDomReady, dispatch, selectAll } from 'islandsjs';
 
 interface ScriptToLoad extends Partial<HTMLScriptElement> {
 	src: string
@@ -7,9 +7,7 @@ interface ScriptToLoad extends Partial<HTMLScriptElement> {
 const scriptLoaderAttribute = 'data-script-loader';
 const scriptLoaderInitedAttribute = `${scriptLoaderAttribute}-inited`;
 const scriptLoaderScriptEventAttribute = `${scriptLoaderAttribute}-trigger-event`;
-
-let loadedScripts: Record<string, ScriptToLoad> = {};
-
+const loadedScripts: Record<string, ScriptToLoad> = {};
 const customEventTriggers = {};
 
 const injectScripts = async (
@@ -28,7 +26,7 @@ const injectScripts = async (
 
 		for (const [key, value] of Object.entries(script)) {
 			scriptElement.setAttribute(key, value)
-		};
+		}
 
 		scriptElement.onload = () => {
 			scriptsToLoad.push(script.src);
@@ -48,16 +46,17 @@ const injectScripts = async (
 	}
 }
 
-const attachListeners = (element: HTMLElement) => {
+const attachListeners = (element: HTMLElement): void => {
 	if (element.hasAttribute(scriptLoaderInitedAttribute)) {
 		return;
 	}
 
-	const config = element.getAttribute(`${scriptLoaderAttribute}`);
-	const configData = new Function(`return {${config}}`)() as Record<string, string|string[]>
+	const config = element.getAttribute(`${scriptLoaderAttribute}`) ?? '';
+	// eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+	const configData = new Function(`return {${config}}`)() as Record<string, string | string[]>
 
-	const prepareScripts = (triggerEvent: string, scripts: string|string[]|ScriptToLoad|ScriptToLoad[]): ScriptToLoad[] => {
-		return (Array.isArray(scripts) ? scripts : [scripts]).map((item) =>  {
+	const prepareScripts = (triggerEvent: string, scripts: string | string[] | ScriptToLoad | ScriptToLoad[]): ScriptToLoad[] => {
+		return (Array.isArray(scripts) ? scripts : [scripts]).map((item) => {
 			item = typeof item === 'string' ? { src: item } : item;
 			item[scriptLoaderScriptEventAttribute] = triggerEvent;
 			return item;
@@ -65,15 +64,15 @@ const attachListeners = (element: HTMLElement) => {
 	}
 
 	for (const [triggerEvent, scripts] of Object.entries(configData)) {
-
 		const triggerEventToArray = triggerEvent.split(',');
+
 		for (const eventName of triggerEventToArray) {
 			if (eventName in customEventTriggers) {
 				const preparedScripts = prepareScripts(eventName, scripts).filter((script) => {
 					return !(script.src in loadedScripts);
 				})
 
-				if (!prepareScripts.length) {
+				if (preparedScripts.length === 0) {
 					continue;
 				}
 
@@ -82,7 +81,7 @@ const attachListeners = (element: HTMLElement) => {
 					scripts: preparedScripts
 				});
 			} else {
-				const handler = () => {
+				const handler = (): void => {
 					injectScripts(
 						prepareScripts(eventName, scripts),
 						() => {
@@ -101,7 +100,7 @@ const attachListeners = (element: HTMLElement) => {
 }
 
 onDomReady(() => {
-	const init = () => {
+	const init = (): void => {
 		for (const element of selectAll<HTMLElement>(`[${scriptLoaderAttribute}]:not([${scriptLoaderInitedAttribute}])`)) {
 			attachListeners(element);
 		}

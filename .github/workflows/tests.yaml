@@ -1,0 +1,46 @@
+name: Tests
+
+on:
+    push:
+        branches:
+        - '**'
+    pull_request:
+        branches:
+        - main
+
+jobs:
+  tests:
+    name: Tests build
+    runs-on: ubuntu-latest
+
+    steps:
+        - uses: actions/checkout@v3
+
+        - uses: actions/setup-node@v3
+          with:
+            node-version: 16
+            cache: npm
+
+        - name: Versions
+          run: node -v && npm -v
+
+        - name: Install packages
+          run: npm run repo:init
+
+        - name: Build
+          run: npm run build
+
+        #- name: Eslint
+        #  run: npm run eslint:check
+
+        - name: Run Playwright Tests
+          run: npm run tests:run
+
+        - uses: actions/upload-artifact@v3
+          if: ${{ failure() }}
+          with:
+            name: artifacts
+            path: |
+                dist
+                playwright-report/
+            retention-days: 30

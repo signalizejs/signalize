@@ -1,0 +1,7 @@
+{
+	"name": "islandsjs/h",
+	"version": "0.1.0",
+	"dependencies": {
+		"islandsjs": "workspace:*"
+	}
+}

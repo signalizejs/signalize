@@ -1,18 +1,28 @@
+import { resolve } from 'path';
 import { defineConfig } from 'vite';
-import commonJs from '@rollup/plugin-commonjs';
+
+const packagesDir = resolve('./packages');
 
 export default defineConfig({
-	build: {
-		manifest: false,
-		minify: false,
-		rollupOptions: {
-			input: {
-				islands: './packages/islands/src/index.ts',
-			}
+	base: './',
+	resolve: {
+		conditions: ['development', 'browser'],
+		alias: {
+			'islandsjs/ajax': `${packagesDir}/islands/ajax/src/index.ts`,
+			'islandsjs/ajaxify': `${packagesDir}/islands/ajaxify/src/index.ts`,
+			'islandsjs/component': `${packagesDir}/islands/component/src/index.ts`,
+			'islandsjs/dialog': `${packagesDir}/islands/dialog/src/index.ts`,
+			'islandsjs/h': `${packagesDir}/islands/h/src/index.ts`,
+			'islandsjs/script-loader': `${packagesDir}/islands/script-loader/src/index.ts`,
+			islandsjs: `${packagesDir}/islands/src/index.ts`
 		}
 	},
 	server: {
-		host: "0.0.0.0",
-		port: "5173"
+		host: '0.0.0.0',
+		port: '5173'
 	},
+	preview: {
+		host: '0.0.0.0',
+		port: '4173'
+	}
 })

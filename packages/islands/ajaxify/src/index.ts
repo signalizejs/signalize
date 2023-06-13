@@ -1,16 +1,16 @@
-import type { CustomEventListener } from "./core";
-import { dispatch, on, onDomReady, selectAll, isJson, createHtml } from "./core";
+import type { CustomEventListener } from 'islandsjs';
+import { dispatch, on, onDomReady, selectAll, isJson, createHtml } from 'islandsjs';
 
 type StateAction = 'push' | 'replace';
 
 interface FetchConfig {
-	info: RequestInfo | URL | string,
-	init?: RequestInit,
-	stateAction?: StateAction,
-	element?: HTMLElement,
-	indicator?: string | HTMLElement,
-	id?: string,
-	onSuccessCallback?: CallableFunction,
+	info: RequestInfo | URL | string
+	init?: RequestInit
+	stateAction?: StateAction
+	element?: HTMLElement
+	indicator?: string | HTMLElement
+	id?: string
+	onSuccessCallback?: CallableFunction
 	onErrorCallback?: CallableFunction
 }
 
@@ -24,10 +24,10 @@ const ajaxifyStateAttribute = 'data-ajaxify-state';
 const ajaxifyBlockAttribute = 'data-ajaxify-block';
 const ajaxifyBlockActionAttribute = 'data-ajaxify-block-action';
 
-export const sendRequest = async (fetchConfig: FetchConfig) => {
-	const id = fetchConfig.id
-		?? fetchConfig.element?.getAttribute('id')
-		?? fetchConfig.element?.getAttribute(ajaxifyIdAttribute);
+export const sendRequest = async (fetchConfig: FetchConfig): void => {
+	const id = fetchConfig.id ??
+		fetchConfig.element?.getAttribute('id') ??
+		fetchConfig.element?.getAttribute(ajaxifyIdAttribute);
 
 	let indicatorElement: HTMLElement | null = fetchConfig.element ?? null;
 
@@ -38,7 +38,7 @@ export const sendRequest = async (fetchConfig: FetchConfig) => {
 	}
 
 	const setIndicatorElementStateClass = (className: 's-ajaxify-processing' | 's-ajaxify-error' | 's-ajaxify-success') => {
-		if (!indicatorElement) {
+		if (indicatorElement == null) {
 			return;
 		}
 
@@ -63,14 +63,14 @@ export const sendRequest = async (fetchConfig: FetchConfig) => {
 		fetchConfig.init = {};
 	}
 
-	if (typeof fetchConfig.init.method === 'undefined' ) {
+	if (typeof fetchConfig.init.method === 'undefined') {
 		fetchConfig.init.method = 'GET';
 	}
 
 	try {
 		const response = await fetch(fetchConfig.info, fetchConfig.init)
 		let responseData = await response.text();
-		let responseDataAreJson = isJson(responseData);
+		const responseDataAreJson = isJson(responseData);
 
 		if (responseDataAreJson) {
 			responseData = JSON.parse(responseData);
@@ -88,13 +88,13 @@ export const sendRequest = async (fetchConfig: FetchConfig) => {
 
 		if (fetchConfig.stateAction !== undefined) {
 			if (window.history.state === null) {
-				window.history.replaceState({ajaxify:true}, '', window.location.href);
+				window.history.replaceState({ ajaxify: true }, '', window.location.href);
 			}
 
 			if (fetchConfig.stateAction === 'replace') {
 				window.history.replaceState(window.history.state, '', fetchConfig.info.toString());
 			} else {
-				window.history.pushState({ajaxify: true}, '', fetchConfig.info.toString());
+				window.history.pushState({ ajaxify: true }, '', fetchConfig.info.toString());
 			}
 		}
 
@@ -104,7 +104,7 @@ export const sendRequest = async (fetchConfig: FetchConfig) => {
 				const blockId = element.getAttribute(ajaxifyBlockAttribute);
 				const targetBlockToSync = document.querySelector(`[${ajaxifyBlockAttribute}="${blockId}"]`);
 
-				if (!targetBlockToSync) {
+				if (targetBlockToSync == null) {
 					continue;
 				}
 
@@ -113,12 +113,12 @@ export const sendRequest = async (fetchConfig: FetchConfig) => {
 				if (blockAction === 'replace') {
 					targetBlockToSync.replaceWith(element);
 				} else if (blockAction === 'append-children') {
-					while (element.firstChild) {
+					while (element.firstChild != null) {
 						const child = element.firstChild;
 						targetBlockToSync.appendChild(child);
 					}
 				} else if (blockAction === 'prepend-children') {
-					while (element.lastChild) {
+					while (element.lastChild != null) {
 						const child = element.lastChild;
 						targetBlockToSync.insertBefore(child, targetBlockToSync.firstChild);
 					}
@@ -132,8 +132,7 @@ export const sendRequest = async (fetchConfig: FetchConfig) => {
 		if (fetchConfig.onSuccessCallback !== undefined) {
 			fetchConfig.onSuccessCallback(eventData)
 		}
-
-	} catch(error) {
+	} catch (error) {
 		const eventData = {
 			error,
 			config: fetchConfig
@@ -148,19 +147,19 @@ export const sendRequest = async (fetchConfig: FetchConfig) => {
 	}
 }
 
-const processConfig = (element: HTMLElement, config: ConfigFromAttribute) => {
+const processConfig = (element: HTMLElement, config: ConfigFromAttribute): void => {
 	for (const [triggerEvent, fetchConfig] of Object.entries(config)) {
 		fetchConfig.element = element;
 		const domEvents = triggerEvent.split(',');
 
 		for (const domEvent of domEvents) {
-			on(domEvent as keyof CustomEventListener, element, () => sendRequest(fetchConfig))
+			on(domEvent as keyof CustomEventListener, element, async () => { await sendRequest(fetchConfig); })
 		}
 	}
 }
 
-const processOther = (element: HTMLAnchorElement) => {
-	const handler = (event: Event) => {
+const processOther = (element: HTMLAnchorElement): void => {
+	const handler = (event: Event): void => {
 		event.preventDefault();
 
 		const url = element.getAttribute('href') ?? element.getAttribute(ajaxifyUrlAttribute);
@@ -169,7 +168,6 @@ const processOther = (element: HTMLAnchorElement) => {
 			throw new Error('Islands - ajaxify: Element doesn\' have href or data-href attribute.');
 		}
 
-		console.log(element, element.getAttribute(`${ajaxifyStateAttribute}`));
 		sendRequest({
 			info: url,
 			element,
@@ -185,8 +183,8 @@ const processOther = (element: HTMLAnchorElement) => {
 	on('click', element, handler);
 }
 
-const processForm = (element: HTMLFormElement) => {
-	const handler =  (event: SubmitEvent) => {
+const processForm = (element: HTMLFormElement): void => {
+	const handler = (event: SubmitEvent): void => {
 		event.preventDefault();
 
 		const action = element.getAttribute('action') ?? element.getAttribute(ajaxifyUrlAttribute);
@@ -211,13 +209,12 @@ const processForm = (element: HTMLFormElement) => {
 				}
 			}
 		});
-
 	};
 
 	on('submit', element, handler)
 }
 
-window.addEventListener('popstate', function(event) {
+window.addEventListener('popstate', function (event) {
 	if (typeof window.history.state.ajaxify === 'boolean') {
 		sendRequest({
 			info: window.location.href
@@ -230,7 +227,7 @@ onDomReady(() => {
 		const configAttributeData = element.getAttribute(ajaxifyAttribute);
 		const parsedConfigData = new Function(`return {${configAttributeData}}`)() as ConfigFromAttribute
 
-		if (Object.keys(parsedConfigData).length) {
+		if (Object.keys(parsedConfigData).length > 0) {
 			processConfig(element, parsedConfigData)
 			return;
 		}
