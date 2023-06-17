@@ -1,24 +1,25 @@
-import { onDomReady, dispatch, selectAll } from 'islandsjs';
+import type { CustomEventListener } from 'islandsjs';
+import { onDomReady, dispatch, selectAll, on } from 'islandsjs';
 
 interface ScriptToLoad extends Partial<HTMLScriptElement> {
 	src: string
 }
 
+type AttributeScriptConfig = Record<string, string | string[] | ScriptToLoad | ScriptToLoad>
 const scriptLoaderAttribute = 'data-script-loader';
 const scriptLoaderInitedAttribute = `${scriptLoaderAttribute}-inited`;
 const scriptLoaderScriptEventAttribute = `${scriptLoaderAttribute}-trigger-event`;
-const loadedScripts: Record<string, ScriptToLoad> = {};
 const customEventTriggers = {};
 
-const injectScripts = async (
-	scripts: ScriptToLoad[],
-	onLoadCallback?: CallableFunction,
-	onErrorCallback?: CallableFunction
-) => {
-	const scriptsToLoad: string[] = [];
+const findScript = (src: string): HTMLScriptElement | null => document.querySelector(`script[src="${src}"]`);
+
+const isScriptLoaded = (src: string): boolean => findScript(src) !== null;
+
+const load = async (scripts: ScriptToLoad[]): Promise<void> => {
+	const scriptsPromises: Promise<any>[] = [];
 
 	for (const script of scripts) {
-		if (script.src in loadedScripts) {
+		if (isScriptLoaded(script.src)) {
 			continue;
 		}
 
@@ -28,22 +29,21 @@ const injectScripts = async (
 			scriptElement.setAttribute(key, value)
 		}
 
-		scriptElement.onload = () => {
-			scriptsToLoad.push(script.src);
-
-			if (scriptsToLoad.length === scripts.length && onLoadCallback !== undefined) {
-				onLoadCallback();
+		scriptsPromises.push(new Promise((resolve, reject) => {
+			scriptElement.onload = () => {
+				resolve({ script, scriptElement });
 			}
-		}
 
-		scriptElement.onerror = () => {
-			if (onErrorCallback !== undefined) {
-				onErrorCallback();
+			scriptElement.onerror = (error) => {
+				reject(error);
+				scriptElement.remove();
 			}
-		}
+		}))
 
 		document.head.appendChild(scriptElement);
 	}
+
+	await Promise.all(scriptsPromises);
 }
 
 const attachListeners = (element: HTMLElement): void => {
@@ -53,7 +53,7 @@ const attachListeners = (element: HTMLElement): void => {
 
 	const config = element.getAttribute(`${scriptLoaderAttribute}`) ?? '';
 	// eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
-	const configData = new Function(`return {${config}}`)() as Record<string, string | string[]>
+	const configData = new Function(`return {${config}}`)() as AttributeScriptConfig;
 
 	const prepareScripts = (triggerEvent: string, scripts: string | string[] | ScriptToLoad | ScriptToLoad[]): ScriptToLoad[] => {
 		return (Array.isArray(scripts) ? scripts : [scripts]).map((item) => {
@@ -69,7 +69,7 @@ const attachListeners = (element: HTMLElement): void => {
 		for (const eventName of triggerEventToArray) {
 			if (eventName in customEventTriggers) {
 				const preparedScripts = prepareScripts(eventName, scripts).filter((script) => {
-					return !(script.src in loadedScripts);
+					return !isScriptLoaded(script.src);
 				})
 
 				if (preparedScripts.length === 0) {
@@ -77,22 +77,22 @@ const attachListeners = (element: HTMLElement): void => {
 				}
 
 				customEventTriggers[eventName]({
-					injectScripts,
 					scripts: preparedScripts
 				});
 			} else {
+				const scriptsToLoad = prepareScripts(eventName, scripts);
 				const handler = (): void => {
-					injectScripts(
-						prepareScripts(eventName, scripts),
-						() => {
-							dispatch('scriptLoader:scriptLoaded', {});
+					load(scriptsToLoad)
+						.then(() => {
+							dispatch('script-loader:success', { scripts: scriptsToLoad })
 							element.removeEventListener(eventName, handler);
-						},
-						() => dispatch('scriptLoader:scriptNotLoaded', {})
-					)
+						})
+						.catch((error) => {
+							dispatch('script-loader:error', { error, scripts: scriptsToLoad })
+						})
 				};
 
-				element.addEventListener(eventName, handler);
+				on(eventName as CustomEventListener, element, handler);
 				element.setAttribute(scriptLoaderInitedAttribute, 'true');
 			}
 		}
@@ -108,10 +108,10 @@ onDomReady(() => {
 
 	init();
 
-	document.addEventListener('domMutation', ({ detail }) => {
+	document.addEventListener('dom-mutation', ({ detail }) => {
 		if (!['childList', 'subtree', 'attributes'].includes(detail.type)) {
 			return
-		};
+		}
 
 		init();
 	})

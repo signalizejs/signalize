@@ -1,4 +1,5 @@
 let onDomReadyListeners: CallableFunction[] = [];
+
 const callOnDomReadyListeners = (): void => {
 	for (const onDomReadyListener of onDomReadyListeners) {
 		onDomReadyListener();
@@ -7,10 +8,15 @@ const callOnDomReadyListeners = (): void => {
 	onDomReadyListeners = [];
 }
 
+const windowIsDefined = typeof window !== 'undefined';
 const documentIsDefined = typeof document !== 'undefined';
 const documentIsReady = documentIsDefined && document.readyState !== 'loading';
 
 export const onDomReady = (callback: CallableFunction): void => {
+	if (!windowIsDefined) {
+		return;
+	}
+
 	if (documentIsDefined) {
 		callback()
 	} else {
@@ -18,7 +24,7 @@ export const onDomReady = (callback: CallableFunction): void => {
 	}
 }
 
-if (documentIsDefined) {
+if (windowIsDefined && documentIsDefined) {
 	if (documentIsReady) {
 		callOnDomReadyListeners()
 	} else {

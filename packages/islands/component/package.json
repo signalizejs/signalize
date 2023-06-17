@@ -1,7 +1,8 @@
 {
 	"name": "islandsjs/component",
-	"version": "0.1.0",
-	"dependencies": {
-		"islandsjs": "workspace:*"
-	}
-}
+	"main": "./dist/component.cjs",
+	"module": "./dist/component.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"sideEffects": false
+  }

@@ -1,23 +1,21 @@
-import { bind, Signal } from 'islandsjs';
+import { bind, Signal, isBrowserEnv } from 'islandsjs';
 
 type HypertextChild = string | number | Element | Node | typeof Signal<any>;
 
 type HypertextChildAttrs = Record<string, string | typeof Signal>;
 
-export const h = (tagName: string, ...children: Array<HypertextChildAttrs | HypertextChild | HypertextChild[]>): Element => {
-	let attrs: HypertextChildAttrs = {};
-
-	if (children[0]?.constructor?.name === 'Object') {
-		attrs = children.shift() as HypertextChildAttrs;
-	}
-
+const renderDom = (
+	tagName: string,
+	attrs: Record<string, any>,
+	children: Array<HypertextChildAttrs | HypertextChild | HypertextChild[]>
+): HTMLElement => {
 	const el = document.createElement(tagName);
 
 	if (Object.keys(attrs).length > 0) {
 		bind(el, attrs);
 	}
 
-	const normalizeChild = (child: string | number | Element | Node | Signal<any>) => {
+	const normalizeChild = (child: string | number | Element | Node | Signal<any>): Array<Node | Element> => {
 		const result: Array<Node | Element> = [];
 
 		if (child instanceof Element || child instanceof Node) {
@@ -52,8 +50,6 @@ export const h = (tagName: string, ...children: Array<HypertextChildAttrs | Hype
 		return result;
 	}
 
-	children = children.flat(Infinity);
-
 	const fragment = document.createDocumentFragment();
 
 	for (const child of children) {
@@ -63,4 +59,32 @@ export const h = (tagName: string, ...children: Array<HypertextChildAttrs | Hype
 	el.appendChild(fragment);
 
 	return el;
+}
+
+const renderHtmlString = (tagName: string, attrs: Record<string, any>, children: string[]): string => {
+	let html = `<${tagName}`;
+
+	for (const [key, value] of Object.entries(attrs)) {
+		html += ` ${key}="${value}"`;
+	}
+
+	html += children.length > 0 ? `>${children.join('')}</${tagName}>` : '>';
+
+	return html;
+}
+
+export const h = <T extends HTMLElement>(tagName: string, ...children: Array<HypertextChildAttrs | HypertextChild | HypertextChild[]>): T => {
+	let attrs: HypertextChildAttrs = {};
+
+	if (children[0]?.constructor?.name === 'Object') {
+		attrs = children.shift() as HypertextChildAttrs;
+	}
+
+	children = children.flat(Infinity);
+
+	return (
+		isBrowserEnv === true
+			? renderDom(tagName, attrs, children)
+			: renderHtmlString(tagName, attrs, children as string[])
+	) as T
 }

@@ -3,7 +3,7 @@ import { createHtml } from './createHtml';
 import { dispatch } from './dispatch';
 import { isJson } from './isJson';
 import { onDomReady } from './onDomReady';
-import { definedSignals, signal, Signal } from './signal';
+import { signal, Signal } from './signal';
 import { on } from './on';
 import { select } from './select';
 import { selectAll } from './selectAll';
@@ -12,7 +12,6 @@ export * from './bind';
 export * from './createHtml';
 export * from './dispatch';
 export * from './isJson';
-//export * from './islands'
 export * from './mergeObjects';
 export * from './normalizeTargets';
 export * from './on';
@@ -23,7 +22,6 @@ export * from './signal';
 
 interface IslandsWindowObject {
 	$config: typeof config
-	$signals: typeof definedSignals
 	Signal: typeof Signal
 	bind: typeof bind
 	configure: typeof configure
@@ -37,7 +35,10 @@ interface IslandsWindowObject {
 	signal: typeof signal
 }
 
-export const config: Record<string, any> = {}
+export const config: Record<string, any> = {
+	attributesPrefix: 'data-',
+	libPrefix: ''
+}
 
 export const configure = <T>(data: T): void => {
 
@@ -46,14 +47,14 @@ export const configure = <T>(data: T): void => {
 onDomReady(() => {
 	new MutationObserver((mutationList): void => {
 		for (const mutation of mutationList) {
-			dispatch('domMutation', mutation);
+			dispatch('dom-mutation', mutation);
 
 			for (const node of mutation.removedNodes) {
-				dispatch('domMutation:nodeRemoved', node)
+				dispatch('dom-mutation:node:removed', node)
 			}
 
 			for (const node of mutation.addedNodes) {
-				dispatch('domMutation:nodeAdded', node)
+				dispatch('dom-mutation:node:added', node)
 			}
 		}
 	}).observe(document, { childList: true, subtree: true, attributes: true });
@@ -61,7 +62,6 @@ onDomReady(() => {
 
 export const Islands: IslandsWindowObject = {
 	$config: config,
-	$signals: definedSignals,
 	Signal,
 	bind,
 	configure,
@@ -75,9 +75,8 @@ export const Islands: IslandsWindowObject = {
 	signal
 };
 
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && typeof window.Islands === 'undefined') {
 	window.Islands = Islands
-	window.$i = Islands
 }
 
 export default Islands;

@@ -1,7 +1,8 @@
 {
 	"name": "islandsjs/ajax",
-	"version": "0.1.0",
-	"dependencies": {
-		"islandsjs": "workspace:*"
-	}
-}
+	"main": "./dist/ajax.cjs",
+	"module": "./dist/ajax.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"sideEffects": false
+  }

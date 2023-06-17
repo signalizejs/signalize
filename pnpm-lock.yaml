@@ -111,6 +111,48 @@ importers:
         specifier: ^4.3
         version: 4.3.0
 
+  packages/islands/ajax:
+    dependencies:
+      islandsjs:
+        specifier: workspace:*
+        version: link:..
+
+  packages/islands/ajaxify:
+    dependencies:
+      islandsjs:
+        specifier: workspace:*
+        version: link:..
+
+  packages/islands/component:
+    dependencies:
+      islandsjs:
+        specifier: workspace:*
+        version: link:..
+
+  packages/islands/dialog:
+    dependencies:
+      islandsjs:
+        specifier: workspace:*
+        version: link:..
+
+  packages/islands/h:
+    dependencies:
+      islandsjs:
+        specifier: workspace:*
+        version: link:..
+
+  packages/islands/script-loader:
+    dependencies:
+      islandsjs:
+        specifier: workspace:*
+        version: link:..
+
+  packages/islands/snippets:
+    dependencies:
+      islandsjs:
+        specifier: workspace:*
+        version: link:..
+
 packages:
 
   /@babel/runtime@7.22.5:

@@ -1,33 +1,15 @@
-import { resolve } from 'path'
+import { resolve, parse } from 'path'
 import { defineConfig } from 'rollup'
 import typescript from '@rollup/plugin-typescript'
 import { existsSync, rmdirSync } from 'fs';
 
 const packagesDir = resolve('./packages');
-const distDirs = [
-	`${packagesDir}/islands/dist`,
-	`${packagesDir}/islands/ajax/dist`,
-	`${packagesDir}/islands/ajaxify/dist`,
-	`${packagesDir}/islands/component/dist`,
-	`${packagesDir}/islands/dialog/dist`,
-	`${packagesDir}/islands/h/dist`,
-	`${packagesDir}/islands/script-loader/dist`
-]
-
-for (const distDir of distDirs) {
-	if (!existsSync(distDir)) {
-		continue;
-	}
-
-	rmdirSync(distDir, { recursive: true, force: true });
-}
-
 const islandsDir = `${packagesDir}/islands`;
 
 /**
  * @type { RollupOptions[] }
  */
-const islandsPackages = [
+const packages = [
 	// IslandsJS
 	{
 		plugins: [
@@ -70,30 +52,6 @@ const islandsPackages = [
 			},
 			{
 				file: `${islandsDir}/ajax/dist/ajax.cjs`,
-				format: 'cjs'
-			}
-		]
-	},
-
-	// Ajaxify
-	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${islandsDir}/ajaxify/src`,
-				declarationDir: `${islandsDir}/ajaxify/dist`
-			})
-		],
-		input: `${islandsDir}/ajaxify/src/index.ts`,
-		treeshake: false,
-		external: ['islandsjs'],
-		output: [
-			{
-				file: `${islandsDir}/ajaxify/dist/ajaxify.js`,
-				format: 'esm'
-			},
-			{
-				file: `${islandsDir}/ajaxify/dist/ajaxify.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -193,9 +151,67 @@ const islandsPackages = [
 				format: 'cjs'
 			}
 		]
+	},
+
+	// Snippets
+	{
+		plugins: [
+			typescript({
+				declaration: true,
+				rootDir: `${islandsDir}/snippets/src`,
+				declarationDir: `${islandsDir}/snippets/dist`
+			})
+		],
+		input: `${islandsDir}/snippets/src/index.ts`,
+		treeshake: false,
+		external: ['islandsjs'],
+		output: [
+			{
+				file: `${islandsDir}/snippets/dist/snippets.js`,
+				format: 'esm'
+			},
+			{
+				file: `${islandsDir}/snippets/dist/snippets.cjs`,
+				format: 'cjs'
+			}
+		]
+	},
+
+	// Spa
+	{
+		plugins: [
+			typescript({
+				declaration: true,
+				rootDir: `${islandsDir}/spa/src`,
+				declarationDir: `${islandsDir}/spa/dist`
+			})
+		],
+		input: `${islandsDir}/spa/src/index.ts`,
+		treeshake: false,
+		external: ['islandsjs'],
+		output: [
+			{
+				file: `${islandsDir}/spa/dist/spa.js`,
+				format: 'esm'
+			},
+			{
+				file: `${islandsDir}/spa/dist/spa.cjs`,
+				format: 'cjs'
+			}
+		]
 	}
 ]
 
+for (const packageConfig of packages) {
+	const dir = parse(packageConfig.output[0].file).dir;
+
+	if (!existsSync(dir)) {
+		continue;
+	}
+
+	rmdirSync(dir, { recursive: true, force: true });
+}
+
 export default defineConfig([
-	...islandsPackages
+	...packages
 ])

@@ -1,3 +1,4 @@
+import type { CustomEventListener } from 'islandsjs';
 import { on, onDomReady, selectAll } from 'islandsjs';
 
 interface OnComponentEmitListenerArguments {
@@ -56,23 +57,25 @@ const createComponent = (el: HTMLElement): void => {
 		parentComponentEl,
 		parentComponentId: parentComponentEl?.dataset.componentId ?? undefined,
 		id: componentId,
-		ref: <T>(id: string) => ref.call(undefined, id, { root: el, componentId }) as T,
-		refs: <T>(id: string) => refs.call(undefined, id, { root: el, componentId }) as T,
+		ref: <T>(id: string) => (refs(id, el, componentId)[0] ?? null) as T,
+		refs: <T>(id: string) => refs(id, el, componentId) as T,
 		onRemove: (listener: CallableFunction) => { onRemoveListeners.add(listener) }
 	});
 }
 
 const refs = <T extends HTMLElement>(
 	id: string,
-	{ root, componentId }: { root?: HTMLElement, componentId?: string } = {}
+	root: HTMLElement,
+	componentId: string
 ): T[] => {
 	const items = selectAll<T>(`[${refAttribute}="${id}"]`, root ?? document.documentElement);
 
 	return [...items].filter((ref) => {
 		const closestComponent = ref.closest(`[${componentAttribute}]`);
-		const closestComponentName = closestComponent?.getAttribute(componentAttribute) ?? null;
 
-		if (closestComponent != null) {
+		if (closestComponent !== null) {
+			const closestComponentName = closestComponent.getAttribute(componentAttribute) as string;
+
 			if (componentId === undefined) {
 				throw new Error(`You are trying to access ref "${id}" of component "${closestComponentName}" from global scope.`)
 			} else {
@@ -87,13 +90,6 @@ const refs = <T extends HTMLElement>(
 	});
 }
 
-const ref = <T extends HTMLElement>(
-	id: string,
-	{ root, componentId }: { root?: HTMLElement, componentId?: string } = {}
-): T => {
-	return (refs(id, { root, componentId })[0] ?? null) as T
-};
-
 export const component = (name: string, init: ComponentInitFunction): void => {
 	if (name in definedComponents) {
 		throw new Error(`Component "${name}" already defined.`);
@@ -107,7 +103,7 @@ onDomReady(() => {
 		createComponent(el);
 	}
 
-	on('domMutation:nodeAdded', document, ({ detail }): void => {
+	on('dom-mutation:node:added' as keyof CustomEventListener, document, ({ detail }): void => {
 		const node = detail.node;
 
 		if (!(node instanceof HTMLElement) || !node.hasAttribute(componentAttribute)) {

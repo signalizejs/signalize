@@ -1,7 +1,8 @@
 {
 	"name": "islandsjs/h",
-	"version": "0.1.0",
-	"dependencies": {
-		"islandsjs": "workspace:*"
-	}
-}
+	"main": "./dist/h.cjs",
+	"module": "./dist/h.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"sideEffects": false
+  }

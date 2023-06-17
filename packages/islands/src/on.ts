@@ -1,8 +1,8 @@
 import { normalizeTargets } from '.';
 
-type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement;
+export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window;
 
-type CustomEventListener = (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => void;
+export type CustomEventListener = (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => void;
 
 interface CustomEventListeners extends HTMLElementEventMap {
 	clickOutside: CustomEventListener

@@ -1,3 +1,4 @@
+import type { CustomEventListener } from 'islandsjs';
 import { onDomReady, on, dispatch } from 'islandsjs';
 
 const dialogAttribute = 'data-dialog';
@@ -15,7 +16,7 @@ export const openDialog = (dialogOrId: string | HTMLDialogElement, modelessly = 
 	if (dialog != null) {
 		modelessly = dialog.hasAttribute(dialogModelessAttribute) ?? modelessly;
 		modelessly ? dialog.show() : dialog.showModal();
-		window.location.hash = `#${dialog.getAttribute(dialogAttribute)}`;
+		window.location.hash = `#${dialog.getAttribute(dialogAttribute) as string}`;
 
 		dispatch('dialog:opened', { dialog });
 	}
@@ -53,7 +54,7 @@ onDomReady(() => {
 	on('click', `[${dialogCloseButtonAttribute}]`, ({ target }) => {
 		const dialog = target.getAttribute[`${dialogCloseButtonAttribute}`] ?? target.closest(`[${dialogAttribute}]`);
 
-		if (dialog) {
+		if (dialog !== null) {
 			closeDialog(dialog);
 		}
 	});
@@ -68,5 +69,5 @@ onDomReady(() => {
 
 	openDialogByUrlHash();
 
-	window.addEventListener('locationchange', openDialogByUrlHash);
+	on('locationchange' as keyof CustomEventListener, window, openDialogByUrlHash);
 });

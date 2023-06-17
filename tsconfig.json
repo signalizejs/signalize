@@ -1,10 +1,22 @@
 {
 	"compilerOptions": {
-	  "target": "esnext",
-	  "newLine": "LF",
-	  "moduleResolution": "node",
-	  "rootDir": ".",
-	  "strict": true,
+		"target": "esnext",
+		"newLine": "LF",
+		"moduleResolution": "node",
+		"rootDir": ".",
+		"strict": true,
+		"paths": {
+			"islandsjs/ajax": ["./packages/islands/ajax"],
+			"islandsjs/component": ["./packages/islands/component"],
+			"islandsjs/dialog": ["./packages/islands/dialog"],
+			"islandsjs/h": ["./packages/islands/h"],
+			"islandsjs/script-loader": ["./packages/islands/script-loader"],
+			"islandsjs/snippets": ["./packages/islands/snippets"],
+			"islandsjs/spa": ["./packages/islands/spa"],
+			"islandsjs": ["./packages/islands"],
+		}
 	},
-	"exclude": ["node_modules"]
+	"exclude": [
+		"node_modules"
+	]
 }

@@ -1,7 +1,8 @@
 {
 	"name": "islandsjs/dialog",
-	"version": "0.1.0",
-	"dependencies": {
-		"islandsjs": "workspace:*"
-	}
-}
+	"main": "./dist/dialog.cjs",
+	"module": "./dist/dialog.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"sideEffects": false
+  }

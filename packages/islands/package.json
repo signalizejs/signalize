@@ -33,35 +33,41 @@
 			"types": "./dist/index.d.ts"
 		},
 		"./dist/*": "./dist/*",
+
 		"./ajax": {
 			"import": "./ajax/dist/ajax.js",
 			"require": "./ajax/dist/ajax.cjs",
-			"types": "./ajax/dist/ajax.d.ts"
-		},
-		"./ajaxify": {
-			"import": "./ajaxify/dist/ajaxify.js",
-			"require": "./ajaxify/dist/ajaxify.cjs",
-			"types": "./ajaxify/dist/ajaxify.d.ts"
+			"types": "./ajax/dist/index.d.ts"
 		},
 		"./component": {
 			"import": "./component/dist/component.js",
 			"require": "./component/dist/component.cjs",
-			"types": "./component/dist/component.d.ts"
+			"types": "./component/dist/index.d.ts"
 		},
 		"./dialog": {
 			"import": "./dialog/dist/dialog.js",
 			"require": "./dialog/dist/dialog.cjs",
-			"types": "./dialog/dist/dialog.d.ts"
+			"types": "./dialog/dist/index.d.ts"
 		},
 		"./h": {
 			"import": "./h/dist/h.js",
 			"require": "./h/dist/h.cjs",
-			"types": "./h/dist/h.d.ts"
+			"types": "./h/dist/index.d.ts"
 		},
 		"./script-loader": {
 			"import": "./script-loader/dist/script-loader.js",
 			"require": "./script-loader/dist/script-loader.cjs",
-			"types": "./script-loader/dist/script-loader.d.ts"
+			"types": "./script-loader/dist/index.d.ts"
+		},
+		"./snippets": {
+			"import": "./snippets/dist/snippets.js",
+			"require": "./snippets/dist/snippets.cjs",
+			"types": "./snippets/dist/index.d.ts"
+		},
+		"./spa": {
+			"import": "./spa/dist/spa.js",
+			"require": "./spa/dist/spa.cjs",
+			"types": "./spa/dist/index.d.ts"
 		},
 		"./package.json": "./package.json"
 	},
@@ -69,7 +75,7 @@
 	"jsdelivr": "dist/islands.js",
 	"unpkg": "dist/islands.js",
 	"module": "dist/islands.js",
-	"types": "dist/islands.d.ts",
+	"types": "dist/index.d.ts",
 	"license": "MIT",
 	"devDependencies": {
 		"@playwright/test": "^1.35.0",
