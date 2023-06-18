@@ -1,7 +1,7 @@
 version: '3'
 services:
     server:
-        container_name: inslands
+        container_name: islands
         build: .
         working_dir: /var/www
         volumes:

@@ -15,7 +15,7 @@ const spaIgnoreAttribute = 'data-spa-ignore';
 const spaStateActionAttribute = 'data-spa-state-action';
 const spaMetaCacheNameAttribute = 'spa-cache-control';
 const spaCacheHeader = 'X-Spa-Cache-Control';
-const spaVersionHeader = 'X-Spa-Version';
+const spaAppVersion = 'X-Spa-App-Version';
 
 const host = window.location.host;
 
@@ -71,10 +71,10 @@ export const visit = async (data: VisitData): Promise<void> => {
 				shouldCacheResponse = cacheHeader !== 'no-cache';
 			}
 
-			const spaVersionFromHeader = headers[spaVersionHeader] ?? null;
+			const spaVersionFromHeader = headers[spaAppVersion] ?? null;
 
 			if (spaVersionFromHeader !== null && spaVersion !== null && spaVersion !== spaVersionFromHeader) {
-				dispatch('spa:version:changed');
+				dispatch('spa:app-version:changed');
 			}
 		}
 

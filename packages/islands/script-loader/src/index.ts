@@ -15,7 +15,7 @@ const findScript = (src: string): HTMLScriptElement | null => document.querySele
 
 const isScriptLoaded = (src: string): boolean => findScript(src) !== null;
 
-const load = async (scripts: ScriptToLoad[]): Promise<void> => {
+export const load = async (scripts: ScriptToLoad[]): Promise<void> => {
 	const scriptsPromises: Promise<any>[] = [];
 
 	for (const script of scripts) {
