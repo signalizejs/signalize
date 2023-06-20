@@ -4,30 +4,30 @@ import typescript from '@rollup/plugin-typescript'
 import { existsSync, rmdirSync } from 'fs';
 
 const packagesDir = resolve('./packages');
-const islandsDir = `${packagesDir}/islands`;
+const signalizeDir = `${packagesDir}/signalize`;
 
 /**
  * @type { RollupOptions[] }
  */
 const packages = [
-	// IslandsJS
+	// SignalizeJS
 	{
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${islandsDir}/src`,
-				declarationDir: `${islandsDir}/dist`
+				rootDir: `${signalizeDir}/src`,
+				declarationDir: `${signalizeDir}/dist`
 			})
 		],
-		input: `${islandsDir}/src/index.ts`,
+		input: `${signalizeDir}/src/index.ts`,
 		treeshake: false,
 		output: [
 			{
-				file: `${islandsDir}/dist/islands.js`,
+				file: `${signalizeDir}/dist/signalize.js`,
 				format: 'esm'
 			},
 			{
-				file: `${islandsDir}/dist/islands.cjs`,
+				file: `${signalizeDir}/dist/signalize.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -38,20 +38,20 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${islandsDir}/ajax/src`,
-				declarationDir: `${islandsDir}/ajax/dist`
+				rootDir: `${signalizeDir}/ajax/src`,
+				declarationDir: `${signalizeDir}/ajax/dist`
 			})
 		],
-		input: `${islandsDir}/ajax/src/index.ts`,
+		input: `${signalizeDir}/ajax/src/index.ts`,
 		treeshake: false,
-		external: ['islandsjs'],
+		external: ['signalizejs'],
 		output: [
 			{
-				file: `${islandsDir}/ajax/dist/ajax.js`,
+				file: `${signalizeDir}/ajax/dist/ajax.js`,
 				format: 'esm'
 			},
 			{
-				file: `${islandsDir}/ajax/dist/ajax.cjs`,
+				file: `${signalizeDir}/ajax/dist/ajax.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -62,20 +62,20 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${islandsDir}/component/src`,
-				declarationDir: `${islandsDir}/component/dist`
+				rootDir: `${signalizeDir}/component/src`,
+				declarationDir: `${signalizeDir}/component/dist`
 			})
 		],
-		input: `${islandsDir}/component/src/index.ts`,
+		input: `${signalizeDir}/component/src/index.ts`,
 		treeshake: false,
-		external: ['islandsjs'],
+		external: ['signalizejs'],
 		output: [
 			{
-				file: `${islandsDir}/component/dist/component.js`,
+				file: `${signalizeDir}/component/dist/component.js`,
 				format: 'esm'
 			},
 			{
-				file: `${islandsDir}/component/dist/component.cjs`,
+				file: `${signalizeDir}/component/dist/component.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -86,20 +86,20 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${islandsDir}/dialog/src`,
-				declarationDir: `${islandsDir}/dialog/dist`
+				rootDir: `${signalizeDir}/dialog/src`,
+				declarationDir: `${signalizeDir}/dialog/dist`
 			})
 		],
-		input: `${islandsDir}/dialog/src/index.ts`,
+		input: `${signalizeDir}/dialog/src/index.ts`,
 		treeshake: false,
-		external: ['islandsjs'],
+		external: ['signalizejs'],
 		output: [
 			{
-				file: `${islandsDir}/dialog/dist/dialog.js`,
+				file: `${signalizeDir}/dialog/dist/dialog.js`,
 				format: 'esm'
 			},
 			{
-				file: `${islandsDir}/dialog/dist/dialog.cjs`,
+				file: `${signalizeDir}/dialog/dist/dialog.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -110,20 +110,20 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${islandsDir}/h/src`,
-				declarationDir: `${islandsDir}/h/dist`
+				rootDir: `${signalizeDir}/h/src`,
+				declarationDir: `${signalizeDir}/h/dist`
 			})
 		],
-		input: `${islandsDir}/h/src/index.ts`,
+		input: `${signalizeDir}/h/src/index.ts`,
 		treeshake: false,
-		external: ['islandsjs'],
+		external: ['signalizejs'],
 		output: [
 			{
-				file: `${islandsDir}/h/dist/h.js`,
+				file: `${signalizeDir}/h/dist/h.js`,
 				format: 'esm'
 			},
 			{
-				file: `${islandsDir}/h/dist/h.cjs`,
+				file: `${signalizeDir}/h/dist/h.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -134,20 +134,20 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${islandsDir}/script-loader/src`,
-				declarationDir: `${islandsDir}/script-loader/dist`
+				rootDir: `${signalizeDir}/script-loader/src`,
+				declarationDir: `${signalizeDir}/script-loader/dist`
 			})
 		],
-		input: `${islandsDir}/script-loader/src/index.ts`,
+		input: `${signalizeDir}/script-loader/src/index.ts`,
 		treeshake: false,
-		external: ['islandsjs'],
+		external: ['signalizejs'],
 		output: [
 			{
-				file: `${islandsDir}/script-loader/dist/script-loader.js`,
+				file: `${signalizeDir}/script-loader/dist/script-loader.js`,
 				format: 'esm'
 			},
 			{
-				file: `${islandsDir}/script-loader/dist/script-loader.cjs`,
+				file: `${signalizeDir}/script-loader/dist/script-loader.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -158,20 +158,20 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${islandsDir}/snippets/src`,
-				declarationDir: `${islandsDir}/snippets/dist`
+				rootDir: `${signalizeDir}/snippets/src`,
+				declarationDir: `${signalizeDir}/snippets/dist`
 			})
 		],
-		input: `${islandsDir}/snippets/src/index.ts`,
+		input: `${signalizeDir}/snippets/src/index.ts`,
 		treeshake: false,
-		external: ['islandsjs'],
+		external: ['signalizejs'],
 		output: [
 			{
-				file: `${islandsDir}/snippets/dist/snippets.js`,
+				file: `${signalizeDir}/snippets/dist/snippets.js`,
 				format: 'esm'
 			},
 			{
-				file: `${islandsDir}/snippets/dist/snippets.cjs`,
+				file: `${signalizeDir}/snippets/dist/snippets.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -182,20 +182,20 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${islandsDir}/spa/src`,
-				declarationDir: `${islandsDir}/spa/dist`
+				rootDir: `${signalizeDir}/spa/src`,
+				declarationDir: `${signalizeDir}/spa/dist`
 			})
 		],
-		input: `${islandsDir}/spa/src/index.ts`,
+		input: `${signalizeDir}/spa/src/index.ts`,
 		treeshake: false,
-		external: ['islandsjs'],
+		external: ['signalizejs'],
 		output: [
 			{
-				file: `${islandsDir}/spa/dist/spa.js`,
+				file: `${signalizeDir}/spa/dist/spa.js`,
 				format: 'esm'
 			},
 			{
-				file: `${islandsDir}/spa/dist/spa.cjs`,
+				file: `${signalizeDir}/spa/dist/spa.cjs`,
 				format: 'cjs'
 			}
 		]

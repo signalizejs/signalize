@@ -1,8 +1,0 @@
-{
-	"name": "islandsjs/script-loader",
-	"main": "./dist/script-loader.cjs",
-	"module": "./dist/script-loader.s",
-	"types": "./dist/index.d.ts",
-	"type": "module",
-	"sideEffects": false
-  }

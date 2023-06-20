@@ -1,5 +1,5 @@
 name: "💎 Feature Request"
-description: Request a new IslandsJS CSS feature.
+description: Request a new SignalizeJS CSS feature.
 labels: [feature]
 body:
   - type: markdown

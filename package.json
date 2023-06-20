@@ -2,8 +2,8 @@
 	"private": "true",
 	"description": "A microframework inspired by SolidJS and Svelte, designed to easily create optimized and interactive websites with minimal JavaScript.",
 	"keywords": [
-		"islandsjs",
-		"islands",
+		"signalizejs",
+		"signalize",
 		"ui",
 		"reactive",
 		"components",

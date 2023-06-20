@@ -1,0 +1,98 @@
+{
+	"name": "signalizejs",
+	"version": "0.1.0",
+	"description": "A microframework inspired by SolidJS and Svelte, designed to easily create optimized and interactive websites with minimal JavaScript.",
+	"keywords": [
+		"signalize",
+		"signalizejs",
+		"performance",
+		"components",
+		"reactive",
+		"signalize",
+		"ui",
+		"reactive",
+		"components",
+		"performance",
+		"front-end",
+		"framework",
+		"web"
+	],
+	"type": "module",
+	"sideEffects": false,
+	"author": "Vladimír Macháček",
+	"files": [
+		"dist",
+		"package.json",
+		"LICENSE",
+		"README.md"
+	],
+	"exports": {
+		".": {
+			"import": "./dist/signalize.js",
+			"require": "./dist/signalize.cjs",
+			"types": "./dist/index.d.ts"
+		},
+		"./dist/*": "./dist/*",
+
+		"./ajax": {
+			"import": "./ajax/dist/ajax.js",
+			"require": "./ajax/dist/ajax.cjs",
+			"types": "./ajax/dist/index.d.ts"
+		},
+		"./component": {
+			"import": "./component/dist/component.js",
+			"require": "./component/dist/component.cjs",
+			"types": "./component/dist/index.d.ts"
+		},
+		"./dialog": {
+			"import": "./dialog/dist/dialog.js",
+			"require": "./dialog/dist/dialog.cjs",
+			"types": "./dialog/dist/index.d.ts"
+		},
+		"./h": {
+			"import": "./h/dist/h.js",
+			"require": "./h/dist/h.cjs",
+			"types": "./h/dist/index.d.ts"
+		},
+		"./script-loader": {
+			"import": "./script-loader/dist/script-loader.js",
+			"require": "./script-loader/dist/script-loader.cjs",
+			"types": "./script-loader/dist/index.d.ts"
+		},
+		"./snippets": {
+			"import": "./snippets/dist/snippets.js",
+			"require": "./snippets/dist/snippets.cjs",
+			"types": "./snippets/dist/index.d.ts"
+		},
+		"./spa": {
+			"import": "./spa/dist/spa.js",
+			"require": "./spa/dist/spa.cjs",
+			"types": "./spa/dist/index.d.ts"
+		},
+		"./package.json": "./package.json"
+	},
+	"main": "dist/signalize.cjs",
+	"jsdelivr": "dist/signalize.js",
+	"unpkg": "dist/signalize.js",
+	"module": "dist/signalize.js",
+	"types": "dist/index.d.ts",
+	"license": "MIT",
+	"devDependencies": {
+		"@playwright/test": "^1.35.0",
+		"@rollup/plugin-commonjs": "^25.0.1",
+		"@rollup/plugin-typescript": "^11.1.1",
+		"@typescript-eslint/eslint-plugin": "^5.59.11",
+		"eslint": "^8.42.0",
+		"eslint-config-airbnb": "^19.0.4",
+		"eslint-config-standard-with-typescript": "^35.0.0",
+		"eslint-plugin-import": "^2.27.5",
+		"eslint-plugin-n": "^15.7.0",
+		"eslint-plugin-promise": "^6.1.1",
+		"http-server": "^14.1.1",
+		"rollup": "^3.25.0",
+		"solid-js": "^1.7.6",
+		"tslib": "^2.5.3",
+		"typescript": "^5.1.3",
+		"vite": "^4.3"
+	}
+}

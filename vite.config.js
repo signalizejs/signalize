@@ -8,14 +8,14 @@ export default defineConfig({
 	resolve: {
 		conditions: ['development', 'browser'],
 		alias: {
-			'islandsjs/ajax': `${packagesDir}/islands/ajax/src/index.ts`,
-			'islandsjs/component': `${packagesDir}/islands/component/src/index.ts`,
-			'islandsjs/dialog': `${packagesDir}/islands/dialog/src/index.ts`,
-			'islandsjs/h': `${packagesDir}/islands/h/src/index.ts`,
-			'islandsjs/script-loader': `${packagesDir}/islands/script-loader/src/index.ts`,
-			'islandsjs/snippets': `${packagesDir}/islands/snippets/src/index.ts`,
-			'islandsjs/spa': `${packagesDir}/islands/spa/src/index.ts`,
-			islandsjs: `${packagesDir}/islands/src/index.ts`
+			'signalizejs/ajax': `${packagesDir}/signalize/ajax/src/index.ts`,
+			'signalizejs/component': `${packagesDir}/signalize/component/src/index.ts`,
+			'signalizejs/dialog': `${packagesDir}/signalize/dialog/src/index.ts`,
+			'signalizejs/h': `${packagesDir}/signalize/h/src/index.ts`,
+			'signalizejs/script-loader': `${packagesDir}/signalize/script-loader/src/index.ts`,
+			'signalizejs/snippets': `${packagesDir}/signalize/snippets/src/index.ts`,
+			'signalizejs/spa': `${packagesDir}/signalize/spa/src/index.ts`,
+			signalizejs: `${packagesDir}/signalize/src/index.ts`
 		}
 	},
 	server: {

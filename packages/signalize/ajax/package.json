@@ -1,0 +1,8 @@
+{
+	"name": "signalizejs/ajax",
+	"main": "./dist/ajax.cjs",
+	"module": "./dist/ajax.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"sideEffects": false
+  }

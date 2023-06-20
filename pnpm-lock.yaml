@@ -60,7 +60,7 @@ importers:
         specifier: ^4.3
         version: 4.3.0
 
-  packages/islands:
+  packages/signalize:
     devDependencies:
       '@playwright/test':
         specifier: ^1.35.0
@@ -111,45 +111,45 @@ importers:
         specifier: ^4.3
         version: 4.3.0
 
-  packages/islands/ajax:
+  packages/signalize/ajax:
     dependencies:
-      islandsjs:
+      signalizejs:
         specifier: workspace:*
         version: link:..
 
-  packages/islands/ajaxify:
+  packages/signalize/ajaxify:
     dependencies:
-      islandsjs:
+      signalizejs:
         specifier: workspace:*
         version: link:..
 
-  packages/islands/component:
+  packages/signalize/component:
     dependencies:
-      islandsjs:
+      signalizejs:
         specifier: workspace:*
         version: link:..
 
-  packages/islands/dialog:
+  packages/signalize/dialog:
     dependencies:
-      islandsjs:
+      signalizejs:
         specifier: workspace:*
         version: link:..
 
-  packages/islands/h:
+  packages/signalize/h:
     dependencies:
-      islandsjs:
+      signalizejs:
         specifier: workspace:*
         version: link:..
 
-  packages/islands/script-loader:
+  packages/signalize/script-loader:
     dependencies:
-      islandsjs:
+      signalizejs:
         specifier: workspace:*
         version: link:..
 
-  packages/islands/snippets:
+  packages/signalize/snippets:
     dependencies:
-      islandsjs:
+      signalizejs:
         specifier: workspace:*
         version: link:..
 

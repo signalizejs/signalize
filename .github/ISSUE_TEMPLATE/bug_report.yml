@@ -1,5 +1,5 @@
 name: "🐞 Bug report"
-description: Report an issue with IslandsJS.
+description: Report an issue with SignalizeJS.
 labels: ["bug"]
 body:
   - type: markdown
@@ -32,7 +32,7 @@ body:
     id: system-info
     attributes:
       label: System Info
-      description: Which version of IslandsJS you have used. Which IslandsJS package you use. Which version of Node / if you use IslandsJS via CDN, which browser and what is the browser version.
+      description: Which version of SignalizeJS you have used. Which SignalizeJS package you use. Which version of Node / if you use SignalizeJS via CDN, which browser and what is the browser version.
       render: shell
       placeholder: System, Binaries, Browsers
     validations:

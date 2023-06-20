@@ -1,7 +1,7 @@
 version: '3'
 services:
     server:
-        container_name: islands
+        container_name: signalize
         build: .
         working_dir: /var/www
         volumes:

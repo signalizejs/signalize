@@ -1,8 +1,0 @@
-{
-	"name": "islandsjs/snippets",
-	"main": "./dist/snippets.cjs",
-	"module": "./dist/snippets.s",
-	"types": "./dist/index.d.ts",
-	"type": "module",
-	"sideEffects": false
-  }

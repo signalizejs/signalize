@@ -6,14 +6,14 @@
 		"rootDir": ".",
 		"strict": true,
 		"paths": {
-			"islandsjs/ajax": ["./packages/islands/ajax"],
-			"islandsjs/component": ["./packages/islands/component"],
-			"islandsjs/dialog": ["./packages/islands/dialog"],
-			"islandsjs/h": ["./packages/islands/h"],
-			"islandsjs/script-loader": ["./packages/islands/script-loader"],
-			"islandsjs/snippets": ["./packages/islands/snippets"],
-			"islandsjs/spa": ["./packages/islands/spa"],
-			"islandsjs": ["./packages/islands"],
+			"signalizejs/ajax": ["./packages/signalize/ajax"],
+			"signalizejs/component": ["./packages/signalize/component"],
+			"signalizejs/dialog": ["./packages/signalize/dialog"],
+			"signalizejs/h": ["./packages/signalize/h"],
+			"signalizejs/script-loader": ["./packages/signalize/script-loader"],
+			"signalizejs/snippets": ["./packages/signalize/snippets"],
+			"signalizejs/spa": ["./packages/signalize/spa"],
+			"signalizejs": ["./packages/signalize"],
 		}
 	},
 	"exclude": [
