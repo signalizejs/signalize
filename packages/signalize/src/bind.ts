@@ -34,20 +34,50 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 			}
 
 			for (const attrOption of attrOptionsAsArray) {
+				let attributeInited = false;
+				let attributeInitValue = undefined;
+				let previousSettedValue = undefined;
+
+				const setOption = (attribute, value) => {
+					if (textContentAttributes.includes(attribute)) {
+						element[attribute] = value;
+					}
+
+					else if (booleanAttributes.includes(attribute)) {
+						element[attribute] = !!value;
+
+					} else if (attribute === 'class') {
+						if (attributeInited) {
+							if (previousSettedValue !== undefined && previousSettedValue.length > 0) {
+								element.classList.remove(previousSettedValue);
+							}
+						} else {
+							attributeInitValue = element.getAttribute('class');
+						}
+
+						const valueToSet = value.trim();
+
+						if (valueToSet.length > 0) {
+							element.classList.add(value);
+							previousSettedValue = valueToSet;
+						}
+
+						attributeInited = true;
+					}
+					else {
+						element.setAttribute(attribute, value);
+					}
+				}
+
 				if (['string', 'number'].includes(typeof attrOption)) {
-					element.setAttribute(attr, attrOption);
+					setOption(attr, attrOption);
 					continue;
 				}
-				attrOption.watch((data: any) => {
+
+				attrOption.watch((data) => {
 					const content = (listener != null) ? listener({ el: element }) : data.newValue;
-					if (textContentAttributes.includes(attr)) {
-						element[attr] = content;
-					} else if (booleanAttributes.includes(attr)) {
-						element[attr] = !!content;
-					} else {
-						element.setAttribute(attr, content);
-					}
-				}, true)
+					setOption(attr, content)
+				}, { immediate: true });
 			}
 
 			if (optionsIsArray) {

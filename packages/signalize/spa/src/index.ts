@@ -9,6 +9,11 @@ interface VisitData {
 	stateAction?: StateAction
 }
 
+interface SpaDispatchEventData extends VisitData {
+	success?: boolean
+}
+
+let currentLocation = window.location;
 const spaVersion = null;
 const spaUrlAttribute = 'data-spa-url';
 const spaIgnoreAttribute = 'data-spa-ignore';
@@ -32,7 +37,12 @@ const createUrl = (urlString: string): URL | null => {
 }
 
 export const visit = async (data: VisitData): Promise<void> => {
-	dispatch('spa:visit:start', { ...data });
+	const dispatchEventData: SpaDispatchEventData = {
+		...data,
+		success: undefined
+	}
+
+	dispatch('spa:visit:start', { ...dispatchEventData });
 
 	const { url, stateAction } = data;
 
@@ -43,21 +53,24 @@ export const visit = async (data: VisitData): Promise<void> => {
 
 	const urlIsCached = urlString in responseCache;
 
+	console.log(urlIsCached);
 	if (urlIsCached) {
 		responseData = responseCache[urlString];
 	} else {
-		dispatch('spa:request:start', { ...data });
+		dispatch('spa:request:start', { ...dispatchEventData });
 
 		request = await ajax(urlString);
+		const requestIsWithoutErroor = request.error === null;
 
-		if (request.error !== null) {
-			dispatch('spa:request:error', { request, ...data });
-		} else {
-			responseData = request.response === null ? '' : await request.response.text();
-			dispatch('spa:request:success', { request, ...data });
+		if (requestIsWithoutErroor) {
+			try {
+				responseData = request.response === null ? '' : await request.response.text();
+			} catch (error) {
+				console.error(error);
+			}
 		}
 
-		dispatch('spa:request:end', { request, ...data });
+		dispatch('spa:request:end', { request, ...dispatchEventData, success: responseData !== null });
 	}
 
 	if (responseData !== null) {
@@ -98,37 +111,35 @@ export const visit = async (data: VisitData): Promise<void> => {
 		if (shouldCacheResponse) {
 			responseCache[urlString] = responseData;
 		}
-	}
 
-	let urlHash = window.location.hash ?? null;
+		let urlHash = window.location.hash ?? null;
 
-	const canScrollWindow = dispatch('spa:visit:scroll') === false;
+		const canScrollAfterVisitStopped = dispatch('spa:visit:beforeScroll');
 
-	if (canScrollWindow) {
-		if (urlHash !== null && urlHash.trim().length > 2) {
-			urlHash = urlHash.slice(1);
-			const element = document.querySelector(`#${urlHash}`);
-
-			if (element !== null) {
-				element.scrollIntoView({
-					block: 'start',
-					inline: 'nearest'
-				});
+		if (canScrollAfterVisitStopped === false) {
+			if (urlHash !== null && urlHash.trim().length > 2) {
+				urlHash = urlHash.slice(1);
+				const element = document.querySelector(`#${urlHash}`);
+				if (element !== null) {
+					element.scrollIntoView({
+						block: 'start',
+						inline: 'nearest'
+					});
+				}
+			} else {
+				window.scrollTo(0, 0)
 			}
-		} else {
-			window.scrollTo(0, 0)
 		}
+
+		currentLocation = window.location
 	}
 
-	dispatch('spa:visit:end', { ...data });
+	dispatch('spa:visit:end', { ...dispatchEventData, success: responseData !== null });
 }
 
 onDomReady(() => {
 	on('click', `a[href], [${spaUrlAttribute}]`, async (event: CustomEvent) => {
-		event.preventDefault();
-
 		const element = event.target as HTMLElement;
-
 		const targetAttribute = element.getAttribute('target');
 
 		if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute)) {
@@ -154,6 +165,8 @@ onDomReady(() => {
 			window.history.replaceState({ spa: true }, '', window.location.href);
 		}
 
+		event.preventDefault();
+
 		dispatch('spa:clicked', { element });
 
 		void visit({
@@ -163,12 +176,14 @@ onDomReady(() => {
 	});
 
 	window.addEventListener('popstate', () => {
-		if (typeof window.history.state.spa !== 'boolean') {
+		if (typeof window.history.state?.spa !== 'boolean') {
 			return;
 		}
 
-		const visitConfig = {
-			url: window.location.href
+		const url = window.url;
+
+		if (url === currentLocation || url.pathname === currentLocation.pathname && url.hash !== currentLocation.hash) {
+			return;
 		}
 
 		dispatch('spa:popstate', visitConfig);

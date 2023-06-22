@@ -54,6 +54,18 @@ export const redraw = (content: string | DocumentFragment | HTMLElement | HTMLEl
 
 		dispatch('snippets:redraw:end', eventDispatcherData);
 
+		for (const script of element.querySelectorAll('script')) {
+			const scriptElement = document.createElement('script');
+			scriptElement.innerHTML = script.innerHTML;
+			scriptElement.async = false;
+
+			for (const { name, value } of [...script.attributes]) {
+				scriptElement.setAttribute(name, value);
+			}
+
+			script.replaceWith(scriptElement);
+		}
+
 		element.setAttribute(snippetRedrawedAttribute, '');
 	}
 }

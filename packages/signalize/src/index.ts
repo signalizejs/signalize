@@ -14,6 +14,7 @@ export * from './dispatch';
 export * from './isJson';
 export * from './mergeObjects';
 export * from './normalizeTargets';
+export * from './off';
 export * from './on';
 export * from './onDomReady';
 export * from './select';
