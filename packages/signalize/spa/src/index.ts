@@ -36,7 +36,7 @@ const createUrl = (urlString: string): URL | null => {
 	return null;
 }
 
-export const visit = async (data: VisitData): Promise<void> => {
+export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 	const dispatchEventData: SpaDispatchEventData = {
 		...data,
 		success: undefined
@@ -134,7 +134,10 @@ export const visit = async (data: VisitData): Promise<void> => {
 		currentLocation = window.location
 	}
 
-	dispatch('spa:visit:end', { ...dispatchEventData, success: responseData !== null });
+	const visitEndData = { ...dispatchEventData, success: responseData !== null };
+	dispatch('spa:visit:end', visitEndData);
+
+	return visitEndData;
 }
 
 onDomReady(() => {
@@ -161,6 +164,12 @@ onDomReady(() => {
 			return;
 		}
 
+		const hrefUrl = createUrl(`${window.location.origin}${url}`);
+
+		if (hrefUrl === null || (hrefUrl.pathname === window.location.pathname && hrefUrl.hash !== currentLocation.hash)) {
+			return;
+		}
+
 		if (window.history.state === null) {
 			window.history.replaceState({ spa: true }, '', window.location.href);
 		}
@@ -180,11 +189,15 @@ onDomReady(() => {
 			return;
 		}
 
-		const url = window.url;
+		const location = window.location;
 
-		if (url === currentLocation || url.pathname === currentLocation.pathname && url.hash !== currentLocation.hash) {
+		if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
 			return;
 		}
+
+		const visitConfig = {
+			url: location
+		};
 
 		dispatch('spa:popstate', visitConfig);
 

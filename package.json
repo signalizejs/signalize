@@ -23,7 +23,7 @@
 		"eslint:fix": "pnpm eslint:check --fix",
 		"tests:run": "npx playwright test",
 		"tests:report": "npx playwright show-report --host 0.0.0.0",
-		"http-server:start": "http-server ./tests/pages -p 3000"
+		"http-server:start": "http-server ./tests/pages -p 4000"
 	},
 	"author": "Vladimír Macháček",
 	"devDependencies": {

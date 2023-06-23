@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const httpServerAddress = 'http://0.0.0.0:3000';
+const httpServerAddress = 'http://0.0.0.0:4000';
 
 export default defineConfig({
 	testDir: './tests',
