@@ -1,8 +1,8 @@
-import { normalizeTargets } from '.';
+import { Signal, normalizeTargets } from '.';
 
 const reactiveInputAttributes = ['value', 'checked'];
 const numericInputAttributes = ['range', 'number'];
-const textContentAttributes = ['innerHTML', 'textContent', 'innerText'];
+const textContentAttributes = ['value', 'innerHTML', 'textContent', 'innerText'];
 const booleanAttributes = [
 	'autofocus', 'autoplay',
 	'checked', 'controls',
@@ -23,14 +23,26 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 	for (const element of normalizeTargets(target, true) as HTMLElement[]) {
 		for (const [attr, attrOptions] of Object.entries(attributes)) {
 			const optionsIsArray = attrOptions instanceof Array;
-			let listener: CallableFunction | null = null;
+			let getListener: CallableFunction | null = null;
+			let setListener: CallableFunction | null = null;
 			let attrOptionsAsArray = [attrOptions];
+			const isNumericInput = numericInputAttributes.includes(element.getAttribute('type') ?? '');
+			let listeners = null;
 
 			if (optionsIsArray) {
-				listener = attrOptions[attrOptions.length - 1];
+				listeners = attrOptions[attrOptions.length - 1];
 				attrOptionsAsArray = attrOptions.slice(0, attrOptions.length - 1);
 			} else if (typeof attrOptions === 'function') {
-				listener = attrOptions;
+				listeners = attrOptions;
+			}
+
+
+			if (typeof listeners === 'function') {
+				getListener = listeners;
+				setListener = listeners;
+			} else {
+				getListener = typeof listeners.get === 'function' ? () => listeners.get() : null;
+				setListener = typeof listeners.set === 'function' ? (value) => listeners.set(value) : null
 			}
 
 			for (const attrOption of attrOptionsAsArray) {
@@ -41,11 +53,8 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 				const setOption = (attribute, value) => {
 					if (textContentAttributes.includes(attribute)) {
 						element[attribute] = value;
-					}
-
-					else if (booleanAttributes.includes(attribute)) {
+					} else if (booleanAttributes.includes(attribute)) {
 						element[attribute] = !!value;
-
 					} else if (attribute === 'class') {
 						if (attributeInited) {
 							if (previousSettedValue !== undefined && previousSettedValue.length > 0) {
@@ -63,8 +72,7 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 						}
 
 						attributeInited = true;
-					}
-					else {
+					} else {
 						element.setAttribute(attribute, value);
 					}
 				}
@@ -75,23 +83,15 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 				}
 
 				attrOption.watch((data) => {
-					const content = (listener != null) ? listener({ el: element }) : data.newValue;
+					const content = getListener !== null ? getListener({ el: element }) : data.newValue;
 					setOption(attr, content)
 				}, { immediate: true });
 			}
 
-			if (optionsIsArray) {
-				continue
-			}
-
-			if (reactiveInputAttributes.includes(attr)) {
-				const isNumericInput = numericInputAttributes.includes(element.getAttribute('type') ?? '');
+			if (typeof setListener === 'function' && reactiveInputAttributes.includes(attr)) {
 				element.addEventListener('input', () => {
-					let newValue = element[attr];
-					if (isNumericInput) {
-						newValue = Number(newValue)
-					}
-					attrOptionsAsArray[0].set(newValue);
+					const newValue = element[attr] as string;
+					setListener(isNumericInput ? Number(newValue) : newValue);
 				});
 			}
 		}

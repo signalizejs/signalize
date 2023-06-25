@@ -13,6 +13,10 @@ interface SignalWatcherArguments<T> {
 	oldValue?: T
 }
 
+interface SignalOptions {
+	equals: boolean
+}
+
 export class Signal<T> {
 	protected readonly _watchers = {
 		beforeSet: new Set<BeforeSetSignalWatcher<T>>(),
@@ -29,8 +33,13 @@ export class Signal<T> {
 		return this._value;
 	}
 
-	public set (newValue: T): void {
+	public set (newValue: T, options?: SignalOptions): void {
 		const oldValue = this._value;
+
+		if (newValue === oldValue && (options?.equals ?? true)) {
+			return;
+		}
+
 		let settable = true;
 
 		for (const watcher of this._watchers.beforeSet) {
@@ -46,7 +55,7 @@ export class Signal<T> {
 			}
 		}
 
-		if (newValue === oldValue || !settable) {
+		if (!settable) {
 			return;
 		}
 
@@ -64,8 +73,6 @@ export class Signal<T> {
 		const immediate = options.immediate ?? false;
 		const execution = options.execution ?? 'afterSet';
 
-		this._watchers[execution].add(listener as any);
-
 		if (immediate) {
 			const watcherData = listener({ newValue: this._value });
 
@@ -73,6 +80,8 @@ export class Signal<T> {
 				this._value = watcherData.value;
 			}
 		}
+
+		this._watchers[execution].add(listener as any);
 
 		return () => this._watchers[execution].delete(listener as any);
 	}

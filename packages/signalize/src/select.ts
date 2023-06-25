@@ -1,5 +1,6 @@
 export const select = <T extends HTMLElement>(selector: string, root: string | HTMLElement = document.documentElement): T | null => {
 	if (typeof root === 'string') {
+		console.log(root);
 		root = document.querySelector(root) as HTMLElement;
 
 		if (root === null) {
