@@ -1,19 +1,6 @@
 import type { CustomEventListener } from 'signalizejs';
 import { on, onDomReady, selectAll } from 'signalizejs';
 
-interface OnComponentEmitListenerArguments {
-	component: string
-	event: string
-	data: any
-}
-
-type OnComponentEmitListener = (options: OnComponentEmitListenerArguments) => void;
-
-interface InitializedComponent {
-	setProp: CallableFunction
-	onEmit: OnComponentEmitListener
-}
-
 interface ComponentInitFunctionArguments {
 	el: HTMLElement
 	parentComponentEl: HTMLElement | undefined
@@ -21,7 +8,6 @@ interface ComponentInitFunctionArguments {
 	id: string
 	ref: <T extends HTMLElement>(id: string) => T
 	refs: <T extends HTMLElement>(id: string) => T[]
-	onRemove: (listener: CallableFunction) => void
 }
 
 type ComponentInitFunction = (data: ComponentInitFunctionArguments) => void;
@@ -29,8 +15,6 @@ const definedComponents: Record<string, ComponentInitFunction> = {};
 const componentAttribute = 'data-component';
 const componentIdAttribute = 'data-component-id';
 const refAttribute = 'data-ref';
-
-const initializedComponents: Record<string, InitializedComponent> = {};
 
 const createComponent = (el: HTMLElement): void => {
 	const componentName = el.getAttribute(componentAttribute) as string;
@@ -40,17 +24,11 @@ const createComponent = (el: HTMLElement): void => {
 		return;
 	}
 
-	const componentId = String(Object.keys(initializedComponents).length);
-	const onRemoveListeners = new Set<CallableFunction>();
+	// Todo random component id
+	const componentId = '1';
 	const parentComponentEl = el.parentElement?.closest<HTMLElement>(`[${componentAttribute}]`) ?? undefined;
 
 	el.setAttribute(componentIdAttribute, componentId);
-
-	on('remove', el, () => {
-		for (const listener of onRemoveListeners) {
-			listener();
-		}
-	});
 
 	initFn({
 		el,
@@ -58,8 +36,7 @@ const createComponent = (el: HTMLElement): void => {
 		parentComponentId: parentComponentEl?.dataset.componentId ?? undefined,
 		id: componentId,
 		ref: <T>(id: string) => (refs(id, el, componentId)[0] ?? null) as T,
-		refs: <T>(id: string) => refs(id, el, componentId) as T,
-		onRemove: (listener: CallableFunction) => { onRemoveListeners.add(listener) }
+		refs: <T>(id: string) => refs(id, el, componentId) as T
 	});
 }
 

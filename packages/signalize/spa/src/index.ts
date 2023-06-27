@@ -145,7 +145,7 @@ onDomReady(() => {
 		const element = event.target as HTMLElement;
 		const targetAttribute = element.getAttribute('target');
 
-		if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute)) {
+		if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute) || element.hasAttribute('download')) {
 			return;
 		}
 
@@ -176,7 +176,11 @@ onDomReady(() => {
 
 		event.preventDefault();
 
-		dispatch('spa:clicked', { element });
+		const clickCanceled = dispatch('spa:clicked', { element }) === true;
+
+		if (clickCanceled) {
+			return;
+		}
 
 		void visit({
 			url,

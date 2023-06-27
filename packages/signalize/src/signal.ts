@@ -17,7 +17,7 @@ interface SignalOptions {
 	equals: boolean
 }
 
-export class Signal<T> {
+/* export class Signal<T> {
 	protected readonly _watchers = {
 		beforeSet: new Set<BeforeSetSignalWatcher<T>>(),
 		afterSet: new Set<AfterSetSignalWatcher<T>>()
@@ -100,3 +100,69 @@ export class Signal<T> {
 }
 
 export const signal = <T>(defaultValue: T): Signal<T> => new Signal(defaultValue);
+*/
+
+export const signal = <T>(defaultValue: T) => {
+	let value: T = defaultValue;
+
+	const watchers = {
+		beforeSet: new Set(),
+		afterSet: new Set()
+	};
+
+	const set = (newValue, options) => {
+		const oldValue = value;
+		if (newValue === oldValue && (options?.equals ?? true)) {
+			return;
+		}
+		let settable = true;
+		for (const watcher of watchers.beforeSet) {
+			const watcherData = watcher({ newValue, oldValue });
+			if (typeof watcherData !== 'undefined') {
+				settable = watcherData.settable ?? settable;
+				newValue = watcherData.value;
+			}
+			if (!settable) {
+				break;
+			}
+		}
+		if (!settable) {
+			return;
+		}
+		value = newValue;
+		for (const watcher of watchers.afterSet) {
+			watcher({ newValue, oldValue });
+		}
+	}
+
+	const watch = (listener, options = {}) => {
+		const immediate = options.immediate ?? false;
+		const execution = options.execution ?? 'afterSet';
+		if (immediate) {
+			const watcherData = listener({ newValue: value });
+			if (typeof watcherData !== 'undefined' && execution === 'beforeSet' && (watcherData.settable ?? true)) {
+				value = watcherData.value;
+			}
+		}
+		watchers[execution].add(listener);
+		return () => watchers[execution].delete(listener);
+	}
+
+	const toString = (): string => String(value);
+
+	const toJSON = (): T => value;
+
+	const valueOf = (): T => value;
+
+	function Signal (): T {
+		return value;
+	}
+
+	Signal.set = set;
+	Signal.watch = watch;
+	Signal.toString = toString;
+	Signal.valueOf = valueOf;
+	Signal.toJSON = toJSON;
+
+	return Signal;
+}
