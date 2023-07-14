@@ -10,7 +10,7 @@
 			"signalizejs/component": ["./packages/signalize/component"],
 			"signalizejs/dialog": ["./packages/signalize/dialog"],
 			"signalizejs/h": ["./packages/signalize/h"],
-			"signalizejs/script-loader": ["./packages/signalize/script-loader"],
+			"signalizejs/script-loader": ["packages/signalize/asset-loader"],
 			"signalizejs/snippets": ["./packages/signalize/snippets"],
 			"signalizejs/spa": ["./packages/signalize/spa"],
 			"signalizejs": ["./packages/signalize"],

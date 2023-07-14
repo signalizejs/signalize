@@ -11,13 +11,12 @@
 </head>
 
 <body>
-	<main data-snippet="main">
-		<a href="/second.html">First page</a>
-	</main>
+	<button asset-loader="click: [{src: '/script.js', type: 'module'}, '/style.css?v3']">Načti</button>
 
 	<script type="module">
-		import 'signalizejs';
-		import 'signalizejs/spa';
+		import { $config, signal } from 'signalizejs';
+		$config.attributePrefix = '';
+		import 'signalizejs/asset-loader';
 	</script>
 
 </body>

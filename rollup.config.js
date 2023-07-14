@@ -134,20 +134,20 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${signalizeDir}/script-loader/src`,
-				declarationDir: `${signalizeDir}/script-loader/dist`
+				rootDir: `${signalizeDir}/asset-loader/src`,
+				declarationDir: `${signalizeDir}/asset-loader/dist`
 			})
 		],
-		input: `${signalizeDir}/script-loader/src/index.ts`,
+		input: `${signalizeDir}/asset-loader/src/index.ts`,
 		treeshake: false,
 		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/script-loader/dist/script-loader.js`,
+				file: `${signalizeDir}/asset-loader/dist/asset-loader.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/script-loader/dist/script-loader.cjs`,
+				file: `${signalizeDir}/asset-loader/dist/asset-loader.cjs`,
 				format: 'cjs'
 			}
 		]

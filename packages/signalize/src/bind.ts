@@ -1,4 +1,4 @@
-import { Signal, normalizeTargets } from '.';
+import { normalizeTargets } from '.';
 
 const reactiveInputAttributes = ['value', 'checked'];
 const numericInputAttributes = ['range', 'number'];

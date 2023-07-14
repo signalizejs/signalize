@@ -22,10 +22,9 @@ export * from './selectAll';
 export * from './signal';
 
 interface SignalizeWindowObject {
-	$config: typeof config
+	$config: typeof $config
 	Signal: typeof Signal
 	bind: typeof bind
-	configure: typeof configure
 	createHtml: typeof createHtml
 	dispatch: typeof dispatch
 	isJson: typeof isJson
@@ -36,13 +35,9 @@ interface SignalizeWindowObject {
 	signal: typeof signal
 }
 
-export const config: Record<string, any> = {
-	attributesPrefix: 'data-',
-	libPrefix: ''
-}
-
-export const configure = <T>(data: T): void => {
-
+export const $config: Record<string, any> = {
+	attributePrefix: 'data-',
+	eventPrefix: ''
 }
 
 onDomReady(() => {
@@ -62,10 +57,9 @@ onDomReady(() => {
 });
 
 export const Signalize: SignalizeWindowObject = {
-	$config: config,
+	$config,
 	Signal,
 	bind,
-	configure,
 	createHtml,
 	dispatch,
 	isJson,

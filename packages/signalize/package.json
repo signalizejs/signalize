@@ -54,10 +54,10 @@
 			"require": "./h/dist/h.cjs",
 			"types": "./h/dist/index.d.ts"
 		},
-		"./script-loader": {
-			"import": "./script-loader/dist/script-loader.js",
-			"require": "./script-loader/dist/script-loader.cjs",
-			"types": "./script-loader/dist/index.d.ts"
+		"./asset-loader": {
+			"import": "./asset-loader/dist/asset-loader.js",
+			"require": "./asset-loader/dist/asset-loader.cjs",
+			"types": "./asset-loader/dist/index.d.ts"
 		},
 		"./snippets": {
 			"import": "./snippets/dist/snippets.js",

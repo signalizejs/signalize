@@ -1,4 +1,4 @@
-import { onDomReady, on, dispatch, isJson, select } from 'signalizejs';
+import { $config, onDomReady, on, dispatch, isJson, select } from 'signalizejs';
 import { ajax } from 'signalizejs/ajax';
 import { redraw } from 'signalizejs/snippets';
 
@@ -13,7 +13,7 @@ interface SpaDispatchEventData extends VisitData {
 	success?: boolean
 }
 
-let currentLocation = window.location;
+let currentLocation = new URL(window.location.href);
 const spaVersion = null;
 const spaUrlAttribute = 'data-spa-url';
 const spaIgnoreAttribute = 'data-spa-ignore';
@@ -53,7 +53,6 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 
 	const urlIsCached = urlString in responseCache;
 
-	console.log(urlIsCached);
 	if (urlIsCached) {
 		responseData = responseCache[urlString];
 	} else {
@@ -73,7 +72,7 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 		dispatch('spa:request:end', { request, ...dispatchEventData, success: responseData !== null });
 	}
 
-	if (responseData !== null) {
+	const updateDom = () => {
 		let shouldCacheResponse: boolean | null = null;
 
 		const headers = request?.response?.headers ?? {};
@@ -111,7 +110,20 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 		if (shouldCacheResponse) {
 			responseCache[urlString] = responseData;
 		}
+	}
 
+	if (responseData !== null) {
+		if (typeof document.startViewTransition === 'undefined') {
+			updateDom();
+		} else {
+			dispatch('spa:transition:start', dispatchEventData);
+			const transition = document.startViewTransition(() => updateDom());
+			await transition.ready;
+			dispatch('spa:transition:end', dispatchEventData)
+		}
+	}
+
+	if (responseData !== null) {
 		let urlHash = window.location.hash ?? null;
 
 		const canScrollAfterVisitStopped = dispatch('spa:visit:beforeScroll');
@@ -131,7 +143,7 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 			}
 		}
 
-		currentLocation = window.location
+		currentLocation = new URL(window.location.href);
 	}
 
 	const visitEndData = { ...dispatchEventData, success: responseData !== null };
@@ -176,7 +188,7 @@ onDomReady(() => {
 
 		event.preventDefault();
 
-		const clickCanceled = dispatch('spa:clicked', { element }) === true;
+		const clickCanceled = dispatch('spa:clicked', { element }) === false;
 
 		if (clickCanceled) {
 			return;
@@ -193,7 +205,7 @@ onDomReady(() => {
 			return;
 		}
 
-		const location = window.location;
+		const location = new URL(window.location.href);
 
 		if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
 			return;

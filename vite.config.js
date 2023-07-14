@@ -12,7 +12,7 @@ export default defineConfig({
 			'signalizejs/component': `${packagesDir}/signalize/component/src/index.ts`,
 			'signalizejs/dialog': `${packagesDir}/signalize/dialog/src/index.ts`,
 			'signalizejs/h': `${packagesDir}/signalize/h/src/index.ts`,
-			'signalizejs/script-loader': `${packagesDir}/signalize/script-loader/src/index.ts`,
+			'signalizejs/asset-loader': `${packagesDir}/signalize/asset-loader/src/index.ts`,
 			'signalizejs/snippets': `${packagesDir}/signalize/snippets/src/index.ts`,
 			'signalizejs/spa': `${packagesDir}/signalize/spa/src/index.ts`,
 			signalizejs: `${packagesDir}/signalize/src/index.ts`

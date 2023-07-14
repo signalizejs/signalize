@@ -1,0 +1,8 @@
+{
+	"name": "signalizejs/asset-loader",
+	"main": "./dist/asset-loader.cjs",
+	"module": "./dist/asset-loader.s",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"sideEffects": false
+  }

@@ -3,7 +3,7 @@ export const selectAll = <T extends HTMLElement>(selector: string, root: string 
 		root = document.querySelector(root) as HTMLElement;
 
 		if (root === null) {
-			throw new Error(`Signalize: Root element ${root as string} not found.`);
+			throw new Error(`Signalize: Root element "${root as string}" not found.`);
 		}
 	}
 
