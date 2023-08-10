@@ -1,8 +1,8 @@
-import { createHtml, dispatch } from 'signalizejs';
+import Signalize, { createHtml, dispatch } from 'signalizejs';
 
-const snippetAttribute = 'data-snippet';
-const snippetRedrawedAttribute = 'data-snippet-redrawed';
-const snippetActionAttribute = 'data-snippet-action';
+const snippetAttribute = 'snippet';
+const snippetRedrawedAttribute = 'snippet-redrawed';
+const snippetActionAttribute = 'snippet-action';
 
 export const redraw = (content: string | DocumentFragment | HTMLElement | HTMLElement): void => {
 	const fragment = createHtml(content);
@@ -69,3 +69,5 @@ export const redraw = (content: string | DocumentFragment | HTMLElement | HTMLEl
 		element.setAttribute(snippetRedrawedAttribute, '');
 	}
 }
+
+Signalize.redraw = redraw;

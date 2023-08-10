@@ -1,4 +1,4 @@
-import { $config, onDomReady, on, dispatch, isJson, select } from 'signalizejs';
+import Signalize, { $config, on, onDomReady, dispatch, isJson, select } from 'signalizejs';
 import { ajax } from 'signalizejs/ajax';
 import { redraw } from 'signalizejs/snippets';
 
@@ -13,14 +13,16 @@ interface SpaDispatchEventData extends VisitData {
 	success?: boolean
 }
 
+let spaUrlAttribute = `spa-url`;
+let spaIgnoreAttribute = `spa-ignore`;
+let spaStateActionAttribute = `spa-state-action`;
+let spaMetaCacheNameAttribute = `spa-cache-control`;
+let spaCacheHeader = `X-Spa-Cache-Control`;
+let spaAppVersionHeader = `X-Spa-App-Version`;
+
 let currentLocation = new URL(window.location.href);
+
 const spaVersion = null;
-const spaUrlAttribute = 'data-spa-url';
-const spaIgnoreAttribute = 'data-spa-ignore';
-const spaStateActionAttribute = 'data-spa-state-action';
-const spaMetaCacheNameAttribute = 'spa-cache-control';
-const spaCacheHeader = 'X-Spa-Cache-Control';
-const spaAppVersion = 'X-Spa-App-Version';
 
 const host = window.location.host;
 
@@ -72,7 +74,7 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 		dispatch('spa:request:end', { request, ...dispatchEventData, success: responseData !== null });
 	}
 
-	const updateDom = () => {
+	const updateDom = (): void => {
 		let shouldCacheResponse: boolean | null = null;
 
 		const headers = request?.response?.headers ?? {};
@@ -83,7 +85,7 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 				shouldCacheResponse = cacheHeader !== 'no-cache';
 			}
 
-			const spaVersionFromHeader = headers[spaAppVersion] ?? null;
+			const spaVersionFromHeader = headers[spaAppVersionHeader] ?? null;
 
 			if (spaVersionFromHeader !== null && spaVersion !== null && spaVersion !== spaVersionFromHeader) {
 				dispatch('spa:app-version:changed');
@@ -126,9 +128,9 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 	if (responseData !== null) {
 		let urlHash = window.location.hash ?? null;
 
-		const canScrollAfterVisitStopped = dispatch('spa:visit:beforeScroll');
+		const visitScrollStopped = dispatch('spa:visit:beforeScroll') === false;
 
-		if (canScrollAfterVisitStopped === false) {
+		if (!visitScrollStopped) {
 			if (urlHash !== null && urlHash.trim().length > 2) {
 				urlHash = urlHash.slice(1);
 				const element = document.querySelector(`#${urlHash}`);
@@ -152,71 +154,82 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 	return visitEndData;
 }
 
+const onPopState = (): void => {
+	if (typeof window.history.state?.spa !== 'boolean') {
+		return;
+	}
+
+	const location = new URL(window.location.href);
+
+	if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
+		return;
+	}
+
+	const visitConfig = {
+		url: location
+	};
+
+	dispatch('spa:popstate', visitConfig);
+
+	void visit(visitConfig);
+}
+
+const onClick = async (event: CustomEvent): Promise<void> => {
+	const element = event.target as HTMLElement;
+	const targetAttribute = element.getAttribute('target');
+
+	if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute) || element.hasAttribute('download')) {
+		return;
+	}
+
+	const url = element.getAttribute('href') ??
+		element.getAttribute(spaUrlAttribute) ??
+		element.closest('[href]')?.getAttribute('href') ??
+		element.closest(`[${spaUrlAttribute}]`)?.getAttribute(spaUrlAttribute);
+
+	if (url === null || url === undefined || url.startsWith('#')) {
+		return;
+	}
+
+	const parsedOriginalUrl = createUrl(url);
+
+	if (parsedOriginalUrl !== null && parsedOriginalUrl.host !== host) {
+		return;
+	}
+
+	const hrefUrl = createUrl(`${window.location.origin}${url}`);
+
+	if (hrefUrl === null || (hrefUrl.pathname === window.location.pathname && hrefUrl.hash !== currentLocation.hash)) {
+		return;
+	}
+
+	if (window.history.state === null) {
+		window.history.replaceState({ spa: true }, '', window.location.href);
+	}
+
+	event.preventDefault();
+
+	const clickCanceled = dispatch('spa:clicked', { element }) === false;
+
+	if (clickCanceled) {
+		return;
+	}
+
+	void visit({
+		url,
+		stateAction: (element.getAttribute(spaStateActionAttribute) ?? 'push') as StateAction
+	});
+}
+
+Signalize.visit = visit;
+
 onDomReady(() => {
-	on('click', `a[href], [${spaUrlAttribute}]`, async (event: CustomEvent) => {
-		const element = event.target as HTMLElement;
-		const targetAttribute = element.getAttribute('target');
+	spaUrlAttribute = `${$config.attributePrefix}${spaUrlAttribute}`;
+	spaIgnoreAttribute = `${$config.attributePrefix}${spaIgnoreAttribute}`;
+	spaStateActionAttribute = `${$config.attributePrefix}${spaStateActionAttribute}`;
+	spaMetaCacheNameAttribute = `${$config.attributePrefix}${spaMetaCacheNameAttribute}`;
 
-		if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute) || element.hasAttribute('download')) {
-			return;
-		}
+	on('click', `a[href], [${spaUrlAttribute}]`, onClick);
 
-		const url = element.getAttribute('href') ??
-			element.getAttribute(spaUrlAttribute) ??
-			element.closest('[href]')?.getAttribute('href') ??
-			element.closest(`[${spaUrlAttribute}]`)?.getAttribute(spaUrlAttribute);
-
-		if (url === null || url === undefined || url.startsWith('#')) {
-			return;
-		}
-
-		const parsedOriginalUrl = createUrl(url);
-
-		if (parsedOriginalUrl !== null && parsedOriginalUrl.host !== host) {
-			return;
-		}
-
-		const hrefUrl = createUrl(`${window.location.origin}${url}`);
-
-		if (hrefUrl === null || (hrefUrl.pathname === window.location.pathname && hrefUrl.hash !== currentLocation.hash)) {
-			return;
-		}
-
-		if (window.history.state === null) {
-			window.history.replaceState({ spa: true }, '', window.location.href);
-		}
-
-		event.preventDefault();
-
-		const clickCanceled = dispatch('spa:clicked', { element }) === false;
-
-		if (clickCanceled) {
-			return;
-		}
-
-		void visit({
-			url,
-			stateAction: (element.getAttribute(spaStateActionAttribute) ?? 'push') as StateAction
-		});
-	});
-
-	window.addEventListener('popstate', () => {
-		if (typeof window.history.state?.spa !== 'boolean') {
-			return;
-		}
-
-		const location = new URL(window.location.href);
-
-		if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
-			return;
-		}
-
-		const visitConfig = {
-			url: location
-		};
-
-		dispatch('spa:popstate', visitConfig);
-
-		void visit(visitConfig);
-	});
-});
+	window.addEventListener('popstate', onPopState);
+})

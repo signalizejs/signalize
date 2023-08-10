@@ -1,16 +1,19 @@
-import type { CustomEventListener } from 'signalizejs';
-import { on, onDomReady, selectAll } from 'signalizejs';
+import type { CustomEventListener } from './on';
+import { $config } from './config';
+import { on } from './on';
+import { isDomReady, onDomReady } from './domReady';
+import { ref, refs } from './ref';
 
 interface ComponentInitFunctionArguments {
-	el: HTMLElement
-	ref: <T extends HTMLElement>(id: string) => T
-	refs: <T extends HTMLElement>(id: string) => T[]
+	$el: HTMLElement
+	ref: typeof ref
+	refs: typeof refs
 }
 
 type ComponentInitFunction = (data: ComponentInitFunctionArguments) => void;
+
+let componentAttribute = 'component';
 const definedComponents: Record<string, ComponentInitFunction> = {};
-const componentAttribute = 'data-component';
-const refAttribute = 'data-ref';
 
 const createComponent = (el: HTMLElement): void => {
 	const componentName = el.getAttribute(componentAttribute) as string;
@@ -20,27 +23,15 @@ const createComponent = (el: HTMLElement): void => {
 		return;
 	}
 
+	const parentComponentIsEl = (refElement: HTMLElement): boolean => refElement.closest(`[${componentAttribute}]`) === el;
+
 	initFn({
-		el,
-		ref: <T>(id: string) => (refs(id, el)[0] ?? null) as T,
-		refs: <T>(id: string) => refs(id, el) as T
-	});
-}
-
-const refs = <T extends HTMLElement>(
-	id: string,
-	root: HTMLElement
-): T[] => {
-	const items = selectAll<T>(`[${refAttribute}="${id}"]`, root);
-
-	return [...items].filter((ref) => {
-		const closestComponent = ref.closest(`[${componentAttribute}]`) as HTMLElement
-
-		if (closestComponent !== root) {
-			throw new Error(`You are trying to access ref "${id}" it's parent is "${closestComponent.getAttribute(componentAttribute) as string}".`)
-		}
-
-		return true;
+		$el: el,
+		ref: <T extends HTMLElement>(id: string): T | null => {
+			const refEl = ref<T>(id, el);
+			return refEl !== null && parentComponentIsEl(refEl) ? refEl : null
+		},
+		refs: (id: string) => [...refs(id, el)].filter(parentComponentIsEl)
 	});
 }
 
@@ -57,15 +48,22 @@ export const component = (name: string, init: ComponentInitFunction): void => {
 	}
 
 	definedComponents[name] = init;
-	initComponents(document.documentElement, name);
-}
+
+	if (isDomReady()) {
+		initComponents(document.documentElement, name);
+	}
+};
 
 onDomReady(() => {
+	componentAttribute = `${$config.attributePrefix}${componentAttribute}`;
+
+	initComponents(document.documentElement);
+
 	on('dom-mutation:node:added' as keyof CustomEventListener, document, ({ detail }: { detail: Node }): void => {
 		if (!(detail instanceof HTMLElement)) {
 			return;
 		}
 
 		initComponents(detail);
-	})
-});
+	});
+})

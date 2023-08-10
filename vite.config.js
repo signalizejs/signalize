@@ -9,7 +9,6 @@ export default defineConfig({
 		conditions: ['development', 'browser'],
 		alias: {
 			'signalizejs/ajax': `${packagesDir}/signalize/ajax/src/index.ts`,
-			'signalizejs/component': `${packagesDir}/signalize/component/src/index.ts`,
 			'signalizejs/dialog': `${packagesDir}/signalize/dialog/src/index.ts`,
 			'signalizejs/h': `${packagesDir}/signalize/h/src/index.ts`,
 			'signalizejs/asset-loader': `${packagesDir}/signalize/asset-loader/src/index.ts`,

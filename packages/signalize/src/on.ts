@@ -1,4 +1,4 @@
-import { normalizeTargets } from '.';
+import { normalizeTargets } from './normalizeTargets';
 
 export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window;
 
@@ -14,8 +14,8 @@ const $customEventListeners: Record<string, CustomEventListener> = {
 		document.addEventListener('click', (listenerEvent) => {
 			const eventTarget = listenerEvent.target as HTMLElement;
 
-			if ((typeof target === 'string' && (eventTarget.matches(target) || eventTarget.closest(target) !== null))
-				|| (target instanceof HTMLElement && target === eventTarget)
+			if ((typeof target === 'string' && (eventTarget.matches(target) || eventTarget.closest(target) !== null)) ||
+				(target instanceof HTMLElement && target === eventTarget)
 			) {
 				return
 			}
@@ -38,11 +38,23 @@ const $customEventListeners: Record<string, CustomEventListener> = {
 
 export const on = (
 	event: keyof CustomEventListeners,
-	target: EventTarget,
-	callback: CallableFunction,
-	options: AddEventListenerOptions = {}
+	targetOrCallback: EventTarget | CallableFunction,
+	callbackOrOptions?: CallableFunction | AddEventListenerOptions,
+	options?: AddEventListenerOptions
 ): void => {
 	const events = event.split(',');
+	let target: EventTarget;
+	let callback: CallableFunction;
+	options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
+
+	if (typeof targetOrCallback === 'function') {
+		target = document;
+		callback = targetOrCallback;
+	} else {
+		target = targetOrCallback
+		callback = callbackOrOptions as CallableFunction;
+	}
+
 	const listenerType = typeof target === 'string' ? 'global' : 'direct';
 	const handlers = {
 		global: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {

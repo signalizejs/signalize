@@ -1,4 +1,4 @@
-import { normalizeTargets } from '.';
+import { normalizeTargets } from './normalizeTargets';
 
 const reactiveInputAttributes = ['value', 'checked'];
 const numericInputAttributes = ['range', 'number'];
@@ -19,6 +19,11 @@ const booleanAttributes = [
 	'typemustmatch'
 ];
 
+const attributesAliases = {
+	text: 'textContent',
+	html: 'innerHTML'
+}
+
 export const bind = (target: EventTarget, attributes: Record<string, any>): void => {
 	for (const element of normalizeTargets(target, true) as HTMLElement[]) {
 		for (const [attr, attrOptions] of Object.entries(attributes)) {
@@ -36,10 +41,9 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 				listeners = attrOptions;
 			}
 
-
 			if (typeof listeners === 'function') {
 				getListener = listeners;
-				setListener = listeners;
+				setListener = listeners.set;
 			} else {
 				getListener = typeof listeners.get === 'function' ? () => listeners.get() : null;
 				setListener = typeof listeners.set === 'function' ? (value) => listeners.set(value) : null
@@ -51,6 +55,7 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 				let previousSettedValue = undefined;
 
 				const setOption = (attribute, value) => {
+					attribute = attributesAliases[attribute] ?? attribute;
 					if (textContentAttributes.includes(attribute)) {
 						element[attribute] = value;
 					} else if (booleanAttributes.includes(attribute)) {

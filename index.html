@@ -11,12 +11,25 @@
 </head>
 
 <body>
-	<button asset-loader="click: [{src: '/script.js', type: 'module'}, '/style.css?v3']">Načti</button>
+
+	<div component="form">
+		<input ref="search">
+		Output: <span ref="output"></span>
+	</div>
+
+	<div component="form">
+		<input ref="search">
+		Second: <span ref="output"></span>
+	</div>
 
 	<script type="module">
-		import { $config, signal } from 'signalizejs';
-		$config.attributePrefix = '';
-		import 'signalizejs/asset-loader';
+		import { signal, bind, ref, component } from 'signalizejs';
+
+		component('form', ({ $el, ref }) => {
+			const search = signal('');
+			bind(ref('search'), { value: search });
+			bind(ref('output'), { html: search })
+		})
 	</script>
 
 </body>

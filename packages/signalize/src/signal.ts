@@ -29,6 +29,8 @@ interface SignalInstance<T> {
 	valueOf: () => T
 }
 
+export const $signals = {};
+
 export function Signal<T> (this: SignalInstance<T>, defaultValue: T): (() => T) {
 	let value: T = defaultValue;
 
@@ -37,7 +39,11 @@ export function Signal<T> (this: SignalInstance<T>, defaultValue: T): (() => T) 
 		afterSet: new Set()
 	};
 
-	this.set = (newValue: T, options?: SignalOptions): void => {
+	function signal() {
+		return value;
+	}
+
+	signal.set = (newValue: T, options?: SignalOptions): void => {
 		const oldValue = value;
 		if (newValue === oldValue && (options?.equals ?? true)) {
 			return;
@@ -53,16 +59,19 @@ export function Signal<T> (this: SignalInstance<T>, defaultValue: T): (() => T) 
 				break;
 			}
 		}
+
 		if (!settable) {
 			return;
 		}
+
 		value = newValue;
+
 		for (const watcher of watchers.afterSet) {
 			watcher({ newValue, oldValue });
 		}
 	}
 
-	this.watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}) => {
+	signal.watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}) => {
 		const immediate = options.immediate ?? false;
 		const execution = options.execution ?? 'afterSet';
 
@@ -77,13 +86,13 @@ export function Signal<T> (this: SignalInstance<T>, defaultValue: T): (() => T) 
 		return () => watchers[execution].delete(listener);
 	}
 
-	this.toString = (): string => String(value);
+	signal.toString = (): string => String(value);
 
-	this.toJSON = (): T => value;
+	signal.toJSON = (): T => value;
 
-	this.valueOf = (): T => value;
+	signal.valueOf = (): T => value;
 
-	return () => value;
+	return signal
 }
 
 export const signal = <T>(defaultValue: T): SignalInstance<T> => new (Signal as any)(defaultValue);

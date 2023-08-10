@@ -1,10 +1,10 @@
 import type { CustomEventListener } from 'signalizejs';
-import { onDomReady, on, dispatch } from 'signalizejs';
+import { $config, on, dispatch, onDomReady } from 'signalizejs';
 
-const dialogAttribute = 'data-dialog';
-const dialogModelessAttribute = `${dialogAttribute}-modeless`;
-const dialogCloseButtonAttribute = `${dialogAttribute}-close`;
-const dialogOpenButtonAttribute = `${dialogAttribute}-open`;
+let dialogAttribute = 'dialog';
+let dialogModelessAttribute = `${dialogAttribute}-modeless`;
+let dialogCloseButtonAttribute = `${dialogAttribute}-close`;
+let dialogOpenButtonAttribute = `${dialogAttribute}-open`;
 
 export const getDialog = (id: string): HTMLDialogElement | null => {
 	return document.querySelector(`[${dialogAttribute}=${id}]`);
@@ -51,6 +51,11 @@ const openDialogByUrlHash = (): void => {
 }
 
 onDomReady(() => {
+	dialogAttribute = `${$config.attributePrefix}${dialogAttribute}`;
+	dialogModelessAttribute = `${$config.attributePrefix}${dialogModelessAttribute}`;
+	dialogCloseButtonAttribute = `${$config.attributePrefix}${dialogCloseButtonAttribute}`;
+	dialogOpenButtonAttribute = `${$config.attributePrefix}${dialogOpenButtonAttribute}-open`;
+
 	on('click', `[${dialogCloseButtonAttribute}]`, ({ target }) => {
 		const dialog = target.getAttribute[`${dialogCloseButtonAttribute}`] ?? target.closest(`[${dialogAttribute}]`);
 
@@ -67,7 +72,7 @@ onDomReady(() => {
 		}
 	});
 
-	openDialogByUrlHash();
-
 	on('locationchange' as keyof CustomEventListener, window, openDialogByUrlHash);
-});
+
+	openDialogByUrlHash();
+})

@@ -1,3 +1,5 @@
+import { dispatch } from 'signalizejs';
+
 interface AjaxReturn {
 	response: Response | null
 	error: any
@@ -8,7 +10,11 @@ export const ajax = async (input: RequestInfo | URL, init?: RequestInit | undefi
 	let error: Error | null = null
 
 	try {
-		response = await fetch(input, init);
+		const request = fetch(input, init);
+
+		dispatch('ajax:request:start', { input, init, request });
+
+		response = await request;
 
 		if (!response.ok) {
 			throw new Error('Ajax error', {
@@ -17,10 +23,15 @@ export const ajax = async (input: RequestInfo | URL, init?: RequestInit | undefi
 				}
 			})
 		}
+
+		dispatch('ajax:request:success', { input, init, request });
 	} catch (requestError: any) {
 		response = requestError.cause.response ?? undefined;
 		error = requestError
+		dispatch('ajax:request:error', { input, init, response, error });
 	}
+
+	dispatch('ajax:request:end', { input, init, response, error });
 
 	return {
 		response,

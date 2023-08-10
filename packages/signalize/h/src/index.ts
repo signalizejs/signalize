@@ -1,4 +1,4 @@
-import { bind, Signal, isBrowserEnv } from 'signalizejs';
+import Signalize, { bind, Signal } from 'signalizejs';
 
 type HypertextChild = string | number | Element | Node | typeof Signal<any>;
 
@@ -83,8 +83,10 @@ export const h = <T extends HTMLElement>(tagName: string, ...children: Array<Hyp
 	children = children.flat(Infinity);
 
 	return (
-		isBrowserEnv === true
+		typeof window !== 'undefined'
 			? renderDom(tagName, attrs, children)
 			: renderHtmlString(tagName, attrs, children as string[])
 	) as T
 }
+
+Signalize.h = h;

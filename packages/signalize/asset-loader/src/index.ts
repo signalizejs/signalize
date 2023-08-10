@@ -1,14 +1,14 @@
 import type { CustomEventListener } from 'signalizejs';
-import { $config, on, onDomReady, dispatch, selectAll, } from 'signalizejs';
+import { $config, on, onDomReady, dispatch, selectAll } from 'signalizejs';
 
 type AttributeAssetConfig = Record<string, string | string[] | HTMLScriptElement | HTMLLinkElement>
-let assetLoaderEventName: string;
+const assetLoaderEventName = 'asset-loader';
 let assetLoaderAttribute: string;
 let assetLoaderInitedAttribute: string;
 let assetLoaderAssetEventAttribute: string;
 const customEventTriggers = {};
 
-export const load = async (assets: Array<HTMLLinkElement|HTMLScriptElement>): Promise<void> => {
+export const load = async (assets: Array<HTMLLinkElement | HTMLScriptElement>): Promise<void> => {
 	const assetsPromises: Promise<any>[] = [];
 
 	for (const asset of assets) {
@@ -39,9 +39,7 @@ export const load = async (assets: Array<HTMLLinkElement|HTMLScriptElement>): Pr
 
 		document.head.appendChild(assetElement);
 	}
-	console.log(assetsPromises);
 	await Promise.all(assetsPromises);
-	console.log('me');
 }
 
 const attachListeners = (element: HTMLElement): void => {
@@ -96,7 +94,6 @@ const attachListeners = (element: HTMLElement): void => {
 					load(assetsToLoad)
 						.then(() => {
 							dispatch(`${assetLoaderEventName}:success`, { assets: assetsToLoad });
-							console.log('success');
 							element.removeEventListener(eventName, handler);
 						})
 						.catch((error) => {
@@ -112,7 +109,6 @@ const attachListeners = (element: HTMLElement): void => {
 }
 
 onDomReady(() => {
-	assetLoaderEventName = `${$config.eventPrefix}asset-loader`;
 	assetLoaderAttribute = `${$config.attributePrefix}asset-loader`;
 	assetLoaderInitedAttribute = `${assetLoaderAttribute}-inited`;
 	assetLoaderAssetEventAttribute = `${assetLoaderAttribute}-trigger-event`;
@@ -132,9 +128,4 @@ onDomReady(() => {
 
 		init();
 	})
-
-	console.log($config);
-	window.addEventListener('load', () => {
-		console.log($config);
-	});
 });
