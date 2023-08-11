@@ -10,26 +10,16 @@
 	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
-<body>
+<body $clicked="0">
 
-	<div component="form">
-		<input ref="search">
-		Output: <span ref="output"></span>
-	</div>
-
-	<div component="form">
-		<input ref="search">
-		Second: <span ref="output"></span>
-	</div>
+	<button $count="2" @click="clicked.set(clicked() + 1)">
+		Count <span :text="count()"></span>
+		Clicked <span :text="clicked()"></span>
+	</button>
 
 	<script type="module">
-		import { signal, bind, ref, component } from 'signalizejs';
+		import { signal, on, bind, ref, component, directive } from 'signalizejs';
 
-		component('form', ({ $el, ref }) => {
-			const search = signal('');
-			bind(ref('search'), { value: search });
-			bind(ref('output'), { html: search })
-		})
 	</script>
 
 </body>

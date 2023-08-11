@@ -2,6 +2,7 @@ import { bind } from './bind';
 import { component } from './component';
 import { $config } from './config';
 import { createHtml } from './createHtml';
+import { directive } from './directives';
 import { dispatch } from './dispatch';
 import { off } from './off';
 import { isJson } from './isJson';
@@ -19,6 +20,7 @@ export * from './createHtml';
 export * from './component';
 export * from './config';
 export * from './dispatch';
+export * from './directives';
 export * from './domReady';
 export * from './isJson';
 export * from './mergeObjects';
@@ -38,6 +40,7 @@ interface SignalizeWindowObject {
 	createHtml: typeof createHtml
 	component: typeof component
 	dispatch: typeof dispatch
+	directive: typeof directive
 	isDomReady: typeof isDomReady
 	isJson: typeof isJson
 	off: typeof off
@@ -59,6 +62,7 @@ export const Signalize: SignalizeWindowObject = {
 	component,
 	createHtml,
 	dispatch,
+	directive,
 	isDomReady,
 	isJson,
 	off,

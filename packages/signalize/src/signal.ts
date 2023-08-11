@@ -1,7 +1,7 @@
 type BeforeSetSignalWatcher<T> = (options: SignalWatcherArguments<T>) => { value: T, settable?: boolean } | undefined
 type AfterSetSignalWatcher<T> = (options: SignalWatcherArguments<T>) => void;
 
-type SignalWatcherExecutionOption = 'beforeSet' | 'afterSet'
+type SignalWatcherExecutionOption = 'beforeSet' | 'afterSet' | 'onGet'
 
 interface SignalWatcherOptions {
 	immediate?: boolean
@@ -34,12 +34,17 @@ export const $signals = {};
 export function Signal<T> (this: SignalInstance<T>, defaultValue: T): (() => T) {
 	let value: T = defaultValue;
 
-	const watchers = {
+	const watchers: Record<SignalWatcherExecutionOption, Set<CallableFunction>> = {
 		beforeSet: new Set(),
-		afterSet: new Set()
+		afterSet: new Set(),
+		onGet: new Set()
 	};
 
 	function signal() {
+		for (const watcher of watchers.onGet) {
+			watcher({ newValue: value, oldValue: value });
+		}
+
 		return value;
 	}
 

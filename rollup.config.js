@@ -58,7 +58,7 @@ const packages = [
 	},
 
 	// Component
-	{
+	/* {
 		plugins: [
 			typescript({
 				declaration: true,
@@ -79,7 +79,7 @@ const packages = [
 				format: 'cjs'
 			}
 		]
-	},
+	}, */
 
 	// Dialog
 	{
