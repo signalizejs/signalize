@@ -55,7 +55,7 @@ export const component = (name: string, init: ComponentInitFunction): void => {
 };
 
 onDomReady(() => {
-	componentAttribute = `${$config.attributePrefix}${componentAttribute}`;
+	componentAttribute = `${$config.attributesPrefix}${componentAttribute}`;
 
 	initComponents(document.documentElement);
 

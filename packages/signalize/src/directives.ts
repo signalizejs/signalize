@@ -1,3 +1,4 @@
+import { AsyncFunction } from './asyncFunction';
 import { bind } from './bind';
 import { $config } from './config';
 import { isDomReady, onDomReady } from './domReady';
@@ -18,52 +19,50 @@ interface Directive {
 	callback: DirectiveCallback
 }
 
-interface ScopeData {
-	// TODO change to signal
-	signals: Record<string, CallableFunction>
-	methods: Record<string, CallableFunction>
+interface ProcessDirectiveOptions {
+	root?: HTMLElement
+	matcherId?: string
 }
 
-interface Scope extends ScopeData {
-	el: HTMLElement
-}
-
-let scopeAttribute = 'scope';
 const directives: Record<string, Directive> = {};
-const scopes: Record<number, Scope> = {};
 
-const processDirectives = (matcherId?: string): void => {
-	const elements = document.getElementsByTagName('*');
+const processDirectives = (options: ProcessDirectiveOptions = {}): void => {
+	const { root = document, matcherId } = options;
+	const elements = [...root.getElementsByTagName('*')];
+
+	if (!(root instanceof Document)) {
+		elements.unshift(root);
+	}
+
 	const directivesToProcess = matcherId === undefined ? Object.values(directives) : [directives[matcherId]];
-
-	const getParentScopeData = (el: HTMLElement, scopeData: ScopeData = { methods: {}, signals: {} }): ScopeData => {
-		const parentScopeElement = el.parentElement?.closest<HTMLElement>(`[${scopeAttribute}]`);
-
-		if (parentScopeElement === null) {
-			return scopeData;
+	const getParentScopeData = (el: HTMLElement, scope: Scope = { }): Scope => {
+		if (el === null) {
+			return scope;
 		}
 
-		scopeData = mergeObjects(scopeData, scopes[parentScopeElement.getAttribute(scopeAttribute)]);
-		return getParentScopeData(parentScopeElement, scopeData);
+		if ('__signalizeScope' in el) {
+			scope = mergeObjects(scope, el.__signalizeScope);
+		}
+
+		return getParentScopeData(el.parentElement, scope);
 	}
 
-	const createElementScope = (el: HTMLElement): Scope => {
-		const scopeId = Object.keys(scopes).length.toString();
-		el.setAttribute(scopeAttribute, scopeId);
-		scopes[scopeId] = getParentScopeData(el);
-		scopes[scopeId].el = el;
-		return scopes[scopeId];
+	const getElementScope = (el: HTMLElement): Scope => {
+		el.__signalizeScope = getParentScopeData(el);
+		return el.__signalizeScope;
 	}
 
-	for (const element of elements) {
-		/* if (element.hasAttribute(scopeAttribute)) {
-			continue;
-		} */
-
+	const processElement = async (element) => {
+		let matchedDirectivesCount = 0;
 		let elementScope = null;
+		const directivesPromises = [];
+
 		for (const directive of directivesToProcess) {
+			if (matchedDirectivesCount >= element.attributes.length) {
+				break;
+			}
+
 			if (directive.matcher instanceof RegExp) {
-				console.log(directive, element);
 				for (const attribute of element.attributes) {
 					const matches = attribute.name.match(directive.matcher);
 
@@ -72,68 +71,129 @@ const processDirectives = (matcherId?: string): void => {
 					}
 
 					if (elementScope === null) {
-						elementScope = createElementScope(element);
+						elementScope = getElementScope(element);
 					}
 
-					directive.callback({ ...elementScope, matches, attribute });
+					directivesPromises.push(
+						directive.callback({ el: element, scope: elementScope, matches, attribute })
+					);
+					matchedDirectivesCount++;
 				}
 			} else if (directive.matcher in element.attributes) {
 				if (elementScope === null) {
-					elementScope = createElementScope(element);
+					elementScope = getElementScope(element);
 				}
 
-				directive.callback({ ...elementScope, attribute: element.attributes[directive.matcher]});
+				directivesPromises.push(
+					directive.callback({ el: element, scope: elementScope, attribute: element.attributes[directive.matcher]})
+				);
+				matchedDirectivesCount++;
 			}
 		}
+
+		await Promise.all(directivesPromises);
+	};
+
+	const processElements = async () => {
+		const element = elements.shift();
+		await processElement(element);
+
+		if (elements.length) {
+			await processElements();
+		}
 	}
+
+	processElements();
 }
 
-export const directive = (matcher: DirectiveMatcher, callback: DirectiveCallback): void => {
-	const matcherName = matcher.toString();
+export const directive = (matcher: DirectiveMatcher, callback: DirectiveCallback): Promise<void> | void => {
+	const matcherId = matcher.toString();
 
-	directives[matcherName] = {
-		matcher,
+	directives[matcherId] = {
+		matcher: matcher instanceof RegExp ? new RegExp(`^${matcher.source}$`) : matcher,
 		callback
 	}
 
 	if (isDomReady()) {
-		processDirectives(matcherName)
+		processDirectives({ matcherId })
 	}
 }
 
-onDomReady(() => {
-	scopeAttribute = `${$config.attributePrefix}${scopeAttribute}`;
+interface CreateFunctionOptions {
+	functionString: string
+	context: Record<string, any>
+}
 
+const createFunction = (options: CreateFunctionOptions): Promise<any> => {
+	const { functionString, context = {} } = options;
+	let fn = new AsyncFunction('');
+
+	try {
+		fn = () => {
+			return new AsyncFunction('context', `
+				let { ${Object.keys(context).join(',')} } = context;
+				${functionString}
+			`).call(null, context);
+		}
+	} catch (e) {
+		console.error(e);
+	}
+
+	return fn;
+}
+
+onDomReady(() => {
 	on('dom-mutation:node:added', () => {
 		processDirectives();
 	})
 
-	directive(/(?:\$|signal:)(\S+)/, ({ matches, el, signals, attribute }) => {
-		signals[matches[1]] = signal(isNaN(attribute.value) ? attribute.value : parseFloat(attribute.value));
+	directive(new RegExp(`(?:\\$|${$config.attributesPrefix}signal${$config.directivesSeparator})(\\S+)`), async ({ matches, el, scope, attribute }) => {
+		const fn = createFunction({
+			functionString: `return ${attribute.value.length ? attribute.value : "''"}`,
+			context: scope
+		});
+		let result = await fn();
+
+		if (typeof result === 'string' && result.length > 0 && isNaN(result) === false) {
+			result = parseFloat(result);
+		}
+
+		el.__signalizeScope[matches[1]] = signal(result);
 	});
 
-	directive(/(?::|bind:)(\S+)/, ({ matches, el, signals, attribute }) => {
-		const fn = new Function(...Object.keys(signals), `const data = ${attribute.value}; console.log(typeof data, data); return data;`);
-		const fnCaller = () =>  fn.call(null, ...Object.values(signals));
+	directive(new RegExp(`(?::|${$config.attributesPrefix}bind${$config.directivesSeparator})(\\S+)`), async ({ matches, el, scope, attribute }) => {
+		if (el.tagName.toLowerCase() === 'template' && attribute.name.includes('for')) {
+			return;
+		}
+
+		const fn = createFunction({
+			functionString: `
+				const result = ${attribute.value};
+				return typeof result === 'function' ? result() : result;
+			`,
+			context: scope
+		})
+
 		let signalsToWatch = [];
 		let usedSignalsCleanup = []
 
-		for (const [signalName, signal] of Object.entries(signals)) {
-			usedSignalsCleanup.push(
-				signal.watch(() => {
-					signalsToWatch.push(signal);
-				}, { execution: 'onGet'})
-			)
+		for (const signal of Object.values(scope)) {
+			if (typeof signal !== 'function') {
+				continue;
+			}
+
+			let clean = signal.watch(() => {
+				signalsToWatch.push(signal);
+				clean();
+			}, { execution: 'onGet' })
 		}
 
-		const bindAttribute = () => {
-			const fnReturn = fnCaller();
-			// TODO only signal should be called
-			let data = typeof fnReturn === 'function' ? fnReturn() : fnReturn;
+		fn();
 
-			bind(el, { [matches[1]]: [...signalsToWatch, () => {
-				return fnCaller()
-			} ]})
+		const bindAttribute = () => {
+			bind(el, {
+				[matches[1]]: [...signalsToWatch, fn]
+			});
 		}
 
 		bindAttribute();
@@ -145,18 +205,138 @@ onDomReady(() => {
 		usedSignalsCleanup = {};
 	});
 
-	directive(/(?:\@|on:)(\S+)/, ({ matches, el, signals, methods, attribute }) => {
-		const fn = new Function(
-			'event',
-			...Object.keys(signals),
-			...Object.keys(methods),
-			attribute.value
-		);
-
+	directive(new RegExp(`(?:\\@|${$config.attributesPrefix}on${$config.directivesSeparator})(\\S+)`), async ({ matches, el, scope, attribute }) => {
 		on(matches[1], el, (event) => {
-			fn.call(null, event, ...Object.values(signals), ...Object.values(methods));
+			const fn = createFunction({
+				functionString: attribute.value,
+				context: {
+					event,
+					...scope
+				}
+			});
+			fn();
 		});
-
-		console.log(matches);
 	})
+
+	directive(new RegExp(`(?::|${$config.attributesPrefix})for`), async ({ el, scope, attribute }) => {
+		if (el.tagName.toLowerCase() !== 'template') {
+			return;
+		}
+
+		const forLoopRe = /([\s\S]+)\s+(in|of)\s+([\s\S]+)/;
+		const argumentsMatch = attribute.value.match(forLoopRe);
+
+		if (argumentsMatch.length < 4) {
+			throw new Error(`Invalid for loop syntax "${attribute.value}".`);
+		}
+
+		const newContextVariables = [];
+		let newContextVariablesString = argumentsMatch[1];
+		let matches;
+
+		const bracketsRegExp = /^([{([])/;
+		const replaceBracketsAndGetArgumentName = (bracket) => {
+			newContextVariablesString = newContextVariablesString.replace(new RegExp(`(?:^${bracket}|${bracket}$)`), '');
+		}
+
+		if (bracketsRegExp.test(newContextVariablesString)) {
+			//console.log('fu');
+		} else {
+			newContextVariables.push(newContextVariablesString);
+		}
+
+		const signalsToWatch = [];
+
+		for (const signal of Object.values(scope)) {
+			if (typeof signal !== 'function') {
+				continue;
+			}
+
+			let unwatch = signal.watch(() => {
+				signalsToWatch.push(signal);
+				unwatch();
+			}, { execution: 'onGet' })
+		}
+
+		const process = async () => {
+
+			const fn = createFunction({
+				functionString: `
+					const scopes = [];
+					const stack = typeof ${argumentsMatch[3]} === 'function' ? ${argumentsMatch[3]}() : ${argumentsMatch[3]};
+					console.log('tu');
+					for (let ${argumentsMatch[1]} ${argumentsMatch[2]} stack) {
+						scopes.push({
+							${newContextVariables.map((variable) => {
+								return `${variable}: ${variable},`;
+							})}
+							...context
+						})
+					}
+
+					return scopes;
+				`,
+				context: scope
+			});
+
+			const scopes = await fn();
+			const currentState = [];
+			let nextElementSibling = el.nextElementSibling;
+
+			while (nextElementSibling !== null) {
+				if (typeof nextElementSibling.__signalizeTemplate === 'undefined') {
+					break;
+				}
+
+				currentState.push(nextElementSibling);
+				nextElementSibling = nextElementSibling.nextElementSibling;
+			}
+
+			let lastInsertPoint = currentState[currentState.length - 1] ?? el;
+			let i = 0;
+
+			for (const scope of scopes) {
+				for (const children of el.content.children) {
+					const root = children.cloneNode(true);
+					root.__signalizeTemplate = el;
+					root.__signalizeScope = scope;
+					processDirectives({ root });
+
+					const rootKey = root.getAttribute('key')
+					let existingItem = null;
+					let existingItemIndex = null;
+
+					if (rootKey) {
+						existingItem = currentState.find((currentStateItem, index) => {
+							let keyMatches = currentStateItem.getAttribute('key') === rootKey;
+							if (keyMatches) {
+								existingItemIndex = index;
+							}
+							return true;
+						});
+					} else if (i >= currentState.length) {
+						//console.log('append', root);
+						lastInsertPoint.after(root);
+						lastInsertPoint = root;
+					}
+					console.log(root);
+
+					i++;
+				}
+			}
+
+			console.log(i, currentState.length);
+			while(currentState.length > i) {
+				let item = currentState.pop();
+				item.remove();
+			}
+		}
+
+		process();
+
+		for (const signalToWatch of signalsToWatch) {
+			signalToWatch.watch(() => process());
+		}
+	});
+
 })

@@ -40,12 +40,16 @@ export function Signal<T> (this: SignalInstance<T>, defaultValue: T): (() => T) 
 		onGet: new Set()
 	};
 
-	function signal() {
+	const get = () => {
 		for (const watcher of watchers.onGet) {
 			watcher({ newValue: value, oldValue: value });
 		}
 
 		return value;
+	}
+
+	function signal() {
+		return get();
 	}
 
 	signal.set = (newValue: T, options?: SignalOptions): void => {
@@ -91,11 +95,11 @@ export function Signal<T> (this: SignalInstance<T>, defaultValue: T): (() => T) 
 		return () => watchers[execution].delete(listener);
 	}
 
-	signal.toString = (): string => String(value);
+	signal.toString = (): string => String(get());
 
-	signal.toJSON = (): T => value;
+	signal.toJSON = (): T => get();
 
-	signal.valueOf = (): T => value;
+	signal.valueOf = (): T => get();
 
 	return signal
 }

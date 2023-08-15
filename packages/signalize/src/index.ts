@@ -14,7 +14,9 @@ import { select, selectAll } from './select';
 import { plugin } from './plugin';
 import { task } from './task';
 import './mutationObserver';
+import { AsyncFunction } from './asyncFunction';
 
+export * from './asyncFunction';
 export * from './bind';
 export * from './createHtml';
 export * from './component';
@@ -36,6 +38,7 @@ export * from './task';
 interface SignalizeWindowObject {
 	$config: typeof $config
 	Signal: typeof Signal
+	AsyncFunction: typeof AsyncFunction
 	bind: typeof bind
 	createHtml: typeof createHtml
 	component: typeof component

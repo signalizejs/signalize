@@ -51,10 +51,10 @@ const openDialogByUrlHash = (): void => {
 }
 
 onDomReady(() => {
-	dialogAttribute = `${$config.attributePrefix}${dialogAttribute}`;
-	dialogModelessAttribute = `${$config.attributePrefix}${dialogModelessAttribute}`;
-	dialogCloseButtonAttribute = `${$config.attributePrefix}${dialogCloseButtonAttribute}`;
-	dialogOpenButtonAttribute = `${$config.attributePrefix}${dialogOpenButtonAttribute}-open`;
+	dialogAttribute = `${$config.attributesPrefix}${dialogAttribute}`;
+	dialogModelessAttribute = `${$config.attributesPrefix}${dialogModelessAttribute}`;
+	dialogCloseButtonAttribute = `${$config.attributesPrefix}${dialogCloseButtonAttribute}`;
+	dialogOpenButtonAttribute = `${$config.attributesPrefix}${dialogOpenButtonAttribute}-open`;
 
 	on('click', `[${dialogCloseButtonAttribute}]`, ({ target }) => {
 		const dialog = target.getAttribute[`${dialogCloseButtonAttribute}`] ?? target.closest(`[${dialogAttribute}]`);

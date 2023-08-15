@@ -10,12 +10,21 @@
 	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
-<body $clicked="0">
+<body>
 
-	<button $count="2" @click="clicked.set(clicked() + 1)">
-		Count <span :text="count()"></span>
-		Clicked <span :text="clicked()"></span>
-	</button>
+	<div $count="5">
+		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
+		<button @click="count.set(count() -1)">Odeber<span :text="count"></span></button><br>
+		<br>
+		<template :for="i in [...Array(count())]">
+			<div $email="">
+				<label>Email: <input :value="email"></label>
+				<button :text="'Send' + email" @click="alert(email)"></button>
+			</div>
+			<hr>
+			<div></div>
+		</template>
+	</div>
 
 	<script type="module">
 		import { signal, on, bind, ref, component, directive } from 'signalizejs';

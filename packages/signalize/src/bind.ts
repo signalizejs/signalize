@@ -25,72 +25,81 @@ const attributesAliases = {
 }
 
 export const bind = (target: EventTarget, attributes: Record<string, any>): void => {
+
 	for (const element of normalizeTargets(target, true) as HTMLElement[]) {
-		for (const [attr, attrOptions] of Object.entries(attributes)) {
-			const optionsIsArray = attrOptions instanceof Array;
+		for (let [attr, attrOptions] of Object.entries(attributes)) {
+			if (attrOptions.length === 1) {
+				attrOptions = attrOptions[0];
+			}
+
 			let getListener: CallableFunction | null = null;
 			let setListener: CallableFunction | null = null;
-			let attrOptionsAsArray = [attrOptions];
+			let attrOptionsAsArray = Array.isArray(attrOptions) ? attrOptions : [attrOptions];
 			const isNumericInput = numericInputAttributes.includes(element.getAttribute('type') ?? '');
-			let listeners = null;
+			let attributeBinder = attrOptionsAsArray.pop();
+			const attributeBinderType = typeof attributeBinder;
+			const attributeBinderIsFunction = attributeBinderType === 'function';
+			const attributeBinderIsSignal = attributeBinderIsFunction && attributeBinder.name.includes('signal');
+			let signalsToWatch = attrOptionsAsArray;
+			let attributeInited = false;
+			let attributeInitValue = undefined;
+			let previousSettedValue = undefined;
 
-			if (optionsIsArray) {
-				listeners = attrOptions[attrOptions.length - 1];
-				attrOptionsAsArray = attrOptions.slice(0, attrOptions.length - 1);
-			} else if (typeof attrOptions === 'function') {
-				listeners = attrOptions;
-			}
+			const setOption = async (attribute, value) => {
+				value = value instanceof Promise ? await value : value;
+				attribute = attributesAliases[attribute] ?? attribute;
 
-			if (typeof listeners === 'function') {
-				getListener = listeners;
-				setListener = listeners.set;
-			} else {
-				getListener = typeof listeners.get === 'function' ? () => listeners.get() : null;
-				setListener = typeof listeners.set === 'function' ? (value) => listeners.set(value) : null
-			}
-
-			for (const attrOption of attrOptionsAsArray) {
-				let attributeInited = false;
-				let attributeInitValue = undefined;
-				let previousSettedValue = undefined;
-
-				const setOption = (attribute, value) => {
-					attribute = attributesAliases[attribute] ?? attribute;
-					if (textContentAttributes.includes(attribute)) {
-						element[attribute] = value;
-					} else if (booleanAttributes.includes(attribute)) {
-						element[attribute] = !!value;
-					} else if (attribute === 'class') {
-						if (attributeInited) {
-							if (previousSettedValue !== undefined && previousSettedValue.length > 0) {
-								element.classList.remove(previousSettedValue);
-							}
-						} else {
-							attributeInitValue = element.getAttribute('class');
+				if (textContentAttributes.includes(attribute)) {
+					element[attribute] = value;
+				} else if (booleanAttributes.includes(attribute)) {
+					element[attribute] = !!value;
+				} else if (attribute === 'class') {
+					if (attributeInited) {
+						if (previousSettedValue !== undefined && previousSettedValue.length > 0) {
+							element.classList.remove(previousSettedValue);
 						}
-
-						const valueToSet = value.trim();
-
-						if (valueToSet.length > 0) {
-							element.classList.add(value);
-							previousSettedValue = valueToSet;
-						}
-
-						attributeInited = true;
 					} else {
-						element.setAttribute(attribute, value);
+						attributeInitValue = element.getAttribute('class');
 					}
-				}
 
-				if (['string', 'number'].includes(typeof attrOption)) {
-					setOption(attr, attrOption);
-					continue;
-				}
+					const valueToSet = value.trim();
 
-				attrOption.watch((data) => {
-					const content = getListener !== null ? getListener({ el: element }) : data.newValue;
-					setOption(attr, content)
-				}, { immediate: true });
+					if (valueToSet.length > 0) {
+						element.classList.add(value);
+						previousSettedValue = valueToSet;
+					}
+
+					attributeInited = true;
+				} else {
+					element.setAttribute(attribute, value);
+				}
+			}
+
+			if (['string', 'number'].includes(attributeBinderType)) {
+				setOption(attr, attributeBinder);
+				continue;
+			}
+
+			if (attributeBinderIsSignal === true) {
+				signalsToWatch.push(attributeBinder);
+				getListener = attributeBinder;
+				setListener = attributeBinder.set;
+			} else if (signalsToWatch.length === 1) {
+				getListener = attributeBinder;
+				setListener = signalsToWatch[0].set;
+			} else {
+				getListener = typeof attributeBinder.get === 'function' ? () => attributeBinder.get() : null;
+				setListener = typeof attributeBinder.set === 'function' ? (value) => attributeBinder.set(value) : null
+			}
+
+			if (attributeBinderIsFunction === true) {
+				setOption(attr, attributeBinder());
+			}
+
+			for (const signalToWatch of signalsToWatch) {
+				signalToWatch.watch((data) => {
+					setOption(attr, getListener());
+				});
 			}
 
 			if (typeof setListener === 'function' && reactiveInputAttributes.includes(attr)) {

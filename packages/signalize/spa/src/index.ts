@@ -224,10 +224,10 @@ const onClick = async (event: CustomEvent): Promise<void> => {
 Signalize.visit = visit;
 
 onDomReady(() => {
-	spaUrlAttribute = `${$config.attributePrefix}${spaUrlAttribute}`;
-	spaIgnoreAttribute = `${$config.attributePrefix}${spaIgnoreAttribute}`;
-	spaStateActionAttribute = `${$config.attributePrefix}${spaStateActionAttribute}`;
-	spaMetaCacheNameAttribute = `${$config.attributePrefix}${spaMetaCacheNameAttribute}`;
+	spaUrlAttribute = `${$config.attributesPrefix}${spaUrlAttribute}`;
+	spaIgnoreAttribute = `${$config.attributesPrefix}${spaIgnoreAttribute}`;
+	spaStateActionAttribute = `${$config.attributesPrefix}${spaStateActionAttribute}`;
+	spaMetaCacheNameAttribute = `${$config.attributesPrefix}${spaMetaCacheNameAttribute}`;
 
 	on('click', `a[href], [${spaUrlAttribute}]`, onClick);
 

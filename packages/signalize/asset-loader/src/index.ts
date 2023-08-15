@@ -109,7 +109,7 @@ const attachListeners = (element: HTMLElement): void => {
 }
 
 onDomReady(() => {
-	assetLoaderAttribute = `${$config.attributePrefix}asset-loader`;
+	assetLoaderAttribute = `${$config.attributesPrefix}asset-loader`;
 	assetLoaderInitedAttribute = `${assetLoaderAttribute}-inited`;
 	assetLoaderAssetEventAttribute = `${assetLoaderAttribute}-trigger-event`;
 

@@ -6,9 +6,9 @@ let domMutationNodeAddedEvent = 'dom-mutation:node:added';
 let domMutationNodeRemovedEvent = 'dom-mutation:node:removed';
 
 onDomReady(() => {
-	domMutationEvent = `${$config.attributePrefix}${domMutationEvent}`;
-	domMutationNodeAddedEvent = `${$config.attributePrefix}${domMutationNodeAddedEvent}`;
-	domMutationNodeRemovedEvent = `${$config.attributePrefix}${domMutationNodeRemovedEvent}`;
+	domMutationEvent = `${$config.attributesPrefix}${domMutationEvent}`;
+	domMutationNodeAddedEvent = `${$config.attributesPrefix}${domMutationNodeAddedEvent}`;
+	domMutationNodeRemovedEvent = `${$config.attributesPrefix}${domMutationNodeRemovedEvent}`;
 
 	new MutationObserver((mutationList): void => {
 		for (const mutation of mutationList) {

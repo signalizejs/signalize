@@ -5,7 +5,7 @@ import { selectAll } from './select';
 let refAttribute = 'ref';
 
 export const refs = <T extends HTMLElement>(id: string, root: HTMLElement = document.documentElement): T[] => {
-	return [...selectAll<T>(`[${$config.attributePrefix}${refAttribute}="${id}"]`, root)]
+	return [...selectAll<T>(`[${$config.attributesPrefix}${refAttribute}="${id}"]`, root)]
 }
 
 export const ref = <T extends HTMLElement>(id: string, root: HTMLElement = document.documentElement): T | null => {
@@ -13,5 +13,5 @@ export const ref = <T extends HTMLElement>(id: string, root: HTMLElement = docum
 }
 
 onDomReady(() => {
-	refAttribute = `${$config.attributePrefix}${refAttribute}`
+	refAttribute = `${$config.attributesPrefix}${refAttribute}`
 });
