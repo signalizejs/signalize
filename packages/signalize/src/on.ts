@@ -7,6 +7,10 @@ export type CustomEventListener = (target: HTMLElement, callback: CallableFuncti
 interface CustomEventListeners extends HTMLElementEventMap {
 	clickOutside: CustomEventListener
 	remove: CustomEventListener
+	'directive:beforeProcess': CustomEventListener
+	'dom-mutation': CustomEventListener
+	'dom-mutation:node:added': CustomEventListener
+	'dom-mutation:node:removed': CustomEventListener
 }
 
 const $customEventListeners: Record<string, CustomEventListener> = {

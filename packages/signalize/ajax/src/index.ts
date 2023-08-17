@@ -1,16 +1,39 @@
 import { dispatch } from 'signalizejs';
 
-interface AjaxReturn {
+export interface AjaxReturn {
 	response: Response | null
 	error: any
 }
 
-export const ajax = async (input: RequestInfo | URL, init?: RequestInit | undefined): Promise<AjaxReturn> => {
+export interface AjaxOptions extends RequestInit {
+	url: string
+	data?: Record<string, any>
+}
+
+export const ajax = async (options: AjaxOptions): Promise<AjaxReturn> => {
 	let response: Response | null = null;
 	let error: Error | null = null
 
 	try {
-		const request = fetch(input, init);
+		const dataType = typeof options.data;
+
+		if (dataType !== 'undefined') {
+			if (typeof options.body === 'undefined') {
+				options.body = ['string', 'number'].includes(dataType) ? options.data : JSON.parse(options.data);
+			}
+
+			delete options.data;
+		}
+
+		if (typeof options.method === 'undefined' && typeof options.body !== 'undefined') {
+			options.method = 'POST';
+		}
+
+		const url = options.url;
+
+		delete options.url;
+
+		const request = fetch(url, options);
 
 		dispatch('ajax:request:start', { input, init, request });
 

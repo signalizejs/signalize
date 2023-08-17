@@ -57,29 +57,29 @@ const packages = [
 		]
 	},
 
-	// Component
-	/* {
+	// Assets Loader
+	{
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${signalizeDir}/component/src`,
-				declarationDir: `${signalizeDir}/component/dist`
+				rootDir: `${signalizeDir}/asset-loader/src`,
+				declarationDir: `${signalizeDir}/asset-loader/dist`
 			})
 		],
-		input: `${signalizeDir}/component/src/index.ts`,
+		input: `${signalizeDir}/asset-loader/src/index.ts`,
 		treeshake: false,
 		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/component/dist/component.js`,
+				file: `${signalizeDir}/asset-loader/dist/asset-loader.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/component/dist/component.cjs`,
+				file: `${signalizeDir}/asset-loader/dist/asset-loader.cjs`,
 				format: 'cjs'
 			}
 		]
-	}, */
+	},
 
 	// Dialog
 	{
@@ -129,25 +129,25 @@ const packages = [
 		]
 	},
 
-	// Script Loader
+	// Logger
 	{
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${signalizeDir}/asset-loader/src`,
-				declarationDir: `${signalizeDir}/asset-loader/dist`
+				rootDir: `${signalizeDir}/logger/src`,
+				declarationDir: `${signalizeDir}/logger/dist`
 			})
 		],
-		input: `${signalizeDir}/asset-loader/src/index.ts`,
+		input: `${signalizeDir}/logger/src/index.ts`,
 		treeshake: false,
 		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/asset-loader/dist/asset-loader.js`,
+				file: `${signalizeDir}/logger/dist/logger.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/asset-loader/dist/asset-loader.cjs`,
+				file: `${signalizeDir}/logger/dist/logger.cjs`,
 				format: 'cjs'
 			}
 		]

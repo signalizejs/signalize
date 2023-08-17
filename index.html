@@ -11,24 +11,43 @@
 </head>
 
 <body>
-
-	<div $count="5">
-		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
-		<button @click="count.set(count() -1)">Odeber<span :text="count"></span></button><br>
-		<br>
-		<template :for="i in [...Array(count())]">
-			<div $email="">
-				<label>Email: <input :value="email"></label>
-				<button :text="'Send' + email" @click="alert(email)"></button>
-			</div>
-			<hr>
-			<div></div>
-		</template>
+	<style>
+		[cloak] {
+			visibility: hidden;
+		}
+	</style>
+	<div $items="[]" cloak>
+		<button @click="items.set([...items(), items().length + 1])">Přidej<span :text="items().length"></span></button>
+		<button @click="items().pop; items.set([...items()].slice(0,-1))">Odeber<span :text="items().length"></span></button><br>
+		<ul>
+			<!-- <template :for="i of items"> -->
+				<template :if="items().length % 2 !== 0">
+					<li :text="'Odd - ' + items().length"></li>
+				</template>
+				<template :if="items().length % 2 === 0">
+					<li :text="'Even - ' + items().length"></li>
+				</template>
+			<!-- </template> -->
+		</ul>
 	</div>
+	<!-- <div $count="2">
+		<button @click="count.set(1)">1</button>
+		<button @click="count.set(2)">2</button>
+
+		<template :if="count() === 2">
+			<div>Rendered - 2</div>
+		</template>
+		<template :if="count() === 1">
+			<div>Rendered - 1</div>
+		</template>
+	</div> -->
+
+<!-- 	<template :for="i in [1,2]">
+		<div :text="i"></div>
+	</template> -->
 
 	<script type="module">
 		import { signal, on, bind, ref, component, directive } from 'signalizejs';
-
 	</script>
 
 </body>

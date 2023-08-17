@@ -1,0 +1,8 @@
+{
+	"name": "signalizejs/logger",
+	"main": "./dist/logger.cjs",
+	"module": "./dist/logger.s",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"sideEffects": false
+  }
