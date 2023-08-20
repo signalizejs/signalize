@@ -1,4 +1,8 @@
 import { normalizeTargets } from './normalizeTargets';
+import { off } from './off';
+import { on } from './on';
+import { getScope, initScope } from './scope';
+import { Signal } from './signal';
 
 const reactiveInputAttributes = ['value', 'checked'];
 const numericInputAttributes = ['range', 'number'];
@@ -25,8 +29,10 @@ const attributesAliases = {
 }
 
 export const bind = (target: EventTarget, attributes: Record<string, any>): void => {
-
 	for (const element of normalizeTargets(target, true) as HTMLElement[]) {
+		const unwatchSignalCallbacks = [];
+		const elementScope = getScope(element) ?? initScope(element);
+
 		for (let [attr, attrOptions] of Object.entries(attributes)) {
 			if (attrOptions.length === 1) {
 				attrOptions = attrOptions[0];
@@ -39,7 +45,7 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 			let attributeBinder = attrOptionsAsArray.pop();
 			const attributeBinderType = typeof attributeBinder;
 			const attributeBinderIsFunction = attributeBinderType === 'function';
-			const attributeBinderIsSignal = attributeBinderIsFunction && attributeBinder.name.includes('signal');
+			const attributeBinderIsSignal = attributeBinder instanceof Signal;
 			let signalsToWatch = attrOptionsAsArray;
 			let attributeInited = false;
 			let attributeInitValue = undefined;
@@ -97,17 +103,29 @@ export const bind = (target: EventTarget, attributes: Record<string, any>): void
 			}
 
 			for (const signalToWatch of signalsToWatch) {
-				signalToWatch.watch((data) => {
-					setOption(attr, getListener());
-				});
+				unwatchSignalCallbacks.push(
+					signalToWatch.watch(async (data) => {
+						setOption(attr, getListener());
+					})
+				);
 			}
 
 			if (typeof setListener === 'function' && reactiveInputAttributes.includes(attr)) {
-				element.addEventListener('input', () => {
-					const newValue = element[attr] as string;
-					setListener(isNumericInput ? Number(newValue) : newValue);
-				});
+				const inputListener = () => {
+					setListener(isNumericInput ? Number(element[attr] as string) : element[attr] as string);
+				};
+				on('input', element, inputListener);
+
+				elementScope.cleanups.push(() => {
+					off('input', element, inputListener);
+				})
 			}
 		}
+
+		elementScope.cleanups.push(() => {
+			for (const unwatch of unwatchSignalCallbacks) {
+				unwatch();
+			}
+		})
 	}
 }

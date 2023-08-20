@@ -16,20 +16,49 @@
 			visibility: hidden;
 		}
 	</style>
-	<div $items="[]" cloak>
-		<button @click="items.set([...items(), items().length + 1])">Přidej<span :text="items().length"></span></button>
-		<button @click="items().pop; items.set([...items()].slice(0,-1))">Odeber<span :text="items().length"></span></button><br>
+	<div $count="5000" cloak>
+		<button @click="count.set(count() + 1);console.log(count())">Přidej<span :text="count"></span></button>
+		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
 		<ul>
-			<!-- <template :for="i of items"> -->
-				<template :if="items().length % 2 !== 0">
-					<li :text="'Odd - ' + items().length"></li>
-				</template>
-				<template :if="items().length % 2 === 0">
-					<li :text="'Even - ' + items().length"></li>
-				</template>
-			<!-- </template> -->
+			<template :for="i in [...Array(count())]">
+				<div>
+					<template :if="i % 2 !== 0">
+						<span :text="'Odd' + i"></span>
+					</template>
+				</div>
+				<div>
+					<template :if="i % 2 === 0">
+						<span :text="'Even' + i"></span>
+					</template>
+				</div>
+			</template>
 		</ul>
 	</div>
+
+	<!-- <div $items="[1,2]">
+		<template :for="i of items">
+			<div>
+				<template :if="i % 2 !== 0">
+					<li :text="'Odd - ' + items().length"></li>
+				</template>
+				<template :if="i % 2 === 0">
+					<li :text="'Even - ' + items().length"></li>
+				</template>
+				<template :if="true"><div :text="'text'"></div></template>
+			</div>
+		</template>
+	</div> -->
+
+	<!-- <br><br>
+	<div $items="[]">
+		<button @click="items.set([items().length, ...items()])" :text="'+' + items().length"></button>
+		<button @click="items.set(items().slice(1))" :text="'-' + items().length"></button>
+
+		<template :for="i of items()">
+			<div $text="i"><input :value="text"><span :text="text"></span></div>
+		</template>
+	</div>
+ -->
 	<!-- <div $count="2">
 		<button @click="count.set(1)">1</button>
 		<button @click="count.set(2)">2</button>
@@ -42,12 +71,22 @@
 		</template>
 	</div> -->
 
-<!-- 	<template :for="i in [1,2]">
+	<!-- 	<template :for="i in [1,2]">
 		<div :text="i"></div>
 	</template> -->
 
+	<!-- <div $text="">
+		<input :value="text"><br>
+		<template :if="text().length < 2">
+			<span :text="text"></span>
+		</template>
+		<template :if="text().length >= 2">
+			<span>Meh</span>
+		</template>
+	</div> -->
+
 	<script type="module">
-		import { signal, on, bind, ref, component, directive } from 'signalizejs';
+		import { signal, on, bind, ref, directive } from 'signalizejs';
 	</script>
 
 </body>

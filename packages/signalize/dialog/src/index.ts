@@ -1,5 +1,5 @@
 import type { CustomEventListener } from 'signalizejs';
-import { $config, on, dispatch, onDomReady } from 'signalizejs';
+import { $config, on, dispatch, onDomReady, select } from 'signalizejs';
 
 let dialogAttribute = 'dialog';
 let dialogModelessAttribute = `${dialogAttribute}-modeless`;
@@ -7,7 +7,7 @@ let dialogCloseButtonAttribute = `${dialogAttribute}-close`;
 let dialogOpenButtonAttribute = `${dialogAttribute}-open`;
 
 export const getDialog = (id: string): HTMLDialogElement | null => {
-	return document.querySelector(`[${dialogAttribute}=${id}]`);
+	return select(`[${dialogAttribute}=${id}]`);
 };
 
 export const openDialog = (dialogOrId: string | HTMLDialogElement, modelessly = false): HTMLDialogElement | null => {

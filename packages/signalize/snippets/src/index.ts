@@ -1,4 +1,4 @@
-import Signalize, { createHtml, dispatch } from 'signalizejs';
+import Signalize, { createHtml, dispatch, select } from 'signalizejs';
 
 const snippetAttribute = 'snippet';
 const snippetRedrawedAttribute = 'snippet-redrawed';
@@ -20,7 +20,7 @@ export const redraw = (content: string | DocumentFragment | HTMLElement | HTMLEl
 			throw new Error(`Signalize/Snippets: Snippet attribute "${snippetAttribute}" cannot be empty.`);
 		}
 
-		const targetSnippetToSync = document.querySelector(`[${snippetAttribute}="${snippetId}"]`);
+		const targetSnippetToSync = select(`[${snippetAttribute}="${snippetId}"]`);
 
 		if (targetSnippetToSync == null) {
 			element.setAttribute(snippetRedrawedAttribute, '');

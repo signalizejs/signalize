@@ -1,4 +1,8 @@
+import { $config } from './config';
+import { onDomReady } from './domReady';
 import { normalizeTargets } from './normalizeTargets';
+import { off } from './off';
+import { getScope } from './scope';
 
 export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window;
 
@@ -12,6 +16,8 @@ interface CustomEventListeners extends HTMLElementEventMap {
 	'dom-mutation:node:added': CustomEventListener
 	'dom-mutation:node:removed': CustomEventListener
 }
+
+const domMutationRemoveListeners = new Set();
 
 const $customEventListeners: Record<string, CustomEventListener> = {
 	clickOutside: (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
@@ -30,29 +36,34 @@ const $customEventListeners: Record<string, CustomEventListener> = {
 		}, options);
 	},
 	remove: (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
-		document.addEventListener('click', (listenerEvent) => {
-			const eventTarget = listenerEvent.target as HTMLElement
-
-			if (target instanceof HTMLElement || (!eventTarget.matches(target) && (eventTarget.closest(target) == null))) {
-				listener();
+		const observer = new MutationObserver((mutationsList, observer) => {
+			for (const mutation of mutationsList) {
+				if (mutation.type === 'childList') {
+					if ([...mutation.removedNodes].includes(target)) {
+						listener();
+					}
+				}
 			}
-		}, options);
+		});
+
+		observer.observe($config.root, { childList: true, subtree: true });
 	}
 };
 
-export const on = (
+export const on = function (
 	event: keyof CustomEventListeners,
 	targetOrCallback: EventTarget | CallableFunction,
 	callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 	options?: AddEventListenerOptions
-): void => {
+): void {
 	const events = event.split(',');
 	let target: EventTarget;
 	let callback: CallableFunction;
+	const root = this?.$config.root ?? document;
 	options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
 
 	if (typeof targetOrCallback === 'function') {
-		target = document;
+		target = root;
 		callback = targetOrCallback;
 	} else {
 		target = targetOrCallback
@@ -62,7 +73,7 @@ export const on = (
 	const listenerType = typeof target === 'string' ? 'global' : 'direct';
 	const handlers = {
 		global: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {
-			document.addEventListener(event, (listenerEvent) => {
+			root.addEventListener(event, (listenerEvent) => {
 				const eventTarget = listenerEvent.target as HTMLElement;
 
 				if (eventTarget.matches(target as string) || (eventTarget.closest(target as string) != null)) {
@@ -79,10 +90,18 @@ export const on = (
 
 	for (const event of events) {
 		if (event in $customEventListeners) {
-			$customEventListeners[event](target, callback, options);
+			$customEventListeners[event].call(this, target, callback, options);
 			continue;
 		}
 
 		handlers[listenerType](event, callback, options);
 	}
 }
+
+onDomReady(() => {
+	on('dom-mutation:node:removed', (event) => {
+		for (const listener of domMutationRemoveListeners) {
+			listener(event);
+		}
+	})
+})

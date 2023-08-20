@@ -3,9 +3,10 @@ import { bind } from './bind';
 import { $config } from './config';
 import { dispatch } from './dispatch';
 import { isDomReady, onDomReady } from './domReady';
-import { mergeObjects } from './mergeObjects';
 import { on } from './on';
-import { signal } from './signal';
+import { getScope, initScope } from './scope';
+import { Signal, signal } from './signal';
+import { task } from './task';
 
 type DirectiveCallback = (data: DirectiveCallbackData) => Promise<void> | void;
 
@@ -27,106 +28,88 @@ interface ProcessDirectiveOptions {
 	directiveName?: string
 }
 
-interface ScopeElement extends ParentNode {
-	__signalizeScope: Scope
-}
-
 interface Scope extends Record<string, any> {}
 
 const directives: Record<string, Directive> = {};
+let cloakAttribute = 'cloak';
+let ignoreAttribute = 'ignore';
 let inited = false;
+
+const processElement = async (el: HTMLElement, directivesToProcess): Promise<void> => {
+	directivesToProcess = directivesToProcess ?? Object.keys(directives);
+
+	const directivesQueue = [...directivesToProcess];
+	const directivesMatchersRegExpString = directivesQueue.map((directiveName) => {
+		const matcher = directives[directiveName].matcher;
+		return matcher instanceof RegExp ? matcher.source : matcher
+	}).join('|');
+	const re = new RegExp(directivesMatchersRegExpString);
+
+	const processDirective = async (directiveName: string, attribute, matches): Promise<void> => {
+		const canBeProcessed = dispatch('directive:beforeProcess', {
+			directiveName,
+			attribute,
+			el
+		});
+
+		if (!canBeProcessed) {
+			return;
+		}
+
+		const directive = directives[directiveName];
+
+		const elementScope = getScope(el) ?? initScope(el);
+		directive.callback({ ...elementScope, matches, attribute });
+
+		const scope = getScope(el);
+
+		if (typeof scope.directives === 'undefined') {
+			scope.directives = [];
+		}
+
+		getScope(el).directives.push(directiveName);
+	}
+
+	const directivesPromises = [];
+	if (directivesQueue.length > 0) {
+		for (const attribute of el.attributes) {
+			if (attribute.name in directivesQueue) {
+				directivesPromises.push(processDirective(attribute.name, attribute));
+			} else if (re.test(attribute.name)) {
+				for (const directiveName of directivesQueue) {
+					if (!(directives[directiveName].matcher instanceof RegExp)) {
+						continue;
+					}
+
+					const matches = directives[directiveName].matcher.exec(attribute.name);
+					if (matches) {
+						directivesPromises.push(processDirective(directiveName, attribute, matches));
+						break;
+					}
+				}
+			}
+		}
+
+		el.removeAttribute(cloakAttribute);
+	}
+
+	await Promise.all(directivesPromises);
+	return el;
+};
 
 const processDirectives = async (options: ProcessDirectiveOptions = {}): Promise<HTMLElement | Document | DocumentFragment> => {
 	const { root = document, directiveName } = options;
 	const directivesToProcess = directiveName === undefined ? Object.keys(directives) : [directiveName];
-	const getParentScopeData = (el: ScopeElement, scope: Scope = { }): Scope => {
-		if (el === null) {
-			return scope;
-		}
-
-		if ('__signalizeScope' in el) {
-			scope = mergeObjects(scope, el.__signalizeScope);
-		}
-
-		return getParentScopeData(el.parentNode, scope);
-	}
-
-	const getElementScope = (el: HTMLElement): Scope => {
-		const scopeElement = el as ScopeElement;
-		scopeElement.__signalizeScope = getParentScopeData(scopeElement);
-		return scopeElement.__signalizeScope;
-	}
-
-	const processElement = async (el: HTMLElement): Promise<void> => {
-		let matchedDirectivesCount = 0;
-		const directivesQueue = [...directivesToProcess];
-
-		const processDirective = async (directiveName: string): Promise<void> => {
-			const directive = directives[directiveName];
-			const directiveData = {
-				el,
-				scope: () => getElementScope(el)
-			}
-
-			if (directive.matcher instanceof RegExp) {
-				for (const attribute of el.attributes) {
-					const canBeProcessed = dispatch('directive:beforeProcess', {
-						directiveName,
-						attribute,
-						el
-					});
-
-					if (!canBeProcessed) {
-						continue;
-					}
-
-					const matches = attribute.name.match(directive.matcher);
-
-					if (matches === null) {
-						continue;
-					}
-
-					await directive.callback({ ...directiveData, matches, attribute });
-					matchedDirectivesCount++;
-				}
-			} else if (directive.matcher in el.attributes) {
-				const canBeProcessed = dispatch('directive:beforeProcess', {
-					directiveName,
-					attribute: el.attributes[directiveName],
-					el
-				});
-
-				if (!canBeProcessed) {
-					return;
-				}
-
-				await directive.callback({ ...directiveData, attribute: el.attributes[directive.matcher] })
-
-				matchedDirectivesCount++;
-			}
-
-			if (matchedDirectivesCount >= el.attributes.length || directivesQueue.length === 0) {
-				el.removeAttribute(`${$config.attributesPrefix}cloak`);
-				return;
-			}
-
-			await processDirective(directivesQueue.shift());
-		}
-
-		if (directivesQueue.length > 0) {
-			await processDirective(directivesQueue.shift());
-		}
-	};
 
 	const processElements = async (root): Promise<void> => {
 		const rootIsHtmlElement = root instanceof HTMLElement;
 
-		if (rootIsHtmlElement && root?.closest(`[${$config.attributesPrefix}ignore]`)) {
+		if (rootIsHtmlElement && root?.closest(`[${ignoreAttribute}]`)) {
 			return;
 		}
 
 		if (rootIsHtmlElement) {
-			await processElement(root);
+			await processElement(root, directivesToProcess);
 		}
 
 		const elementsProcessingPromises = []
@@ -173,12 +156,10 @@ const createFunction = (options: CreateFunctionOptions): typeof AsyncFunction =>
 	let fn = new AsyncFunction('');
 
 	try {
-		fn = () => {
-			return new AsyncFunction('context', `
-				let { ${Object.keys(context).join(',')} } = context;
-				${functionString}
-			`).call(null, context);
-		}
+		fn = new AsyncFunction('context', `
+			let { ${Object.keys(context).join(',')} } = context;
+			${functionString}
+		`)
 	} catch (e) {
 		console.error(e);
 	}
@@ -187,21 +168,24 @@ const createFunction = (options: CreateFunctionOptions): typeof AsyncFunction =>
 }
 
 onDomReady(async () => {
-	// Todo scope přejmenovat na context
+	cloakAttribute = `${$config.attributesPrefix}${cloakAttribute}`;
+	ignoreAttribute = `${$config.attributesPrefix}${ignoreAttribute}`;
+
 	directive('signal', {
 		matcher: new RegExp(`(?:\\$|${$config.attributesPrefix}signal${$config.directivesSeparator})(\\S+)`),
-		callback: async ({ matches, el, scope, attribute }): Promise<void> => {
+		callback: async ({ matches, el, data, attribute }): Promise<void> => {
+			const currentData = data();
 			const fn = createFunction({
 				functionString: `return ${attribute.value.length ? attribute.value : "''"}`,
-				context: scope()
+				context: currentData
 			});
-			let result = await fn();
+			let result = await fn(currentData);
 
 			if (typeof result === 'string' && result.length > 0 && !isNaN(result)) {
 				result = parseFloat(result);
 			}
 
-			el.__signalizeScope[matches[1]] = signal(result);
+			getScope(el).data[matches[1]] = signal(result);
 		}
 	});
 
@@ -213,9 +197,9 @@ onDomReady(async () => {
 				if (directiveName === 'bind' && attribute.name.includes('for') && el.tagName.toLocaleLowerCase() === 'template') {
 					event.preventDefault();
 				}
-			})
+			});
 		},
-		callback: async ({ el, scope, attribute }) => {
+		callback: async ({ el, data, attribute }) => {
 			if (el.tagName.toLowerCase() !== 'template') {
 				return;
 			}
@@ -242,45 +226,58 @@ onDomReady(async () => {
 				newContextVariables.push(newContextVariablesString);
 			}
 
-			const signalsToWatch = [];
-
-			for (const signal of Object.values(scope())) {
-				if (typeof signal !== 'function') {
-					continue;
-				}
-
-				const unwatch = signal.watch(() => {
-					signalsToWatch.push(signal);
-					unwatch();
-				}, { execution: 'onGet' })
-			}
+			let forFnCache;
+			let unwatchSignalCallbacks = [];
 
 			const process = async (): Promise<void> => {
-				const fn = createFunction({
-					functionString: `
-						const scopes = [];
-						const stack = typeof ${argumentsMatch[3]} === 'function' ? ${argumentsMatch[3]}() : ${argumentsMatch[3]};
+				const currentData = data();
+				const signalsToWatch = [];
 
-						for (let ${argumentsMatch[1]} ${argumentsMatch[2]} stack) {
-							scopes.push({
+				for (const signal of Object.values(currentData)) {
+					if (typeof signal !== 'function') {
+						continue;
+					}
+
+					const unwatch = signal.watch(() => {
+						signalsToWatch.push(signal);
+						unwatch();
+					}, { execution: 'onGet' })
+				}
+				const directivesProcessingPromises = [];
+				const processScope = async (scope) => {
+					const templateFragment = el.cloneNode(true).content;
+					for (const child of templateFragment.children) {
+						initScope(child, { ...scope, ...currentData });
+						directivesProcessingPromises.push(processElement(child));
+					}
+				}
+				let forFn = forFnCache ?? createFunction({
+					functionString: `
+						for (let ${argumentsMatch[1]} ${argumentsMatch[2]} typeof ${argumentsMatch[3]} === 'function' ? ${argumentsMatch[3]}() : ${argumentsMatch[3]}) {
+							__processScope({
 								${newContextVariables.map((variable) => {
 									return `${variable}: ${variable},`;
 								}).join('\n')}
 								...context
 							})
 						}
-
-						return scopes;
 					`,
-					context: scope()
+					context: {
+						...currentData,
+						__processScope: processScope
+					}
 				});
 
-				const scopes = await fn();
+				forFnCache = forFn;
+				await forFn({
+					...currentData,
+					__processScope: processScope
+				});
 				const currentState = [];
 				let nextElementSibling = el.nextElementSibling;
 
 				while (nextElementSibling !== null) {
-					if (nextElementSibling.__signalizeTemplate !== el) {
+					if (getScope(nextElementSibling)?.template !== el) {
 						break;
 					}
 
@@ -291,52 +288,85 @@ onDomReady(async () => {
 				let lastInsertPoint = currentState[currentState.length - 1] ?? el;
 				let i = 0;
 
-				const directivesProcessingPromises = [];
-				for (const scope of scopes) {
-					const templateFragment = el.cloneNode(true).content
-					templateFragment.__signalizeScope = scope;
-					directivesProcessingPromises.push(processDirectives({ root: templateFragment }));
-				}
-
 				const fragments = await Promise.all(directivesProcessingPromises);
 
-				for (const fragment of fragments) {
-					for (const child of fragment.children) {
-						const root = child.cloneNode(true);
-						root.__signalizeTemplate = el;
-						const rootKey = root.getAttribute('key')
-						let existingItem = null;
-						let existingItemIndex = null;
-						// Todo přesunout položku a její potomky v indexech
+				const reinitDirectives = (el) => {
+					const scope = getScope(el);
+					if (scope !== undefined && scope?.directives !== undefined) {
+						scope.cleanup();
+						const directivesQueue = scope.directives;
+						scope.directives = [];
+						processElement(el,directivesQueue);
+					}
 
-						if (rootKey) {
-							existingItem = currentState.find((currentStateItem, index) => {
-								const keyMatches = currentStateItem.getAttribute('key') === rootKey;
-								if (keyMatches) {
-									existingItemIndex = index;
-								}
-								return true;
-							});
-						} else if (i >= currentState.length) {
-							lastInsertPoint.after(root);
-							lastInsertPoint = root;
+					for (const child of el.children) {
+						reinitDirectives(child);
+					}
+				}
+
+				while (fragments.length > 0) {
+					const root = fragments.shift();
+					getScope(root).template = el;
+					const rootKey = root.getAttribute('key')
+					let existingItem = null;
+					let existingItemIndex = null;
+
+					if (rootKey) {
+						existingItem = currentState.find((currentStateItem, index) => {
+							const keyMatches = currentStateItem.getAttribute('key') === rootKey;
+							if (keyMatches) {
+								existingItemIndex = index;
+							}
+							return true;
+						});
+						// Todo přesunout položku a její potomky v indexech
+					} else if (currentState.length > 0 && i < currentState.length) {
+						const scope = getScope(currentState[i]);
+
+						for (const [key, value] of Object.entries(getScope(root).data())) {
+							scope.data[key] = value;
 						}
 
-						i++;
+						scope.data = getScope(root).data;
+						reinitDirectives(currentState[i]);
+
+						lastInsertPoint = currentState[i];
+					} else if (currentState.length === 0 || i >= currentState.length) {
+						lastInsertPoint.after(root);
+						lastInsertPoint = root;
+
+						for (const child of root.children) {
+							initScope(child, getScope(root).data());
+							processDirectives({ root: child });
+						}
 					}
+
+					i++;
 				}
 
 				while (currentState.length > i) {
 					const item = currentState.pop();
+					getScope(item).cleanup();
 					item.remove();
+				}
+
+				for (const unwatch of unwatchSignalCallbacks) {
+					unwatch();
+				}
+
+				unwatchSignalCallbacks = [];
+				for (const signalToWatch of signalsToWatch) {
+					unwatchSignalCallbacks.push(signalToWatch.watch(process))
 				}
 			}
 
 			await process();
 
-			for (const signalToWatch of signalsToWatch) {
-				signalToWatch.watch(async () => { await process(); });
-			}
+			getScope(el).cleanups.push(() => {
+				for (const unwatch of unwatchSignalCallbacks) {
+					unwatch();
+				}
+			})
 		}
 	})
 
@@ -350,15 +380,15 @@ onDomReady(async () => {
 				}
 			});
 		},
-		callback: async ({ matches, el, scope, attribute }) => {
+		callback: async ({ matches, el, data, attribute }) => {
 			const fn = createFunction({
 				functionString: `return ${attribute.value}`,
-				context: scope()
+				context: data()
 			});
 			const signalsToWatch = [];
 
-			for (const signal of Object.values(scope())) {
-				if (typeof signal !== 'function') {
+			for (const signal of Object.values(data())) {
+				if (!(signal instanceof Signal)) {
 					continue;
 				}
 
@@ -368,25 +398,27 @@ onDomReady(async () => {
 				}, { execution: 'onGet' })
 			}
 
-			const cleanup = () => {
+			const cleanup = (): void => {
 				let nextElementSibling = el.nextElementSibling;
 
 				while (nextElementSibling !== null) {
-					if (nextElementSibling.__signalizeCondition !== el) {
+					const elementScope = getScope(nextElementSibling);
+					if (elementScope?.condition !== el) {
 						break;
 					}
 
 					const elementToRemove = nextElementSibling;
 					nextElementSibling = nextElementSibling.nextElementSibling;
+					elementScope.cleanup();
 					elementToRemove.remove();
 				}
 			}
 
 			const render = async (): Promise<void> => {
-				const conditionResult = await fn();
+				const conditionResult = await fn(data());
 				let lastInsertPoint = el;
 
-				if (conditionResult === true && el.nextElementSibling?.__signalizeCondition === el) {
+				if (conditionResult === true && getScope(el.nextElementSibling)?.condition === el) {
 					return;
 				}
 
@@ -395,14 +427,14 @@ onDomReady(async () => {
 					return;
 				}
 
-				let fragment = el.content;
-				fragment.__signalizeScope = scope();
-				fragment = await processDirectives({ root: fragment });
+				let fragment = el.cloneNode(true).content;
 
-				for (const child of fragment.children) {
-					const root = child.cloneNode(true);
-					root.__signalizeCondition = el;
-					root.__signalizeScope = scope();
+				initScope(fragment, data());
+				fragment = await processDirectives({ root: fragment });
+				const children = [...fragment.children];
+				while (children.length > 0) {
+					const root = children.shift();
+					getScope(root).condition = el;
 					lastInsertPoint.after(root);
 					lastInsertPoint = root;
 				}
@@ -410,27 +442,36 @@ onDomReady(async () => {
 
 			await render();
 
+			const unwatchSignalCallbacks = [];
+
 			for (const signalToWatch of signalsToWatch) {
-				signalToWatch.watch(render);
+				unwatchSignalCallbacks.push(signalToWatch.watch(render));
 			}
+
+			getScope(el).cleanups.push(() => {
+				for (const unwatch of unwatchSignalCallbacks) {
+					unwatch();
+				}
+			})
 		}
 	})
 
 	directive('bind', {
 		matcher: new RegExp(`(?::|${$config.attributesPrefix}bind${$config.directivesSeparator})(\\S+)`),
-		callback: async ({ matches, el, scope, attribute }) => {
+		callback: async ({ matches, el, data, attribute }) => {
+			const currentData = data();
 			const fn = createFunction({
 				functionString: `
 					const result = ${attribute.value};
 					return typeof result === 'function' ? result() : result;
 				`,
-				context: scope()
+				context: currentData
 			})
 
 			const signalsToWatch = [];
 
-			for (const signal of Object.values(scope())) {
-				if (typeof signal !== 'function') {
+			for (const signal of Object.values(currentData)) {
+				if (!(signal instanceof Signal)) {
 					continue;
 				}
 
@@ -440,39 +481,51 @@ onDomReady(async () => {
 				}, { execution: 'onGet' })
 			}
 
-			fn();
+			fn(currentData);
 
-			const bindAttribute = () => {
-				bind(el, {
-					[matches[1]]: [...signalsToWatch, fn]
-				});
-			}
 
-			bindAttribute();
+			bind(el, {
+				[matches[1]]: [...signalsToWatch, () => fn(currentData)]
+			});
 		}
 	})
 
 	directive('on', {
 		matcher: new RegExp(`(?:\\@|${$config.attributesPrefix}on${$config.directivesSeparator})(\\S+)`),
-		callback: async ({ matches, el, scope, attribute }) => {
+		callback: async ({ matches, el, data, attribute }) => {
 			on(matches[1], el, (event) => {
+				const currentData = data();
 				const fn = createFunction({
 					functionString: attribute.value,
 					context: {
 						event,
-						...scope()
+						...currentData
 					}
 				});
-				fn();
+				fn({
+					event,
+					...currentData
+				});
 			});
 		}
 	})
 
-	await processDirectives();
+	task(async () => {
+		await processDirectives();
 
-	inited = true;
+		inited = true;
 
-	on('dom-mutation:node:added', () => {
-		//void processDirectives();
-	});
+		on('dom-mutation:node:added', (event) => {
+			const node = event.detail;
+			if (!(node instanceof HTMLElement)) {
+				return;
+			}
+
+			if (getScope(node) !== undefined) {
+				return;
+			}
+
+			void processDirectives({ root: event.detail });
+		});
+	})
 })

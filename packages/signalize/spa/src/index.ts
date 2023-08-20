@@ -133,7 +133,7 @@ export const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
 		if (!visitScrollStopped) {
 			if (urlHash !== null && urlHash.trim().length > 2) {
 				urlHash = urlHash.slice(1);
-				const element = document.querySelector(`#${urlHash}`);
+				const element = select(`#${urlHash}`);
 				if (element !== null) {
 					element.scrollIntoView({
 						block: 'start',

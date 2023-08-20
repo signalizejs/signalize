@@ -31,77 +31,81 @@ interface SignalInstance<T> {
 
 export const $signals = {};
 
-export function Signal<T> (this: SignalInstance<T>, defaultValue: T): (() => T) {
-	let value: T = defaultValue;
+export class Signal<T> extends Function {
+	constructor (defaultValue: T) {
+		super()
 
-	const watchers: Record<SignalWatcherExecutionOption, Set<CallableFunction>> = {
-		beforeSet: new Set(),
-		afterSet: new Set(),
-		onGet: new Set()
-	};
+		let value: T = defaultValue;
 
-	const get = () => {
-		for (const watcher of watchers.onGet) {
-			watcher({ newValue: value, oldValue: value });
-		}
+		const watchers: Record<SignalWatcherExecutionOption, Set<CallableFunction>> = {
+			beforeSet: new Set(),
+			afterSet: new Set(),
+			onGet: new Set()
+		};
 
-		return value;
-	}
-
-	function signal() {
-		return get();
-	}
-
-	signal.set = (newValue: T, options?: SignalOptions): void => {
-		const oldValue = value;
-		if (newValue === oldValue && (options?.equals ?? true)) {
-			return;
-		}
-		let settable = true;
-		for (const watcher of watchers.beforeSet) {
-			const watcherData = watcher({ newValue, oldValue });
-			if (typeof watcherData !== 'undefined') {
-				settable = watcherData.settable ?? settable;
-				newValue = watcherData.value;
+		const get = (): T => {
+			for (const watcher of watchers.onGet) {
+				watcher({ newValue: value, oldValue: value });
 			}
+
+			return value;
+		}
+
+		this.set = (newValue: T, options?: SignalOptions): void => {
+			const oldValue = value;
+
+			if (newValue === oldValue && (options?.equals ?? true)) {
+				return;
+			}
+
+			let settable = true;
+			for (const watcher of watchers.beforeSet) {
+				const watcherData = watcher({ newValue, oldValue });
+				if (typeof watcherData !== 'undefined') {
+					settable = watcherData.settable ?? settable;
+					newValue = watcherData.value;
+				}
+				if (!settable) {
+					break;
+				}
+			}
+
 			if (!settable) {
-				break;
+				return;
+			}
+
+			value = newValue;
+
+			for (const watcher of watchers.afterSet) {
+				watcher({ newValue, oldValue });
 			}
 		}
 
-		if (!settable) {
-			return;
-		}
+		this.watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}) => {
+			const immediate = options.immediate ?? false;
+			const execution = options.execution ?? 'afterSet';
 
-		value = newValue;
+			if (immediate) {
+				const watcherData = listener({ newValue: value });
+				if (typeof watcherData !== 'undefined' && execution === 'beforeSet' && (watcherData.settable ?? true)) {
+					value = watcherData.value;
+				}
+			}
 
-		for (const watcher of watchers.afterSet) {
-			watcher({ newValue, oldValue });
-		}
-	}
-
-	signal.watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}) => {
-		const immediate = options.immediate ?? false;
-		const execution = options.execution ?? 'afterSet';
-
-		if (immediate) {
-			const watcherData = listener({ newValue: value });
-			if (typeof watcherData !== 'undefined' && execution === 'beforeSet' && (watcherData.settable ?? true)) {
-				value = watcherData.value;
+			watchers[execution].add(listener);
+			return () => {
+				watchers[execution].delete(listener);
 			}
 		}
 
-		watchers[execution].add(listener);
-		return () => watchers[execution].delete(listener);
+		this.toString = (): string => String(get());
+		this.toJSON = get;
+		this.valueOf = get;
+
+		return new Proxy(this, {
+			apply: get
+		})
 	}
-
-	signal.toString = (): string => String(get());
-
-	signal.toJSON = (): T => get();
-
-	signal.valueOf = (): T => get();
-
-	return signal
 }
 
-export const signal = <T>(defaultValue: T): SignalInstance<T> => new (Signal as any)(defaultValue);
+export const signal = <T>(defaultValue: T): Signal<T> => new Signal(defaultValue);

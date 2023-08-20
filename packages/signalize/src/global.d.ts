@@ -1,8 +1,7 @@
-import type signalize from '.';
+import type { Signalize } from '.';
 
 declare global {
 	interface Window {
-		Signalize: typeof signalize
-		$: typeof signalize
+		Signalize: Signalize
 	}
 }

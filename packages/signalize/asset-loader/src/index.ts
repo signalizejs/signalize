@@ -1,5 +1,5 @@
 import type { CustomEventListener } from 'signalizejs';
-import { $config, on, onDomReady, dispatch, selectAll } from 'signalizejs';
+import { $config, on, onDomReady, dispatch, selectAll, select } from 'signalizejs';
 
 type AttributeAssetConfig = Record<string, string | string[] | HTMLScriptElement | HTMLLinkElement>
 const assetLoaderEventName = 'asset-loader';
@@ -16,7 +16,7 @@ export const load = async (assets: Array<HTMLLinkElement | HTMLScriptElement>): 
 		const tagName = isAsset ? 'script' : 'link';
 		const attributeName = isAsset ? 'src' : 'href';
 
-		if (document.querySelector(`${tagName}[${attributeName}="${asset[attributeName]}"]`) !== null) {
+		if (select(`${tagName}[${attributeName}="${asset[attributeName]}"]`) !== null) {
 			continue;
 		}
 
