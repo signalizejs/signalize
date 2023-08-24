@@ -1,4 +1,4 @@
-export const mergeObjects = <T extends object>(...objects: T[]): T => {
+const mergeObjects = <T extends object>(...objects: T[]): T => {
 	const mergedObject: T = {} as T;
 
 	for (const objectToMerge of objects) {
@@ -21,4 +21,6 @@ export const mergeObjects = <T extends object>(...objects: T[]): T => {
 	}
 
 	return mergedObject;
-};
+}
+
+export default mergeObjects;

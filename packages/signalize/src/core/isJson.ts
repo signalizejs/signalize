@@ -1,4 +1,4 @@
-export const isJson = (content: any): boolean => {
+export default (content: any): boolean => {
 	try {
 		JSON.parse(content);
 	} catch (e) {

@@ -16,24 +16,28 @@
 			visibility: hidden;
 		}
 	</style>
-	<div $count="5000" cloak>
+	<div $text="" $count="10" cloak>
+		<input :value="text">
 		<button @click="count.set(count() + 1);console.log(count())">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
 		<ul>
 			<template :for="i in [...Array(count())]">
 				<div>
 					<template :if="i % 2 !== 0">
-						<span :text="'Odd' + i"></span>
+						<span :text="'Odd' + i + ' - ' + text"></span>
 					</template>
 				</div>
 				<div>
 					<template :if="i % 2 === 0">
-						<span :text="'Even' + i"></span>
+						<span :text="'Even' + i + ' - ' + text"></span>
 					</template>
 				</div>
 			</template>
 		</ul>
 	</div>
+	<!-- <template :for="[name, surname] of Object.entries({name: 'vladimir', surname: 'Macháček'})">
+		<li :text="name + ' ' + surname"></li>
+	</template> -->
 
 	<!-- <div $items="[1,2]">
 		<template :for="i of items">
@@ -86,7 +90,9 @@
 	</div> -->
 
 	<script type="module">
-		import { signal, on, bind, ref, directive } from 'signalizejs';
+		import Signalize from 'signalizejs';
+
+		const signalize = new Signalize();
 	</script>
 
 </body>

@@ -1,4 +1,4 @@
-import Signalize, { $config, on, onDomReady, dispatch, isJson, select } from 'signalizejs';
+import Signalize, { config, on, onDomReady, dispatch, isJson, select } from 'signalizejs';
 import { ajax } from 'signalizejs/ajax';
 import { redraw } from 'signalizejs/snippets';
 
@@ -224,10 +224,10 @@ const onClick = async (event: CustomEvent): Promise<void> => {
 Signalize.visit = visit;
 
 onDomReady(() => {
-	spaUrlAttribute = `${$config.attributesPrefix}${spaUrlAttribute}`;
-	spaIgnoreAttribute = `${$config.attributesPrefix}${spaIgnoreAttribute}`;
-	spaStateActionAttribute = `${$config.attributesPrefix}${spaStateActionAttribute}`;
-	spaMetaCacheNameAttribute = `${$config.attributesPrefix}${spaMetaCacheNameAttribute}`;
+	spaUrlAttribute = `${config.attributesPrefix}${spaUrlAttribute}`;
+	spaIgnoreAttribute = `${config.attributesPrefix}${spaIgnoreAttribute}`;
+	spaStateActionAttribute = `${config.attributesPrefix}${spaStateActionAttribute}`;
+	spaMetaCacheNameAttribute = `${config.attributesPrefix}${spaMetaCacheNameAttribute}`;
 
 	on('click', `a[href], [${spaUrlAttribute}]`, onClick);
 

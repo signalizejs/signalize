@@ -1,5 +1,5 @@
 import type { CustomEventListener } from 'signalizejs';
-import { $config, on, onDomReady, dispatch, selectAll, select } from 'signalizejs';
+import { config, on, onDomReady, dispatch, selectAll, select } from 'signalizejs';
 
 type AttributeAssetConfig = Record<string, string | string[] | HTMLScriptElement | HTMLLinkElement>
 const assetLoaderEventName = 'asset-loader';
@@ -109,7 +109,7 @@ const attachListeners = (element: HTMLElement): void => {
 }
 
 onDomReady(() => {
-	assetLoaderAttribute = `${$config.attributesPrefix}asset-loader`;
+	assetLoaderAttribute = `${config.attributesPrefix}asset-loader`;
 	assetLoaderInitedAttribute = `${assetLoaderAttribute}-inited`;
 	assetLoaderAssetEventAttribute = `${assetLoaderAttribute}-trigger-event`;
 

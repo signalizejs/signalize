@@ -17,20 +17,6 @@ interface SignalOptions {
 	equals: boolean
 }
 
-interface SignalInstance<T> {
-	(): T
-	set: (newValue: T, options?: SignalOptions) => void
-	watch: (
-		listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>,
-		options?: SignalWatcherOptions
-	) => () => void
-	toString: () => string
-	toJSON: () => T
-	valueOf: () => T
-}
-
-export const $signals = {};
-
 export class Signal<T> extends Function {
 	constructor (defaultValue: T) {
 		super()
@@ -77,7 +63,7 @@ export class Signal<T> extends Function {
 			value = newValue;
 
 			for (const watcher of watchers.afterSet) {
-				watcher({ newValue, oldValue });
+				setTimeout(() => watcher ({ newValue, oldValue }), 0)
 			}
 		}
 

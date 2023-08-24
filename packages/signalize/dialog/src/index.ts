@@ -1,5 +1,5 @@
 import type { CustomEventListener } from 'signalizejs';
-import { $config, on, dispatch, onDomReady, select } from 'signalizejs';
+import { config, on, dispatch, onDomReady, select } from 'signalizejs';
 
 let dialogAttribute = 'dialog';
 let dialogModelessAttribute = `${dialogAttribute}-modeless`;
@@ -51,10 +51,10 @@ const openDialogByUrlHash = (): void => {
 }
 
 onDomReady(() => {
-	dialogAttribute = `${$config.attributesPrefix}${dialogAttribute}`;
-	dialogModelessAttribute = `${$config.attributesPrefix}${dialogModelessAttribute}`;
-	dialogCloseButtonAttribute = `${$config.attributesPrefix}${dialogCloseButtonAttribute}`;
-	dialogOpenButtonAttribute = `${$config.attributesPrefix}${dialogOpenButtonAttribute}-open`;
+	dialogAttribute = `${config.attributesPrefix}${dialogAttribute}`;
+	dialogModelessAttribute = `${config.attributesPrefix}${dialogModelessAttribute}`;
+	dialogCloseButtonAttribute = `${config.attributesPrefix}${dialogCloseButtonAttribute}`;
+	dialogOpenButtonAttribute = `${config.attributesPrefix}${dialogOpenButtonAttribute}-open`;
 
 	on('click', `[${dialogCloseButtonAttribute}]`, ({ target }) => {
 		const dialog = target.getAttribute[`${dialogCloseButtonAttribute}`] ?? target.closest(`[${dialogAttribute}]`);

@@ -115,5 +115,5 @@ window.onerror = (message: Event | string, file?: string, lineNumber?: number, c
 }
 
 onDomReady(() => {
-	enabledLevels = $config.logger?.enabledLevels ?? enabledLevels;
+	enabledLevels = config.logger?.enabledLevels ?? enabledLevels;
 });
