@@ -359,10 +359,8 @@ export default (signalize: Signalize): void => {
 								return keyMatches;
 							});
 
-							console.log('tu');
 							if (existingItem) {
 								if (existingItemIndex > i && currentState[i] !== undefined) {
-									console.log('Smaller index', root.outerHTML);
 									if (i === 0) {
 										const tmp = currentState[i];
 										currentState[i].before(existingItem);
@@ -378,7 +376,6 @@ export default (signalize: Signalize): void => {
 							} else if (i >= currentState.length) {
 								lastInsertPoint.after(root);
 								lastInsertPoint = root;
-								console.log('here');
 								for (const child of root.children) {
 									scope(child, ({ data }) => {
 										data = scope(root).data()
@@ -389,7 +386,6 @@ export default (signalize: Signalize): void => {
 							} else {
 								currentState[i].before(root);
 								processDirectives({ root: root });
-								console.log('fu');
 							}
 
 						} else if (currentState.length > 0 && i < currentState.length) {
@@ -413,7 +409,6 @@ export default (signalize: Signalize): void => {
 								processDirectives({ root: child });
 							}
 						}
-						console.log(currentState, currentState.length, i)
 						i++;
 					}
 
