@@ -17,12 +17,12 @@
 		}
 	</style>
 
-	<div $text="" $count="5" cloak>
+	<!-- <div $text="" $count="5" cloak>
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
 		<ul>
-			<template :for="i in [...Array(count())]">
+			<template :for="i of count()">
 				<div>
 					<template :if="i % 2 !== 0">
 						<span :text="'Odd' + i + ' - ' + text"></span>
@@ -35,7 +35,31 @@
 				</div>
 			</template>
 		</ul>
-	</div>
+	</div> -->
+
+	<form $items="{}" $text="" @submit="
+		event.preventDefault();
+		items.set({...items(), [text()]: text()})
+		text.set('');
+	">
+		<input :value="text">
+		<ul>
+			<template :for="item of Object.keys(items()).sort()">
+				<li :key="item.replace(/s/g, '')">
+					<a
+						role="button"
+						@click="
+							const newItems = items();
+							delete newItems[item];
+							items.set(newItems);
+						"
+					>
+						<span :text="item"></span> -	X
+					</a>
+				</li>
+			</template>
+		</ul>
+	</form>
 
 	<!-- <template :for="[name, surname] of Object.entries({name: 'vladimir', surname: 'Macháček'})">
 		<li :text="name + ' ' + surname"></li>

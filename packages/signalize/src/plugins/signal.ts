@@ -22,10 +22,6 @@ interface SignalWatcherArguments<T> {
 	oldValue?: T
 }
 
-interface SignalOptions {
-	equals: boolean
-}
-
 class Signal<T = any> extends Function {
 	constructor (defaultValue: T) {
 		super()
@@ -46,10 +42,10 @@ class Signal<T = any> extends Function {
 			return value;
 		}
 
-		this.set = (newValue: T, options?: SignalOptions): void => {
+		this.set = (newValue: T): void => {
 			const oldValue = value;
 
-			if (newValue === oldValue && (options?.equals ?? true)) {
+			if (['string', 'number'].includes(typeof newValue) && newValue === oldValue) {
 				return;
 			}
 

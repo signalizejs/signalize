@@ -340,12 +340,7 @@ export default (signalize: Signalize): void => {
 						}
 					}
 
-					while (currentState.length > fragments.length) {
-						const item = currentState.pop();
-						scope(item).cleanup();
-						item.remove();
-					}
-
+					const fragmentsLength = fragments.length;
 					while (fragments.length > 0) {
 						const root = fragments.shift();
 						scope(root, (rootScope) => {
@@ -361,9 +356,42 @@ export default (signalize: Signalize): void => {
 								if (keyMatches) {
 									existingItemIndex = index;
 								}
-								return true;
+								return keyMatches;
 							});
-							// Todo přesunout položku a její potomky v indexech
+
+							console.log('tu');
+							if (existingItem) {
+								if (existingItemIndex > i && currentState[i] !== undefined) {
+									console.log('Smaller index', root.outerHTML);
+									if (i === 0) {
+										const tmp = currentState[i];
+										currentState[i].before(existingItem);
+										currentState[i] = existingItem;
+										currentState[existingItemIndex] = tmp;
+									} else {
+										const tmp = currentState[i];
+										currentState[i - 1].after(existingItem);
+										currentState[i] = existingItem
+										currentState[existingItemIndex] = tmp;
+									}
+								}
+							} else if (i >= currentState.length) {
+								lastInsertPoint.after(root);
+								lastInsertPoint = root;
+								console.log('here');
+								for (const child of root.children) {
+									scope(child, ({ data }) => {
+										data = scope(root).data()
+									});
+
+									processDirectives({ root: child });
+								}
+							} else {
+								currentState[i].before(root);
+								processDirectives({ root: root });
+								console.log('fu');
+							}
+
 						} else if (currentState.length > 0 && i < currentState.length) {
 							const fragmentScope = scope(currentState[i]);
 
@@ -371,14 +399,12 @@ export default (signalize: Signalize): void => {
 								fragmentScope.data[key] = value;
 							}
 
-							//scope.data = scope(root).data;
 							reinitDirectives(currentState[i]);
 
 							lastInsertPoint = currentState[i];
 						} else if (currentState.length === 0 || i >= currentState.length) {
 							lastInsertPoint.after(root);
 							lastInsertPoint = root;
-
 							for (const child of root.children) {
 								scope(child, ({ data }) => {
 									data = scope(root).data()
@@ -387,8 +413,27 @@ export default (signalize: Signalize): void => {
 								processDirectives({ root: child });
 							}
 						}
-
+						console.log(currentState, currentState.length, i)
 						i++;
+					}
+
+					nextElementSibling = element.nextElementSibling;
+					let removeId = 0;
+
+					while (nextElementSibling !== null) {
+						if (scope(nextElementSibling)?.template !== element) {
+							break;
+						}
+
+						const nextElementToRemove = nextElementSibling.nextElementSibling;
+
+						if (removeId >= fragmentsLength) {
+							scope(nextElementSibling).cleanup();
+							nextElementSibling.remove();
+						}
+
+						nextElementSibling = nextElementToRemove;
+						removeId++;
 					}
 
 					for (const unwatch of unwatchSignalCallbacks) {
