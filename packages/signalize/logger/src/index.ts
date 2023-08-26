@@ -17,6 +17,10 @@ interface CompleteLogData extends Log {
 
 type Levels = 'log' | 'error' | 'warn';
 
+export default (signalize: Signalize) => {
+
+}
+
 let enabledLevels: Levels[] = ['error'];
 
 const originalConsoleError = console.error;

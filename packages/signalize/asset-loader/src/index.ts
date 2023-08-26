@@ -2,6 +2,11 @@ import type { CustomEventListener } from 'signalizejs';
 import { config, on, onDomReady, dispatch, selectAll, select } from 'signalizejs';
 
 type AttributeAssetConfig = Record<string, string | string[] | HTMLScriptElement | HTMLLinkElement>
+
+export default (signalize: Signalize) => {
+
+}
+
 const assetLoaderEventName = 'asset-loader';
 let assetLoaderAttribute: string;
 let assetLoaderInitedAttribute: string;

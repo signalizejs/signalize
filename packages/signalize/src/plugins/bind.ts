@@ -1,33 +1,41 @@
-const reactiveInputAttributes = ['value', 'checked'];
-const numericInputAttributes = ['range', 'number'];
-const textContentAttributes = ['value', 'innerHTML', 'textContent', 'innerText'];
-const booleanAttributes = [
-	'autofocus', 'autoplay',
-	'checked', 'controls',
-	'default', 'defer', 'disabled',
-	'formnovalidate',
-	'hidden',
-	'ismap',
-	'loop',
-	'multiple', 'muted',
-	'novalidate',
-	'open',
-	'readonly', 'required', 'reversed',
-	'scoped', 'seamless', 'selected',
-	'typemustmatch'
-];
+import type Signalize from '..'
 
-const attributesAliases = {
-	text: 'textContent',
-	html: 'innerHTML'
+declare module '..' {
+	interface Signalize {
+		bind: (target: EventTarget, attributes: Record<string, any>) => void
+	}
 }
 
 export default (signalize: Signalize): void => {
-	const { normalizeTargets, getScope, initScope, Signal, on, off } = signalize;
+	const reactiveInputAttributes = ['value', 'checked'];
+	const numericInputAttributes = ['range', 'number'];
+	const textContentAttributes = ['value', 'innerHTML', 'textContent', 'innerText'];
+	const booleanAttributes = [
+		'autofocus', 'autoplay',
+		'checked', 'controls',
+		'default', 'defer', 'disabled',
+		'formnovalidate',
+		'hidden',
+		'ismap',
+		'loop',
+		'multiple', 'muted',
+		'novalidate',
+		'open',
+		'readonly', 'required', 'reversed',
+		'scoped', 'seamless', 'selected',
+		'typemustmatch'
+	];
+
+	const attributesAliases = {
+		text: 'textContent',
+		html: 'innerHTML'
+	}
+
+	const { normalizeTargets, scope, initScope, Signal, on, off } = signalize;
 	signalize.bind = (target: EventTarget, attributes: Record<string, any>): void => {
 		for (const element of normalizeTargets(target, true) as HTMLElement[]) {
 			const unwatchSignalCallbacks = [];
-			const elementScope = getScope(element) ?? initScope(element);
+			const elementScope = scope(element) ?? initScope(element);
 
 			for (let [attr, attrOptions] of Object.entries(attributes)) {
 				if (attrOptions.length === 1) {
@@ -112,13 +120,13 @@ export default (signalize: Signalize): void => {
 					};
 					on('input', element, inputListener);
 
-					elementScope.cleanups.push(() => {
+					elementScope.cleanup(() => {
 						off('input', element, inputListener);
 					})
 				}
 			}
 
-			elementScope.cleanups.push(() => {
+			elementScope.cleanup(() => {
 				for (const unwatch of unwatchSignalCallbacks) {
 					unwatch();
 				}

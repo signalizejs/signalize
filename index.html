@@ -16,9 +16,10 @@
 			visibility: hidden;
 		}
 	</style>
-	<div $text="" $count="10" cloak>
+
+	<div $text="" $count="5" cloak>
 		<input :value="text">
-		<button @click="count.set(count() + 1);console.log(count())">Přidej<span :text="count"></span></button>
+		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
 		<ul>
 			<template :for="i in [...Array(count())]">
@@ -29,12 +30,13 @@
 				</div>
 				<div>
 					<template :if="i % 2 === 0">
-						<span :text="'Even' + i + ' - ' + text"></span>
+						<span :text="'Even' + i + ' - ' + text" :style="text().length > 2 ? 'color:red' : 'color:blue'"></span>
 					</template>
 				</div>
 			</template>
 		</ul>
 	</div>
+
 	<!-- <template :for="[name, surname] of Object.entries({name: 'vladimir', surname: 'Macháček'})">
 		<li :text="name + ' ' + surname"></li>
 	</template> -->
@@ -63,26 +65,14 @@
 		</template>
 	</div>
  -->
-	<!-- <div $count="2">
-		<button @click="count.set(1)">1</button>
-		<button @click="count.set(2)">2</button>
-
-		<template :if="count() === 2">
-			<div>Rendered - 2</div>
-		</template>
-		<template :if="count() === 1">
-			<div>Rendered - 1</div>
-		</template>
-	</div> -->
-
-	<!-- 	<template :for="i in [1,2]">
+	<!-- <template :for="i in 1100">
 		<div :text="i"></div>
 	</template> -->
-
-	<!-- <div $text="">
-		<input :value="text"><br>
+<!-- 	<button $count="0" @click="count.set(count() + 1)">Count <span :text="count"></span></button>
+ -->
+	<!-- <div $text="'Longer'">
 		<template :if="text().length < 2">
-			<span :text="text"></span>
+			<span>Shorter</span>
 		</template>
 		<template :if="text().length >= 2">
 			<span>Meh</span>
@@ -91,7 +81,6 @@
 
 	<script type="module">
 		import Signalize from 'signalizejs';
-
 		const signalize = new Signalize();
 	</script>
 

@@ -1,5 +1,12 @@
 import type Signalize from '..';
 
+declare module '..' {
+	interface Signalize {
+		select: <T extends HTMLElement>(selector: string, root: string | HTMLElement) => T | null
+		selectAll: <T extends HTMLElement>(selector: string, root: string | HTMLElement) => NodeListOf<T>
+	}
+}
+
 export default (signalize: Signalize): void => {
 	const { config } = signalize.config;
 

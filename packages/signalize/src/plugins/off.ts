@@ -1,5 +1,11 @@
 import type Signalize from '..';
 
+declare module '..' {
+	interface Signalize {
+		off: (type: string, element, listener: EventListenerOrEventListenerObject, options?: Record<string, any>) => void
+	}
+}
+
 export default (signalize: Signalize): void => {
 	signalize.off = (type: string, element, listener: EventListenerOrEventListenerObject, options = {}): void => {
 		const events = type.split(',');

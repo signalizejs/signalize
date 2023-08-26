@@ -1,4 +1,4 @@
-import { dispatch } from 'signalizejs';
+import type Signalize from 'signalizejs';
 
 export interface AjaxReturn {
 	response: Response | null
@@ -10,54 +10,59 @@ export interface AjaxOptions extends RequestInit {
 	data?: Record<string, any>
 }
 
-export const ajax = async (options: AjaxOptions): Promise<AjaxReturn> => {
-	let response: Response | null = null;
-	let error: Error | null = null
+export default (signalize: Signalize) => {
+	const { dispatch } = signalize;
 
-	try {
-		const dataType = typeof options.data;
+	signalize.ajax = async (options: AjaxOptions): Promise<AjaxReturn> => {
+		let response: Response | null = null;
+		let error: Error | null = null
 
-		if (dataType !== 'undefined') {
-			if (typeof options.body === 'undefined') {
-				options.body = ['string', 'number'].includes(dataType) ? options.data : JSON.parse(options.data);
+		try {
+			const dataType = typeof options.data;
+
+			if (dataType !== 'undefined') {
+				if (typeof options.body === 'undefined') {
+					options.body = ['string', 'number'].includes(dataType) ? options.data : JSON.parse(options.data);
+				}
+
+				delete options.data;
 			}
 
-			delete options.data;
+			if (typeof options.method === 'undefined' && typeof options.body !== 'undefined') {
+				options.method = 'POST';
+			}
+
+			const url = options.url;
+
+			delete options.url;
+
+			const request = fetch(url, options);
+
+			dispatch('ajax:request:start', { input, init, request });
+
+			response = await request;
+
+			if (!response.ok) {
+				throw new Error('Ajax error', {
+					cause: {
+						response
+					}
+				})
+			}
+
+			dispatch('ajax:request:success', { input, init, request });
+		} catch (requestError: any) {
+			response = requestError.cause.response ?? undefined;
+			error = requestError
+			dispatch('ajax:request:error', { input, init, response, error });
 		}
 
-		if (typeof options.method === 'undefined' && typeof options.body !== 'undefined') {
-			options.method = 'POST';
+		dispatch('ajax:request:end', { input, init, response, error });
+
+		return {
+			response,
+			error
 		}
-
-		const url = options.url;
-
-		delete options.url;
-
-		const request = fetch(url, options);
-
-		dispatch('ajax:request:start', { input, init, request });
-
-		response = await request;
-
-		if (!response.ok) {
-			throw new Error('Ajax error', {
-				cause: {
-					response
-				}
-			})
-		}
-
-		dispatch('ajax:request:success', { input, init, request });
-	} catch (requestError: any) {
-		response = requestError.cause.response ?? undefined;
-		error = requestError
-		dispatch('ajax:request:error', { input, init, response, error });
 	}
 
-	dispatch('ajax:request:end', { input, init, response, error });
-
-	return {
-		response,
-		error
-	}
 }

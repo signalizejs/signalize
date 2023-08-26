@@ -1,21 +1,26 @@
-// With dependencies
-import DomReadyPlugin from './core/domReady';
-import NormalizeTargetsPlugin from './core/normalizeTargets';
-import ObservePlugin from './core/observe';
-import BindPlugin from './core/bind';
-import DirectivePlugin from './core/directives';
-import OnPlugin from './core/on';
-import OfPlugin from './core/off';
-import RefPlugin from './core/ref';
-import ScopePlugin from './core/scope';
-import SelectPlugin from './core/select';
-// Without dependencies or stateless
-import AsyncFunction from './core/AsyncFunction'
-import dispatch from './core/dispatch'
-import html from './core/html'
-import isJson from './core/isJson'
-import mergeObjects from './core/mergeObjects'
-import { Signal, signal } from './core/signal'
+import AsyncFunctionPlugin from './plugins/AsyncFunction';
+import BindPlugin from './plugins/bind';
+import CallableClassPlugin from './plugins/CallableClass';
+import DirectivePlugin from './plugins/directives';
+import DispatchPlugin from './plugins/dispatch'
+import DomReadyPlugin from './plugins/domReady';
+import IsJsonPlugin from './plugins/isJson';
+import MergePlugin from './plugins/merge';
+import NormalizeTargetsPlugin from './plugins/normalizeTargets';
+import ObservePlugin from './plugins/observe';
+import OnPlugin from './plugins/on';
+import OfPlugin from './plugins/off';
+import ParseHtmlPlugin from './plugins/parseHTML'
+import RefPlugin from './plugins/ref';
+import ScopePlugin from './plugins/scope';
+import SelectPlugin from './plugins/select';
+import SignalPlugin from './plugins/signal';
+
+declare global {
+	interface Window {
+		Signalize: Signalize
+	}
+}
 
 export type Plugin<O> = (signalize: Signalize, options?: O) => void;
 
@@ -37,13 +42,19 @@ export class Signalize {
 	}
 
 	constructor (config?: Partial<Config>) {
-		this.config = mergeObjects(this.config, config ?? {});
+		this.use(MergePlugin);
+		this.config = this.merge(this.config, config ?? {}) as Config;
 
+		this.use(AsyncFunctionPlugin);
+		this.use(CallableClassPlugin);
+		this.use(IsJsonPlugin);
+		this.use(ParseHtmlPlugin);
 		this.use(DomReadyPlugin);
 		this.use(NormalizeTargetsPlugin);
+		this.use(DispatchPlugin);
 		this.use(OnPlugin);
+		this.use(SignalPlugin);
 		this.use(ScopePlugin);
-
 		this.use(ObservePlugin);
 		this.use(BindPlugin);
 		this.use(DirectivePlugin);
@@ -52,21 +63,14 @@ export class Signalize {
 		this.use(RefPlugin);
 		this.use(ScopePlugin);
 		this.use(SelectPlugin);
+		this.use(ParseHtmlPlugin);
 
 		this.observe(this.config.root);
 	}
 
-	use<O extends Record<string, any>>(plugin: Plugin<O>, options?: O): void {
+	use<O = Record<string, any>>(plugin: Plugin<O>, options?: O): void {
 		plugin(this, options);
 	}
-
-	AsyncFunction = AsyncFunction;
-	Signal = Signal;
-	dispatch = dispatch;
-	isJson = isJson;
-	html = html;
-	mergeObjects = mergeObjects;
-	signal = signal
 }
 
 export default Signalize;

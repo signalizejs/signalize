@@ -1,6 +1,10 @@
 import type { CustomEventListener } from 'signalizejs';
 import { config, on, dispatch, onDomReady, select } from 'signalizejs';
 
+export default (signalize: Signalize) => {
+
+}
+
 let dialogAttribute = 'dialog';
 let dialogModelessAttribute = `${dialogAttribute}-modeless`;
 let dialogCloseButtonAttribute = `${dialogAttribute}-close`;

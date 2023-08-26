@@ -1,4 +1,11 @@
-import type Signalize from "..";
+import type Signalize from '..';
+
+declare module '..' {
+	interface Signalize {
+		ref: <T extends HTMLElement>(id: string, root: HTMLElement) => T | null
+		refs: <T extends HTMLElement>(id: string, root: HTMLElement) => T[]
+	}
+}
 
 let refAttribute = 'ref';
 

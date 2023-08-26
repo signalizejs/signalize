@@ -4,6 +4,10 @@ type HypertextChild = string | number | Element | Node | typeof Signal<any>;
 
 type HypertextChildAttrs = Record<string, string | typeof Signal>;
 
+export default (signalize: Signalize) => {
+
+}
+
 const renderDom = (
 	tagName: string,
 	attrs: Record<string, any>,

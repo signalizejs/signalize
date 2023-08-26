@@ -1,3 +1,12 @@
+import type Signalize from '..';
+
+declare module '..' {
+	interface Signalize {
+		Signal: Signal
+		signal: <T>(defaultValue: T) => Signal<T>
+	}
+}
+
 type BeforeSetSignalWatcher<T> = (options: SignalWatcherArguments<T>) => { value: T, settable?: boolean } | undefined
 type AfterSetSignalWatcher<T> = (options: SignalWatcherArguments<T>) => void;
 
@@ -17,7 +26,7 @@ interface SignalOptions {
 	equals: boolean
 }
 
-export class Signal<T> extends Function {
+class Signal<T = any> extends Function {
 	constructor (defaultValue: T) {
 		super()
 
@@ -63,7 +72,7 @@ export class Signal<T> extends Function {
 			value = newValue;
 
 			for (const watcher of watchers.afterSet) {
-				setTimeout(() => watcher ({ newValue, oldValue }), 0)
+				setTimeout(() => watcher({ newValue, oldValue }), 0)
 			}
 		}
 
@@ -94,4 +103,7 @@ export class Signal<T> extends Function {
 	}
 }
 
-export const signal = <T>(defaultValue: T): Signal<T> => new Signal(defaultValue);
+export default (signalize: Signalize): void => {
+	signalize.Signal = Signal;
+	signalize.signal = <T>(defaultValue: T): Signal<T> => new Signal(defaultValue);
+}

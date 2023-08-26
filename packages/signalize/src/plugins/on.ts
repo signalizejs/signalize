@@ -1,3 +1,16 @@
+import type Signalize from '..';
+
+declare module '..' {
+	interface Signalize {
+		on: (
+			event: keyof CustomEventListeners,
+			targetOrCallback: EventTarget | CallableFunction,
+			callbackOrOptions?: CallableFunction | AddEventListenerOptions,
+			options?: AddEventListenerOptions
+		) => void
+	}
+}
+
 export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window;
 
 export type CustomEventListener = (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => void;

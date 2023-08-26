@@ -1,6 +1,4 @@
-import Signalize, { config, on, onDomReady, dispatch, isJson, select } from 'signalizejs';
-import { ajax } from 'signalizejs/ajax';
-import { redraw } from 'signalizejs/snippets';
+import type Signalize from 'signalizejs';
 
 type StateAction = 'push' | 'replace';
 
@@ -11,6 +9,10 @@ interface VisitData {
 
 interface SpaDispatchEventData extends VisitData {
 	success?: boolean
+}
+
+export default (signalize: Signalize) => {
+
 }
 
 let spaUrlAttribute = `spa-url`;

@@ -1,5 +1,12 @@
 import type Signalize from '..';
 
+declare module '..' {
+	interface Signalize {
+		onDomReady: (callback: CallableFunction) => void
+		isDomReady: () => boolean
+	}
+}
+
 export default (signalize: Signalize): void => {
 	const { off } = signalize;
 	let domReadyListeners: CallableFunction[] = [];
@@ -23,8 +30,6 @@ export default (signalize: Signalize): void => {
 		}
 	}
 
-	signalize.onDomReady = onDomReady;
-
 	if (windowIsDefined && documentIsDefined) {
 		if (isDomReady()) {
 			callOnDomReadyListeners()
@@ -37,4 +42,6 @@ export default (signalize: Signalize): void => {
 			document.addEventListener('DOMContentLoaded', domContentLoadedListener)
 		}
 	}
+
+	signalize.onDomReady = onDomReady;
 }

@@ -1,5 +1,11 @@
 import type Signalize from '..';
 
+declare module '..' {
+	interface Signalize {
+		observe: (root: HTMLElement | Document | DocumentFragment, callback?: ObserveCallback) => void
+	}
+}
+
 type ObserveCallback = (mutationRecords: MutationRecord[]) => void;
 
 export default (signalize: Signalize): void => {
@@ -25,6 +31,6 @@ export default (signalize: Signalize): void => {
 			}
 		}
 
-		new MutationObserver(callback).observe(document, { childList: true, subtree: true, attributes: true });
+		new MutationObserver(callback).observe(root, { childList: true, subtree: true, attributes: true });
 	}
 }

@@ -1,4 +1,10 @@
-import type Signalize from "..";
+import type Signalize from '..';
+
+declare module '..' {
+	interface Signalize {
+		normalizeTargets: (target: EventTarget, normalizeDocument: boolean) => ElementsType
+	}
+}
 
 export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window;
 

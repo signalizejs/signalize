@@ -1,5 +1,9 @@
 import Signalize, { createHtml, dispatch, select } from 'signalizejs';
 
+export default (signalize: Signalize) => {
+
+}
+
 const snippetAttribute = 'snippet';
 const snippetRedrawedAttribute = 'snippet-redrawed';
 const snippetActionAttribute = 'snippet-action';
