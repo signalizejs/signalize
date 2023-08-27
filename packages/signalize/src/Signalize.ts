@@ -4,7 +4,6 @@ import CallableClassPlugin from './plugins/CallableClass';
 import DirectivePlugin from './plugins/directives';
 import DispatchPlugin from './plugins/dispatch'
 import DomReadyPlugin from './plugins/domReady';
-import IsJsonPlugin from './plugins/isJson';
 import MergePlugin from './plugins/merge';
 import NormalizeTargetsPlugin from './plugins/normalizeTargets';
 import ObservePlugin from './plugins/observe';
@@ -16,6 +15,23 @@ import ScopePlugin from './plugins/scope';
 import SelectPlugin from './plugins/select';
 import SignalPlugin from './plugins/signal';
 
+export * from './plugins/AsyncFunction';
+export * from './plugins/bind';
+export * from './plugins/CallableClass';
+export * from './plugins/directives';
+export * from './plugins/dispatch'
+export * from './plugins/domReady';
+export * from './plugins/merge';
+export * from './plugins/normalizeTargets';
+export * from './plugins/observe';
+export * from './plugins/on';
+export * from './plugins/off';
+export * from './plugins/parseHTML'
+export * from './plugins/ref';
+export * from './plugins/scope';
+export * from './plugins/select';
+export * from './plugins/signal';
+
 declare global {
 	interface Window {
 		Signalize: Signalize
@@ -24,7 +40,7 @@ declare global {
 
 export type Plugin<O> = (signalize: Signalize, options?: O) => void;
 
-export interface Config extends Record<string, any> {
+export interface SignalizeConfig extends Record<string, any> {
 	root: HTMLElement | Document | DocumentFragment
 	exposeSignalize: boolean
 	typeBasedSignals: boolean
@@ -33,7 +49,7 @@ export interface Config extends Record<string, any> {
 }
 
 export class Signalize {
-	config: Config = {
+	config: SignalizeConfig = {
 		root: document,
 		exposeSignalize: true,
 		typeBasedSignals: true,
@@ -41,13 +57,12 @@ export class Signalize {
 		directivesSeparator: ':'
 	}
 
-	constructor (config?: Partial<Config>) {
+	constructor (config?: Partial<SignalizeConfig>) {
 		this.use(MergePlugin);
-		this.config = this.merge(this.config, config ?? {}) as Config;
+		this.config = this.merge(this.config, config ?? {}) as SignalizeConfig;
 
 		this.use(AsyncFunctionPlugin);
 		this.use(CallableClassPlugin);
-		this.use(IsJsonPlugin);
 		this.use(ParseHtmlPlugin);
 		this.use(DomReadyPlugin);
 		this.use(NormalizeTargetsPlugin);

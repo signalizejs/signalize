@@ -1,4 +1,17 @@
-import type Signalize from 'signalizejs';
+import type { Signalize, CustomEventListener } from 'signalizejs';
+
+declare module 'signalizejs' {
+	interface Signalize {
+		ajax: (options: AjaxOptions) => Promise<AjaxReturn>
+	}
+
+	interface CustomEventListeners {
+		'ajax:request:start': CustomEventListener
+		'ajax:request:success': CustomEventListener
+		'ajax:request:error': CustomEventListener
+		'ajax:request:end': CustomEventListener
+	}
+}
 
 export interface AjaxReturn {
 	response: Response | null
@@ -10,7 +23,7 @@ export interface AjaxOptions extends RequestInit {
 	data?: Record<string, any>
 }
 
-export default (signalize: Signalize) => {
+export default (signalize: Signalize): void => {
 	const { dispatch } = signalize;
 
 	signalize.ajax = async (options: AjaxOptions): Promise<AjaxReturn> => {
@@ -34,11 +47,9 @@ export default (signalize: Signalize) => {
 
 			const url = options.url;
 
-			delete options.url;
-
 			const request = fetch(url, options);
 
-			dispatch('ajax:request:start', { input, init, request });
+			dispatch('ajax:request:start', { options, request });
 
 			response = await request;
 
@@ -50,14 +61,14 @@ export default (signalize: Signalize) => {
 				})
 			}
 
-			dispatch('ajax:request:success', { input, init, request });
+			dispatch('ajax:request:success', { options, request });
 		} catch (requestError: any) {
 			response = requestError.cause.response ?? undefined;
 			error = requestError
-			dispatch('ajax:request:error', { input, init, response, error });
+			dispatch('ajax:request:error', { options, response, error });
 		}
 
-		dispatch('ajax:request:end', { input, init, response, error });
+		dispatch('ajax:request:end', { options, response, error });
 
 		return {
 			response,

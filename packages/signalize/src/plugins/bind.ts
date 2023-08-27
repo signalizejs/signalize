@@ -7,6 +7,8 @@ declare module '..' {
 }
 
 export default (signalize: Signalize): void => {
+	const { normalizeTargets, scope, Signal, on, off } = signalize;
+
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
 	const textContentAttributes = ['value', 'innerHTML', 'textContent', 'innerText'];
@@ -25,17 +27,15 @@ export default (signalize: Signalize): void => {
 		'scoped', 'seamless', 'selected',
 		'typemustmatch'
 	];
-
 	const attributesAliases = {
 		text: 'textContent',
 		html: 'innerHTML'
 	}
 
-	const { normalizeTargets, scope, initScope, Signal, on, off } = signalize;
-	signalize.bind = (target: EventTarget, attributes: Record<string, any>): void => {
+	const bind = (target: EventTarget, attributes: Record<string, any>): void => {
 		for (const element of normalizeTargets(target, true) as HTMLElement[]) {
 			const unwatchSignalCallbacks = [];
-			const elementScope = scope(element) ?? initScope(element);
+			const elementScope = scope(element);
 
 			for (let [attr, attrOptions] of Object.entries(attributes)) {
 				if (attrOptions.length === 1) {
@@ -133,4 +133,6 @@ export default (signalize: Signalize): void => {
 			})
 		}
 	}
+
+	signalize.bind = bind;
 }

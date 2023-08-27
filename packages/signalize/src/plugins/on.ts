@@ -15,13 +15,9 @@ export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTM
 
 export type CustomEventListener = (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => void;
 
-interface CustomEventListeners extends HTMLElementEventMap {
+export interface CustomEventListeners extends HTMLElementEventMap {
 	clickOutside: CustomEventListener
 	remove: CustomEventListener
-	'directive:beforeProcess': CustomEventListener
-	'dom-mutation': CustomEventListener
-	'dom-mutation:node:added': CustomEventListener
-	'dom-mutation:node:removed': CustomEventListener
 }
 
 export default (signalize: Signalize): void => {

@@ -2,7 +2,7 @@ import type Signalize from '..';
 
 declare module '..' {
 	interface Signalize {
-		parseHTML: (html: string, type: DOMParserSupportedType) => Document
+		parseHTML: (html: string, type?: DOMParserSupportedType) => Document
 	}
 }
 

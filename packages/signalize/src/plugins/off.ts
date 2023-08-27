@@ -2,7 +2,7 @@ import type Signalize from '..';
 
 declare module '..' {
 	interface Signalize {
-		off: (type: string, element, listener: EventListenerOrEventListenerObject, options?: Record<string, any>) => void
+		off: (type: string, element: HTMLElement | Document, listener: EventListenerOrEventListenerObject, options?: Record<string, any>) => void
 	}
 }
 

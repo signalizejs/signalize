@@ -72,8 +72,8 @@
 		"./package.json": "./package.json"
 	},
 	"main": "dist/signalize.cjs",
-	"jsdelivr": "dist/signalize.js",
-	"unpkg": "dist/signalize.js",
+	"jsdelivr": "dist/signalize.global.js",
+	"unpkg": "dist/signalize.global.js",
 	"module": "dist/signalize.js",
 	"types": "dist/index.d.ts",
 	"license": "MIT",

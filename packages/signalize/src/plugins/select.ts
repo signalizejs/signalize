@@ -2,13 +2,13 @@ import type Signalize from '..';
 
 declare module '..' {
 	interface Signalize {
-		select: <T extends HTMLElement>(selector: string, root: string | HTMLElement) => T | null
-		selectAll: <T extends HTMLElement>(selector: string, root: string | HTMLElement) => NodeListOf<T>
+		select: <T extends HTMLElement>(selector: string, root?: string | HTMLElement) => T | null
+		selectAll: <T extends HTMLElement>(selector: string, root?: string | HTMLElement) => NodeListOf<T>
 	}
 }
 
 export default (signalize: Signalize): void => {
-	const { config } = signalize.config;
+	const { config } = signalize;
 
 	signalize.select = <T extends HTMLElement>(selector: string, root: string | HTMLElement = config.root): T | null => {
 		if (typeof root === 'string') {
@@ -30,8 +30,6 @@ export default (signalize: Signalize): void => {
 				throw new Error(`Signalize: Root element "${root as string}" not found.`);
 			}
 		}
-
 		return root.querySelectorAll(selector);
 	}
-
 }

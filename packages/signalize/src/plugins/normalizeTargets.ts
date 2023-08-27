@@ -2,11 +2,11 @@ import type Signalize from '..';
 
 declare module '..' {
 	interface Signalize {
-		normalizeTargets: (target: EventTarget, normalizeDocument: boolean) => ElementsType
+		normalizeTargets: (target: EventTarget, normalizeDocument?: boolean) => ElementsType
 	}
 }
 
-export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window;
+export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window | Document;
 
 export type ElementsType = Array<HTMLElement | Document | Window>;
 

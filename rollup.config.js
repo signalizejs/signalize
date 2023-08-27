@@ -32,6 +32,23 @@ const packages = [
 			}
 		]
 	},
+	{
+		plugins: [
+			typescript({
+				declaration: true,
+				rootDir: `${signalizeDir}/src`,
+				declarationDir: `${signalizeDir}/dist`
+			})
+		],
+		input: `${signalizeDir}/src/index.global.ts`,
+		treeshake: false,
+		output: [
+			{
+				file: `${signalizeDir}/dist/signalize.global.js`,
+				format: 'iife'
+			}
+		]
+	},
 
 	// Ajax
 	{

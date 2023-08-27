@@ -1,15 +1,20 @@
 import type Signalize from '..'
+import type { CustomEventListener, Scope } from '..';
 
 declare module '..' {
 	interface Signalize {
 		directive: (name: string, data: Directive) => void
+	}
+
+	interface CustomEventListeners {
+		'directive:beforeProcess': CustomEventListener
 	}
 }
 
 type DirectiveCallback = (data: DirectiveCallbackData) => Promise<void> | void;
 
 interface DirectiveCallbackData extends Scope {
-	el: HTMLElement
+	element: HTMLElement
 	matches: RegExpMatchArray
 	attribute: Attr
 }
@@ -33,22 +38,20 @@ interface CreateFunctionOptions {
 export default (signalize: Signalize): void => {
 	const {
 		AsyncFunction,
-		Signal,
 		bind,
 		isDomReady,
-		on,
+		on, onDomReady,
 		dispatch,
-		onDomReady,
-		scope,
-		signal,
+		Signal, scope, signal,
 		config
 	} = signalize;
+
 	const directives: Record<string, Directive> = {};
-	let cloakAttribute = 'cloak';
-	let ignoreAttribute = 'ignore';
+	let cloakAttribute = `${config.attributesPrefix}cloak`;
+	let ignoreAttribute = `${config.attributesPrefix}ignore`;
 	let inited = false;
 
-	const processElement = async (element: HTMLElement, directivesToProcess): Promise<void> => {
+	const processElement = async (element: HTMLElement, directivesToProcess?: string[]): Promise<HTMLElement> => {
 		directivesToProcess = directivesToProcess ?? Object.keys(directives);
 
 		const directivesQueue = [...directivesToProcess];
@@ -58,7 +61,7 @@ export default (signalize: Signalize): void => {
 		}).join('|');
 		const re = new RegExp(directivesMatchersRegExpString);
 
-		const processDirective = async (directiveName: string, attribute, matches): Promise<void> => {
+		const processDirective = async (directiveName: string, attribute: Attr, matches: RegExpMatchArray): Promise<void> => {
 			const canBeProcessed = dispatch('directive:beforeProcess', {
 				directiveName,
 				attribute,
@@ -126,7 +129,7 @@ export default (signalize: Signalize): void => {
 
 			const elementsProcessingPromises = []
 
-			for (const children of root.children) {
+			for (const children of [...root.children]) {
 				elementsProcessingPromises.push(processElements(children));
 			}
 
@@ -196,6 +199,7 @@ export default (signalize: Signalize): void => {
 				}
 
 				scope(element).data[matches[1]] = signal(result);
+				console.log(scope(element));
 			}
 		});
 
@@ -258,16 +262,14 @@ export default (signalize: Signalize): void => {
 							...currentData
 						}
 					});
-					let stack = await stackFn({
-						...currentData
-					});
+					let stack = await stackFn({ ...currentData });
 
 					if (typeof stack === 'number') {
 						stack = [...Array(stack).keys()];
 					}
 
 					let totalCount = stack.length;
-					let counter = 1;
+					let counter = 0;
 					const isArrayDestruct = argumentsMatch[0].trim().startsWith('[');
 					const iterate = (data, stack) => {
 						let destruct = {};
@@ -291,7 +293,7 @@ export default (signalize: Signalize): void => {
 							...destruct,
 							iterator: {
 								count: counter,
-								first: counter === 1,
+								first: counter === 0,
 								last: counter === totalCount,
 								odd: counter % 2 !== 0,
 								even: counter % 2 === 0
@@ -480,30 +482,33 @@ export default (signalize: Signalize): void => {
 				}
 
 				const cleanup = (): void => {
-					let nextElementSibling = element.nextElementSibling;
+					let nextSibling = element.nextSibling;
 
-					while (nextElementSibling !== null) {
-						const elementScope = scope(nextElementSibling);
-						if (elementScope?.condition !== element) {
+					while (nextSibling !== null) {
+						const siblingScope = scope(nextSibling);
+						if (siblingScope?.condition !== element) {
 							break;
 						}
 
-						const elementToRemove = nextElementSibling;
-						nextElementSibling = nextElementSibling.nextElementSibling;
-						elementScope.cleanup();
-						elementToRemove.remove();
+						const siblingToRemove = nextSibling;
+						nextSibling = nextSibling.nextSibling;
+						siblingScope.cleanup();
+						siblingToRemove.remove();
 					}
 				}
 
+				let rendered = false;
 				const render = async (): Promise<void> => {
 					const conditionResult = await fn(data());
 					let lastInsertPoint = element;
-					if (conditionResult === true && element.nextElementSibling && scope(element.nextElementSibling)?.condition === element) {
+
+					if (conditionResult === true && rendered === true) {
 						return;
 					}
 
 					if (conditionResult !== true) {
 						cleanup();
+						rendered = false;
 						return;
 					}
 
@@ -515,7 +520,7 @@ export default (signalize: Signalize): void => {
 						}
 					});
 					fragment = await processDirectives({ root: fragment });
-					const children = [...fragment.children];
+					const children = [...fragment.childNodes];
 					while (children.length > 0) {
 						const root = children.shift();
 						scope(root, (rootScope) => {
@@ -524,6 +529,7 @@ export default (signalize: Signalize): void => {
 						lastInsertPoint.after(root);
 						lastInsertPoint = root;
 					}
+					rendered = true;
 				}
 
 				await render();
@@ -546,6 +552,7 @@ export default (signalize: Signalize): void => {
 			matcher: new RegExp(`(?::|${config.attributesPrefix}bind${config.directivesSeparator})(\\S+)`),
 			callback: async ({ matches, element, data, attribute }) => {
 				const currentData = data();
+				console.log(currentData);
 				const fn = createFunction({
 					functionString: `
 						const result = ${attribute.value};
@@ -560,9 +567,9 @@ export default (signalize: Signalize): void => {
 						continue;
 					}
 
-					const clean = signal.watch(() => {
+					const unwatch = signal.watch(() => {
 						signalsToWatch.push(signal);
-						clean();
+						unwatch();
 					}, { execution: 'onGet' })
 				}
 
@@ -613,6 +620,6 @@ export default (signalize: Signalize): void => {
 		});
 	})
 
-	signalize.directive = directive
+	signalize.directive = directive;
 
 }

@@ -1,8 +1,15 @@
 import type Signalize from '..';
+import type { CustomEventListener } from './on';
 
 declare module '..' {
 	interface Signalize {
 		observe: (root: HTMLElement | Document | DocumentFragment, callback?: ObserveCallback) => void
+	}
+
+	interface CustomEventListeners {
+		'dom-mutation': CustomEventListener
+		'dom-mutation:node:added': CustomEventListener
+		'dom-mutation:node:removed': CustomEventListener
 	}
 }
 

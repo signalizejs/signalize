@@ -8,7 +8,7 @@ declare module '..' {
 
 type ScopeInitFunction = (Scope: Scope) => void;
 
-class Scope {
+export class Scope {
 	element: HTMLElement | Document | DocumentFragment;
 	data;
 	#cleanups = new Set<CallableFunction>();
@@ -24,7 +24,7 @@ class Scope {
 		init: CallableFunction
 		data?: Record<string, any>
 	}) {
-		const { on, merge, CallableClass } = signalize;
+		const { merge, CallableClass } = signalize;
 		this.element = element;
 
 		const getElementData = (element, data = {}): Scope => {
@@ -42,9 +42,6 @@ class Scope {
 		}
 
 		class CallableData extends CallableClass {
-			get(target, key, receiver) {
-				return data[key];
-			}
 			set(target, key, newValue) {
 				data[key] = newValue;
 				return true;
@@ -57,7 +54,9 @@ class Scope {
 		this.data = new CallableData();
 		this.element.__signalizeScope = this;
 
-		init(this);
+		if (init !== undefined) {
+			init(this);
+		}
 	}
 
 	cleanup (callback: CallableFunction): void {
@@ -87,25 +86,19 @@ class Scope {
 	}
 }
 
-export interface ScopeInstance extends Scope {}
-
 export default (signalize: Signalize): void => {
 	const { isDomReady, onDomReady, on, config } = signalize;
-	const scopeKey = '__signalizeScope';
-	let scopeAttribute = 'scope';
-	const definedScopes: Record<string, ScopeInitFunction> = {};
 
+	const scopeKey = '__signalizeScope';
+	let scopeAttribute = 'scope'
+	const definedScopes: Record<string, ScopeInitFunction> = {};
 	const initScope = (element: HTMLElement, init?): void => {
 		if (element[scopeKey] !== undefined) {
 			init(element[scopeKey]);
 			return;
 		}
 
-		new Scope({
-			signalize,
-			init,
-			element
-		});
+		new Scope({ signalize, init, element });
 	}
 
 	const initScopes = (root: HTMLElement, name?: string): void => {
@@ -118,29 +111,31 @@ export default (signalize: Signalize): void => {
 	const scope = (nameOrElement: string | HTMLElement | Document | DocumentFragment, init: ScopeInitFunction): void | undefined | Scope => {
 		const nameOrElementIsString = typeof nameOrElement === 'string';
 		const name = nameOrElementIsString ? nameOrElement : undefined;
+		const nameIsDefined = name !== undefined;
 		const element = !nameOrElementIsString ? nameOrElement : undefined;
 
-		if (element !== undefined && init === undefined) {
+		if (element !== undefined && init === undefined && element[scopeKey] !== undefined) {
 			return element[scopeKey];
 		}
 
-		if (name !== undefined && name in definedScopes) {
-			throw new Error(`Scope "${name}" is already defined.`);
-		}
-
-		if (name !== undefined) {
+		if (nameIsDefined) {
+			if (name in definedScopes) {
+				throw new Error(`Scope "${name}" is already defined.`);
+			}
 			definedScopes[name] = init;
 		}
 
-		if (isDomReady()) {
-			if (name !== undefined) {
-				initScopes(document.documentElement, name)
-			} else {
-				initScope(element, init);
-			}
+		if (!isDomReady()) {
+			return;
 		}
 
-		return element.__signalizeScope;
+		if (nameIsDefined) {
+			initScopes(document.documentElement, name);
+			return;
+		}
+
+		initScope(element, init);
+		return element[scopeKey];
 	};
 
 	onDomReady(() => {
@@ -149,9 +144,8 @@ export default (signalize: Signalize): void => {
 		initScopes(document.documentElement);
 
 		const cleanScope = (element: HTMLElement | DocumentFragment | Document) => {
-			const elementScope = scope(element);
-			if (elementScope !== undefined) {
-				elementScope.cleanup();
+			if (element[scopeKey] !== undefined) {
+				scope(element).cleanup();
 			}
 
 			for (const child of element.children) {
