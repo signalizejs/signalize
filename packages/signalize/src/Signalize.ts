@@ -64,21 +64,18 @@ export class Signalize {
 		this.use(AsyncFunctionPlugin);
 		this.use(CallableClassPlugin);
 		this.use(ParseHtmlPlugin);
-		this.use(DomReadyPlugin);
 		this.use(NormalizeTargetsPlugin);
+		this.use(DomReadyPlugin);
+		this.use(SelectPlugin);
 		this.use(DispatchPlugin);
 		this.use(OnPlugin);
 		this.use(SignalPlugin);
 		this.use(ScopePlugin);
 		this.use(ObservePlugin);
 		this.use(BindPlugin);
-		this.use(DirectivePlugin);
 		this.use(OfPlugin);
 		this.use(RefPlugin);
-		this.use(RefPlugin);
-		this.use(ScopePlugin);
-		this.use(SelectPlugin);
-		this.use(ParseHtmlPlugin);
+		this.use(DirectivePlugin);
 
 		this.observe(this.config.root);
 	}

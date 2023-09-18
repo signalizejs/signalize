@@ -37,7 +37,7 @@
 		</ul>
 	</div> -->
 
-	<form $items="{}" $text="" @submit="
+	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();
 		items.set({...items(), [text()]: text()})
 		text.set('');
@@ -59,7 +59,7 @@
 				</li>
 			</template>
 		</ul>
-	</form>
+	</form> -->
 
 	<!-- <template :for="[name, surname] of Object.entries({name: 'vladimir', surname: 'Macháček'})">
 		<li :text="name + ' ' + surname"></li>
@@ -103,9 +103,18 @@
 		</template>
 	</div> -->
 
+	<div $meh="2">
+		<div scope="counter" $count="0">
+			<button @click="count.set(count() + 1)">Count <span :text="count"></span></button>
+		</div>
+	</div>
+
 	<script type="module">
 		import Signalize from 'signalizejs';
 		const signalize = new Signalize();
+
+		signalize.scope('counter', (elementScope) => {
+		});
 	</script>
 
 </body>

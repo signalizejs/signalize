@@ -25,7 +25,7 @@ export default (signalize: Signalize): void => {
 			}
 		}
 
-		return elements;
+		return elements.filter((element) => element !== null);
 	}
 
 }

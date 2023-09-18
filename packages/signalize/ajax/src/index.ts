@@ -47,7 +47,11 @@ export default (signalize: Signalize): void => {
 
 			const url = options.url;
 
-			const request = fetch(url, options);
+			const requestInit = { ...options };
+
+			delete requestInit.url;
+
+			const request = fetch(url, requestInit);
 
 			dispatch('ajax:request:start', { options, request });
 

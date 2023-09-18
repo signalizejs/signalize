@@ -87,12 +87,16 @@ export class Scope {
 }
 
 export default (signalize: Signalize): void => {
-	const { isDomReady, onDomReady, on, config } = signalize;
+	const { isDomReady, onDomReady, on, config, selectAll, isVisible } = signalize;
 
 	const scopeKey = '__signalizeScope';
 	let scopeAttribute = 'scope'
 	const definedScopes: Record<string, ScopeInitFunction> = {};
 	const initScope = (element: HTMLElement, init?): void => {
+		if (init === undefined) {
+			init = definedScopes[element.getAttribute(scopeAttribute)];
+		}
+
 		if (element[scopeKey] !== undefined) {
 			init(element[scopeKey]);
 			return;
@@ -102,9 +106,14 @@ export default (signalize: Signalize): void => {
 	}
 
 	const initScopes = (root: HTMLElement, name?: string): void => {
-		const selector = name !== undefined ? `[${scopeAttribute}="${name}"]` : `[${scopeAttribute}]`;
-		for (const el of root.querySelectorAll<HTMLElement>(selector)) {
-			initScope(el);
+		const nameIsDefined = name !== undefined;
+		const selector = nameIsDefined ? `[${scopeAttribute}="${name}"]` : `[${scopeAttribute}]`;
+		for (const element of selectAll<HTMLElement>(selector, root)) {
+			if (element[scopeKey] !== undefined) {
+				continue;
+			}
+
+			initScope(element);
 		}
 	}
 
@@ -141,7 +150,7 @@ export default (signalize: Signalize): void => {
 	onDomReady(() => {
 		scopeAttribute = `${config.attributesPrefix}${scopeAttribute}`;
 
-		initScopes(document.documentElement);
+		initScopes(config.root);
 
 		const cleanScope = (element: HTMLElement | DocumentFragment | Document) => {
 			if (element[scopeKey] !== undefined) {

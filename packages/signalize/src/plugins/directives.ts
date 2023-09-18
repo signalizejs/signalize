@@ -48,7 +48,7 @@ export default (signalize: Signalize): void => {
 
 	const directives: Record<string, Directive> = {};
 	let cloakAttribute = `${config.attributesPrefix}cloak`;
-	let ignoreAttribute = `${config.attributesPrefix}ignore`;
+	let ignoreAttribute = `${config.attributesPrefix}directives${config.directivesSeparator}ignore`;
 	let inited = false;
 
 	const processElement = async (element: HTMLElement, directivesToProcess?: string[]): Promise<HTMLElement> => {
@@ -199,7 +199,6 @@ export default (signalize: Signalize): void => {
 				}
 
 				scope(element).data[matches[1]] = signal(result);
-				console.log(scope(element));
 			}
 		});
 
@@ -552,11 +551,10 @@ export default (signalize: Signalize): void => {
 			matcher: new RegExp(`(?::|${config.attributesPrefix}bind${config.directivesSeparator})(\\S+)`),
 			callback: async ({ matches, element, data, attribute }) => {
 				const currentData = data();
-				console.log(currentData);
 				const fn = createFunction({
 					functionString: `
 						const result = ${attribute.value};
-						return typeof result === 'function' ? result() : result;
+						return typeof result === 'function' ? result.call(null, _context) : result;
 					`,
 					context: currentData
 				})
@@ -585,19 +583,24 @@ export default (signalize: Signalize): void => {
 			matcher: new RegExp(`(?:\\@|${config.attributesPrefix}on${config.directivesSeparator})(\\S+)`),
 			callback: async (scope) => {
 				const { matches, element, data, attribute } = scope;
-				on(matches[1], element, (event) => {
+				on(matches[1], element, async (event) => {
 					const currentData = data();
 					const fn = createFunction({
-						functionString: attribute.value,
+						functionString: `return ${attribute.value}`,
 						context: {
 							event,
 							...currentData
 						}
 					});
-					fn({
+
+					const result = await fn.call(element, {
 						event,
 						...currentData
 					});
+
+					if (typeof result === 'function') {
+						result(event);
+					}
 				});
 			}
 		})

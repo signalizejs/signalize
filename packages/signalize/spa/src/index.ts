@@ -87,7 +87,7 @@ export default (signalize: Signalize): void => {
 		} else {
 			dispatch('spa:request:start', { ...dispatchEventData });
 
-			request = await ajax(urlString);
+			request = await ajax({ url: urlString });
 			const requestIsWithoutErroor = request.error === null;
 
 			if (requestIsWithoutErroor) {
@@ -223,7 +223,6 @@ export default (signalize: Signalize): void => {
 		if (parsedOriginalUrl !== null && parsedOriginalUrl.host !== host) {
 			return;
 		}
-
 		const hrefUrl = createUrl(`${window.location.origin}${url}`);
 
 		if (hrefUrl === null || (hrefUrl.pathname === window.location.pathname && hrefUrl.hash !== currentLocation.hash)) {
