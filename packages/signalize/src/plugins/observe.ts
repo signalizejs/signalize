@@ -7,9 +7,9 @@ declare module '..' {
 	}
 
 	interface CustomEventListeners {
-		'dom-mutation': CustomEventListener
-		'dom-mutation:node:added': CustomEventListener
-		'dom-mutation:node:removed': CustomEventListener
+		'dom:mutation': CustomEventListener
+		'dom:mutation:node:added': CustomEventListener
+		'dom:mutation:node:removed': CustomEventListener
 	}
 }
 
@@ -18,9 +18,9 @@ type ObserveCallback = (mutationRecords: MutationRecord[]) => void;
 export default (signalize: Signalize): void => {
 	const { dispatch } = signalize;
 	signalize.observe = (root: HTMLElement | Document | DocumentFragment = document, callback?: ObserveCallback): void => {
-		const domMutationEvent = 'dom-mutation';
-		const domMutationNodeAddedEvent = 'dom-mutation:node:added';
-		const domMutationNodeRemovedEvent = 'dom-mutation:node:removed';
+		const domMutationEvent = 'dom:mutation';
+		const domMutationNodeAddedEvent = 'dom:mutation:node:added';
+		const domMutationNodeRemovedEvent = 'dom:mutation:node:removed';
 
 		if (callback === undefined) {
 			callback = (mutationRecords: MutationRecord[]) => {

@@ -9,7 +9,7 @@ declare module 'signalizejs' {
 }
 
 export default (signalize: Signalize): void => {
-	const { on, onDomReady, select, dispatch, selectAll } = signalize
+	const { on, select, dispatch, selectAll } = signalize
 	const assetLoaderEventName = 'asset-loader';
 	let assetLoaderAttribute: string;
 	let assetLoaderInitedAttribute: string;
@@ -116,10 +116,10 @@ export default (signalize: Signalize): void => {
 		}
 	}
 
-	onDomReady(() => {
+	on('dom:ready', () => {
 		assetLoaderAttribute = `${config.attributesPrefix}asset-loader`;
-		assetLoaderInitedAttribute = `${assetLoaderAttribute}-inited`;
-		assetLoaderAssetEventAttribute = `${assetLoaderAttribute}-trigger-event`;
+		assetLoaderInitedAttribute = `${assetLoaderAttribute}${config.directivesSeparator}inited`;
+		assetLoaderAssetEventAttribute = `${assetLoaderAttribute}${config.directivesSeparator}trigger-event`;
 
 		const init = (): void => {
 			for (const element of selectAll<HTMLElement>(`[${assetLoaderAttribute}]:not([${assetLoaderInitedAttribute}])`)) {
@@ -129,7 +129,7 @@ export default (signalize: Signalize): void => {
 
 		init();
 
-		on('dom-mutation', document, ({ detail }) => {
+		on('dom:mutation', document, ({ detail }) => {
 			if (!['childList', 'subtree', 'attributes'].includes(detail.type)) {
 				return
 			}

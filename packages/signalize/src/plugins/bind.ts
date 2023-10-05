@@ -7,7 +7,7 @@ declare module '..' {
 }
 
 export default (signalize: Signalize): void => {
-	const { normalizeTargets, scope, Signal, on, off } = signalize;
+	const { selectorToIterable, scope, Signal, on, off } = signalize;
 
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
@@ -33,7 +33,7 @@ export default (signalize: Signalize): void => {
 	}
 
 	const bind = (target: EventTarget, attributes: Record<string, any>): void => {
-		for (const element of normalizeTargets(target, true) as HTMLElement[]) {
+		for (const element of selectorToIterable(target, true) as HTMLElement[]) {
 			const unwatchSignalCallbacks = [];
 			const elementScope = scope(element);
 

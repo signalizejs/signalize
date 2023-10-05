@@ -15,7 +15,7 @@ declare module 'signalizejs' {
 }
 
 export default (signalize: Signalize): void => {
-	const { dispatch, select, onDomReady, on, config } = signalize;
+	const { dispatch, select, on, config } = signalize;
 	let dialogAttribute = 'dialog';
 	let dialogModelessAttribute = `${dialogAttribute}-modeless`;
 	let dialogCloseButtonAttribute = `${dialogAttribute}-close`;
@@ -63,7 +63,7 @@ export default (signalize: Signalize): void => {
 		openDialog(id);
 	}
 
-	onDomReady(() => {
+	on('dom:ready', () => {
 		dialogAttribute = `${config.attributesPrefix}${dialogAttribute}`;
 		dialogModelessAttribute = `${config.attributesPrefix}${dialogModelessAttribute}`;
 		dialogCloseButtonAttribute = `${config.attributesPrefix}${dialogCloseButtonAttribute}`;

@@ -1,4 +1,5 @@
 import type Signalize from '..';
+import type { Selectable } from './select';
 
 declare module '..' {
 	interface Signalize {
@@ -8,6 +9,7 @@ declare module '..' {
 			callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 			options?: AddEventListenerOptions
 		) => void
+		customEventListeners: Record<string, CustomEventListener>
 	}
 }
 
@@ -21,10 +23,10 @@ export interface CustomEventListeners extends HTMLElementEventMap {
 }
 
 export default (signalize: Signalize): void => {
-	const { onDomReady, config, normalizeTargets } = signalize;
+	const { config, selectorToIterable } = signalize;
 	const domMutationRemoveListeners = new Set();
 
-	const $customEventListeners: Record<string, CustomEventListener> = {
+	const customEventListeners: Record<string, CustomEventListener> = {
 		clickOutside: (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
 			document.addEventListener('click', (listenerEvent) => {
 				const eventTarget = listenerEvent.target as HTMLElement;
@@ -57,12 +59,12 @@ export default (signalize: Signalize): void => {
 
 	const on = function (
 		event: keyof CustomEventListeners,
-		targetOrCallback: EventTarget | CallableFunction,
+		targetOrCallback: Selectable | CallableFunction,
 		callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 		options?: AddEventListenerOptions
 	): void {
 		const events = event.split(',');
-		let target: EventTarget;
+		let target: Selectable;
 		let callback: CallableFunction;
 		const root = config.root ?? document;
 		options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
@@ -87,15 +89,15 @@ export default (signalize: Signalize): void => {
 				}, options);
 			},
 			direct: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {
-				for (const element of normalizeTargets(target)) {
+				for (const element of selectorToIterable(target)) {
 					element.addEventListener(event, callback, options)
 				}
 			}
 		}
 
 		for (const event of events) {
-			if (event in $customEventListeners) {
-				$customEventListeners[event].call(this, target, callback, options);
+			if (event in signalize.config.customEventListeners) {
+				signalize.config.customEventListeners[event].call(this, target, callback, options);
 				continue;
 			}
 
@@ -103,13 +105,13 @@ export default (signalize: Signalize): void => {
 		}
 	}
 
-	onDomReady(() => {
-		on('dom-mutation:node:removed', (event) => {
+	signalize.configure({ customEventListeners })
+	signalize.on = on;
+	on('dom:ready', () => {
+		on('dom:mutation:node:removed', (event) => {
 			for (const listener of domMutationRemoveListeners) {
 				listener(event);
 			}
 		})
 	});
-
-	signalize.on = on;
 }

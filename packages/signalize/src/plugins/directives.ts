@@ -40,7 +40,7 @@ export default (signalize: Signalize): void => {
 		AsyncFunction,
 		bind,
 		isDomReady,
-		on, onDomReady,
+		on,
 		dispatch,
 		Signal, scope, signal,
 		config
@@ -52,6 +52,23 @@ export default (signalize: Signalize): void => {
 	let inited = false;
 
 	const processElement = async (element: HTMLElement, directivesToProcess?: string[]): Promise<HTMLElement> => {
+		const elementClosestScope = element.closest(`[${signalize.config.scopeAttribute}]`);
+		let scopeInitPromise = null;
+
+		if (elementClosestScope && typeof elementClosestScope[config.scopeKey] === 'undefined') {
+			scopeInitPromise = new Promise((resolve) => {
+				on('scope:inited', ({detail}) => {
+					if (detail.element === elementClosestScope) {
+						resolve(true);
+					}
+				})
+			})
+		}
+
+		if (scopeInitPromise instanceof Promise) {
+			await scopeInitPromise;
+		}
+
 		directivesToProcess = directivesToProcess ?? Object.keys(directives);
 
 		const directivesQueue = [...directivesToProcess];
@@ -81,6 +98,7 @@ export default (signalize: Signalize): void => {
 
 				elementScope.directives.push(directiveName);
 			});
+
 			directive.callback({ ...elementScope, matches, attribute });
 		}
 
@@ -180,7 +198,7 @@ export default (signalize: Signalize): void => {
 		return createFunctionCache[cacheKey];
 	}
 
-	onDomReady(async () => {
+	on('dom:ready', async () => {
 		cloakAttribute = `${config.attributesPrefix}${cloakAttribute}`;
 		ignoreAttribute = `${config.attributesPrefix}${ignoreAttribute}`;
 
@@ -480,9 +498,8 @@ export default (signalize: Signalize): void => {
 					}, { execution: 'onGet' })
 				}
 
+				let nextSibling = element.nextSibling;
 				const cleanup = (): void => {
-					let nextSibling = element.nextSibling;
-
 					while (nextSibling !== null) {
 						const siblingScope = scope(nextSibling);
 						if (siblingScope?.condition !== element) {
@@ -496,7 +513,8 @@ export default (signalize: Signalize): void => {
 					}
 				}
 
-				let rendered = false;
+				const nextSiblingScope = scope(nextSibling);
+				let rendered = nextSiblingScope?.condition === element;
 				const render = async (): Promise<void> => {
 					const conditionResult = await fn(data());
 					let lastInsertPoint = element;
@@ -549,7 +567,8 @@ export default (signalize: Signalize): void => {
 
 		directive('bind', {
 			matcher: new RegExp(`(?::|${config.attributesPrefix}bind${config.directivesSeparator})(\\S+)`),
-			callback: async ({ matches, element, data, attribute }) => {
+			callback: async (elscope) => {
+				const { matches, element, data, attribute } = elscope;
 				const currentData = data();
 				const fn = createFunction({
 					functionString: `
@@ -609,7 +628,7 @@ export default (signalize: Signalize): void => {
 
 		inited = true;
 
-		on('dom-mutation:node:added', (event) => {
+		on('dom:mutation:node:added', (event) => {
 			const node = event.detail;
 			if (!(node instanceof HTMLElement)) {
 				return;

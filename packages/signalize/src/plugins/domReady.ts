@@ -1,15 +1,18 @@
 import type Signalize from '..';
+import type { CustomEventListener } from './on';
 
 declare module '..' {
 	interface Signalize {
-		onDomReady: (callback: CallableFunction) => void
 		isDomReady: () => boolean
+	}
+
+	interface CustomEventListeners {
+		'dom:ready': CustomEventListener
 	}
 }
 
 export default (signalize: Signalize): void => {
-	const { off } = signalize;
-	let domReadyListeners: CallableFunction[] = [];
+	const domReadyListeners: CallableFunction[] = [];
 
 	const callOnDomReadyListeners = (): void => {
 		while (domReadyListeners.length > 0) {
@@ -17,31 +20,25 @@ export default (signalize: Signalize): void => {
 		}
 	}
 
-	const windowIsDefined = typeof window !== 'undefined';
-	const documentIsDefined = typeof document !== 'undefined';
-	const isDomReady = (): boolean => documentIsDefined && document.readyState !== 'loading';
+	const isDomReady = (): boolean => document.readyState !== 'loading';
 	signalize.isDomReady = isDomReady;
 
-	const onDomReady = (callback: CallableFunction): void => {
-		if (isDomReady()) {
-			callback()
-		} else {
-			domReadyListeners.push(callback);
-		}
+	if (isDomReady()) {
+		callOnDomReadyListeners()
+	} else {
+		document.addEventListener('DOMContentLoaded', callOnDomReadyListeners, { once: true })
 	}
 
-	if (windowIsDefined && documentIsDefined) {
-		if (isDomReady()) {
-			callOnDomReadyListeners()
-		} else {
-			const domContentLoadedListener = (): void => {
-				off('DOMContentLoaded', document, domContentLoadedListener);
-				callOnDomReadyListeners();
+	signalize.isDomReady = isDomReady;
+	signalize.configure({
+		customEventListeners: {
+			'dom:ready': (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
+				if (isDomReady()) {
+					listener()
+				} else {
+					domReadyListeners.push(listener);
+				}
 			}
-
-			document.addEventListener('DOMContentLoaded', domContentLoadedListener)
 		}
-	}
-
-	signalize.onDomReady = onDomReady;
+	})
 }

@@ -1,32 +1,43 @@
 import type Signalize from '..';
+import type { CustomEventListener } from './on';
 
 declare module '..' {
 	interface Signalize {
 		scope: (nameOrElement: string | HTMLElement | Document | DocumentFragment, init: ScopeInitFunction) => void | ScopeInstance
+	}
+
+	interface CustomEventListeners {
+		'scopes:inited': CustomEventListener
 	}
 }
 
 type ScopeInitFunction = (Scope: Scope) => void;
 
 export class Scope {
+	#signalize: Signalize;
+	#scopeAttribute: string;
+	#cleanups = new Set<CallableFunction>();
+
 	element: HTMLElement | Document | DocumentFragment;
 	data;
-	#cleanups = new Set<CallableFunction>();
 
 	constructor ({
 		signalize,
 		element,
 		init,
+		scopeAttribute,
 		data = {}
 	}: {
 		signalize: Signalize
 		element: HTMLElement | Document | DocumentFragment
 		init: CallableFunction
+		scopeAttribute: string
 		data?: Record<string, any>
 	}) {
 		const { merge, CallableClass } = signalize;
 		this.element = element;
-
+		this.#signalize = signalize;
+		this.#scopeAttribute = scopeAttribute;
 		const getElementData = (element, data = {}): Scope => {
 			if (element === null) {
 				return data;
@@ -73,43 +84,49 @@ export class Scope {
 	}
 
 	ref<T extends HTMLElement>(id: string): T | null {
-		const refEl = ref<T>(id, this.element);
+		const refEl = this.#signalize.ref<T>(id, this.element);
 		return refEl !== null && this.#parentScopeIsEl(refEl) ? refEl : null
 	}
 
 	refs (id: string): HTMLElement[] {
-		return [...refs(id, this.element)].filter(this.#parentScopeIsEl)
+		return [...this.#signalize.refs(id, this.element)].filter(this.#parentScopeIsEl)
 	}
 
-	#parentScopeIsEl (): boolean {
-		return (refElement: HTMLElement): boolean => refElement.closest(`[${scopeAttribute}]`) === el;
+	#parentScopeIsEl (refElement: HTMLElement): boolean {
+		return refElement.closest(`[${this.#scopeAttribute}]`) === el;
 	}
 }
 
 export default (signalize: Signalize): void => {
-	const { isDomReady, onDomReady, on, config, selectAll, isVisible } = signalize;
+	const { isDomReady, on, config, selectAll, configure, dispatch } = signalize;
 
+	let inited = false;
 	const scopeKey = '__signalizeScope';
-	let scopeAttribute = 'scope'
-	const definedScopes: Record<string, ScopeInitFunction> = {};
+	let scopeAttribute = `${config.attributesPrefix}scope`;
+	const definedScopes: Record<string, ScopeInitFunction> = signalize.config.scopes ?? {};
 	const initScope = (element: HTMLElement, init?): void => {
+		const scopeName = typeof element.getAttribute === 'function' ? element.getAttribute(scopeAttribute) : undefined;
 		if (init === undefined) {
-			init = definedScopes[element.getAttribute(scopeAttribute)];
+			init = definedScopes[scopeName];
 		}
 
 		if (element[scopeKey] !== undefined) {
 			init(element[scopeKey]);
-			return;
+		} else {
+			new Scope({ signalize, init, element, scopeAttribute });
 		}
 
-		new Scope({ signalize, init, element });
+		dispatch('scope:inited', {
+			element,
+			scope: scopeName
+		})
 	}
 
 	const initScopes = (root: HTMLElement, name?: string): void => {
 		const nameIsDefined = name !== undefined;
 		const selector = nameIsDefined ? `[${scopeAttribute}="${name}"]` : `[${scopeAttribute}]`;
 		for (const element of selectAll<HTMLElement>(selector, root)) {
-			if (element[scopeKey] !== undefined) {
+			if (element[scopeKey] !== undefined || !(element.getAttribute(scopeAttribute) in definedScopes)) {
 				continue;
 			}
 
@@ -127,30 +144,36 @@ export default (signalize: Signalize): void => {
 			return element[scopeKey];
 		}
 
+
 		if (nameIsDefined) {
 			if (name in definedScopes) {
 				throw new Error(`Scope "${name}" is already defined.`);
 			}
 			definedScopes[name] = init;
+
+			if (isDomReady()) {
+				initScopes(document.documentElement, name);
+				return;
+			}
+		} else if (typeof init !== 'undefined') {
+			initScope(element, init);
 		}
 
-		if (!isDomReady()) {
-			return;
-		}
-
-		if (nameIsDefined) {
-			initScopes(document.documentElement, name);
-			return;
-		}
-
-		initScope(element, init);
 		return element[scopeKey];
 	};
 
-	onDomReady(() => {
+	const scopesInitedListeners: CallableFunction[] = [];
+
+	on('dom:ready', () => {
 		scopeAttribute = `${config.attributesPrefix}${scopeAttribute}`;
 
 		initScopes(config.root);
+		inited = true;
+		dispatch('scopes:inited');
+
+		for (const listener of scopesInitedListeners) {
+			listener();
+		}
 
 		const cleanScope = (element: HTMLElement | DocumentFragment | Document) => {
 			if (element[scopeKey] !== undefined) {
@@ -162,7 +185,7 @@ export default (signalize: Signalize): void => {
 			}
 		};
 
-		on('dom-mutation:node:removed', (event) => {
+		on('dom:mutation:node:removed', (event) => {
 			setTimeout(() => {
 				if (event.detail instanceof HTMLElement) {
 					cleanScope(event.detail)
@@ -170,7 +193,7 @@ export default (signalize: Signalize): void => {
 			}, 0);
 		});
 
-		on('dom-mutation:node:added' as keyof CustomEventListener, document, ({ detail }: { detail: Node }): void => {
+		on('dom:mutation:node:added' as keyof CustomEventListener, document, ({ detail }: { detail: Node }): void => {
 			if (!(detail instanceof HTMLElement)) {
 				return;
 			}
@@ -183,6 +206,19 @@ export default (signalize: Signalize): void => {
 		});
 	});
 
+ 	configure({
+		customEventListeners: {
+			'scopes:inited': (target: HTMLElement | string, listener: CallableFunction): void => {
+				if (inited) {
+					listener();
+				} else {
+					scopesInitedListeners.push(listener);
+				}
+			}
+		}
+	});
+
+	signalize.config.scopeAttribute = scopeAttribute;
+	signalize.config.scopeKey = scopeKey;
 	signalize.scope = scope;
-	signalize.initScope = initScope;
 }

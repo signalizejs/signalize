@@ -125,7 +125,7 @@ export default (signalize: Signalize): void => {
 		originalWindowOnError(message, file, lineNumber, columnNumber, error);
 	}
 
-	onDomReady(() => {
+	on('dom:ready', () => {
 		enabledLevels = config.logger?.enabledLevels ?? enabledLevels;
 	});
 

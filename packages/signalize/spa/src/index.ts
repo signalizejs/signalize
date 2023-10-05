@@ -30,7 +30,7 @@ interface SpaDispatchEventData extends VisitData {
 }
 
 export default (signalize: Signalize): void => {
-	const { dispatch, ajax, redraw, select, onDomReady, on, config } = signalize;
+	const { dispatch, ajax, redraw, select, on, config } = signalize;
 	let spaUrlAttribute = `spa-url`;
 	let spaIgnoreAttribute = `spa-ignore`;
 	let spaStateActionAttribute = `spa-state-action`;
@@ -247,7 +247,7 @@ export default (signalize: Signalize): void => {
 		});
 	}
 
-	onDomReady(() => {
+	on('dom:ready', () => {
 		spaUrlAttribute = `${config.attributesPrefix}${spaUrlAttribute}`;
 		spaIgnoreAttribute = `${config.attributesPrefix}${spaIgnoreAttribute}`;
 		spaStateActionAttribute = `${config.attributesPrefix}${spaStateActionAttribute}`;

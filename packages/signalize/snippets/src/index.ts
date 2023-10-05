@@ -12,10 +12,10 @@ declare module 'signalizejs' {
 }
 
 export default (signalize: Signalize): void => {
-	const { parseHTML, select, dispatch } = signalize;
+	const { parseHTML, select, dispatch, config } = signalize;
 	const snippetAttribute = 'snippet';
-	const snippetRedrawedAttribute = 'snippet-redrawed';
-	const snippetActionAttribute = 'snippet-action';
+	const snippetRedrawedAttribute = `snippet${config.directivesSeparator}redrawed`;
+	const snippetActionAttribute = `snippet${config.directivesSeparator}action`;
 
 	const redraw = (content: string | DocumentFragment | HTMLElement | HTMLElement): void => {
 		const fragment = parseHTML(content);
