@@ -33,6 +33,7 @@ interface ProcessDirectiveOptions {
 interface CreateFunctionOptions {
 	functionString: string
 	context: Record<string, any>
+	element?: HTMLElement | Document | DocumentFragment
 }
 
 export default (signalize: Signalize): void => {
@@ -43,7 +44,8 @@ export default (signalize: Signalize): void => {
 		on,
 		dispatch,
 		Signal, scope, signal,
-		config
+		config,
+		globals
 	} = signalize;
 
 	const directives: Record<string, Directive> = {};
@@ -186,14 +188,24 @@ export default (signalize: Signalize): void => {
 		const cacheKey = `${options.functionString.replace(/\s*/g, '_')}-${Object.keys(options.context).join('-')}`;
 
 		if (!(cacheKey in createFunctionCache)) {
-			createFunctionCache[cacheKey] = new AsyncFunction('_context', `
+			const functionDataKeys = Object.keys({...globals, ...context});
+			createFunctionCache[cacheKey] = async function (data) {
+				let functionData = {...globals, ...data}
+				console.log(this);
 				try {
-					let { ${Object.keys(context).join(',')} } = _context;
-					${functionString}
-				} catch(e) {
-					console.error(e);
+					return new AsyncFunction('_context', '_element', `
+						try {
+							let { ${functionDataKeys.join(',')} } = _context;
+							${functionString}
+						} catch(e) {
+							console.error(_element ?? '', e);
+						}
+					`).call(this, functionData, options.element);
+				} catch (e) {
+					console.error(options.element ?? '', e);
 				}
-			`)
+				return null
+			}
 		}
 		return createFunctionCache[cacheKey];
 	}
@@ -208,7 +220,8 @@ export default (signalize: Signalize): void => {
 				const currentData = data();
 				const fn = createFunction({
 					functionString: `return ${attribute.value.length ? attribute.value : "''"}`,
-					context: currentData
+					context: currentData,
+					element
 				});
 				let result = await fn(currentData);
 
@@ -277,7 +290,8 @@ export default (signalize: Signalize): void => {
 						functionString: `return typeof ${argumentsMatch[3]} === 'function' ? ${argumentsMatch[3]}() : ${argumentsMatch[3]};`,
 						context: {
 							...currentData
-						}
+						},
+						element
 					});
 					let stack = await stackFn({ ...currentData });
 
@@ -609,9 +623,11 @@ export default (signalize: Signalize): void => {
 						context: {
 							event,
 							...currentData
-						}
+						},
+						element
 					});
 
+					console.log(fn);
 					const result = await fn.call(element, {
 						event,
 						...currentData

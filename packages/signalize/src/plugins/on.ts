@@ -43,17 +43,12 @@ export default (signalize: Signalize): void => {
 			}, options);
 		},
 		remove: (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
-			const observer = new MutationObserver((mutationsList, observer) => {
-				for (const mutation of mutationsList) {
-					if (mutation.type === 'childList') {
-						if ([...mutation.removedNodes].includes(target)) {
-							listener();
-						}
-					}
+			// TODO on remove
+			on('dom:mutation:node:removed', (event: CustomEvent) => {
+				if (event.detail === target) {
+					listener();
 				}
-			});
-
-			observer.observe(config.root, { childList: true, subtree: true });
+			}, { once: true });
 		}
 	};
 
@@ -63,7 +58,7 @@ export default (signalize: Signalize): void => {
 		callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 		options?: AddEventListenerOptions
 	): void {
-		const events = event.split(',');
+		const events = event.split(',').map((event) => event.trim());
 		let target: Selectable;
 		let callback: CallableFunction;
 		const root = config.root ?? document;
@@ -80,7 +75,8 @@ export default (signalize: Signalize): void => {
 		const listenerType = typeof target === 'string' ? 'global' : 'direct';
 		const handlers = {
 			global: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {
-				root.addEventListener(event, (listenerEvent) => {
+				console.log(`"${event}"`)
+				document.addEventListener(event, (listenerEvent) => {
 					const eventTarget = listenerEvent.target as HTMLElement;
 
 					if (eventTarget.matches(target as string) || (eventTarget.closest(target as string) != null)) {
@@ -107,11 +103,4 @@ export default (signalize: Signalize): void => {
 
 	signalize.configure({ customEventListeners })
 	signalize.on = on;
-	on('dom:ready', () => {
-		on('dom:mutation:node:removed', (event) => {
-			for (const listener of domMutationRemoveListeners) {
-				listener(event);
-			}
-		})
-	});
 }

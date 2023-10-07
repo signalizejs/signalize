@@ -34,7 +34,7 @@ export default (signalize: Signalize): void => {
 
 	const bind = (target: EventTarget, attributes: Record<string, any>): void => {
 		for (const element of selectorToIterable(target, true) as HTMLElement[]) {
-			const unwatchSignalCallbacks = [];
+			const unwatchSignalCallbacks: CallableFunction[] = [];
 			const elementScope = scope(element);
 
 			for (let [attr, attrOptions] of Object.entries(attributes)) {
@@ -44,16 +44,15 @@ export default (signalize: Signalize): void => {
 
 				let getListener: CallableFunction | null = null;
 				let setListener: CallableFunction | null = null;
-				let attrOptionsAsArray = Array.isArray(attrOptions) ? attrOptions : [attrOptions];
+				const attrOptionsAsArray = Array.isArray(attrOptions) ? attrOptions : [attrOptions];
 				const isNumericInput = numericInputAttributes.includes(element.getAttribute('type') ?? '');
-				let attributeBinder = attrOptionsAsArray.pop();
+				const attributeBinder = attrOptionsAsArray.pop();
 				const attributeBinderType = typeof attributeBinder;
 				const attributeBinderIsFunction = attributeBinderType === 'function';
 				const attributeBinderIsSignal = attributeBinder instanceof Signal;
-				let signalsToWatch = attrOptionsAsArray;
+				const signalsToWatch = attrOptionsAsArray;
 				let attributeInited = false;
-				let attributeInitValue = undefined;
-				let previousSettedValue = undefined;
+				let previousSettedValue: any;
 
 				const setOption = async (attribute, value) => {
 					value = value instanceof Promise ? await value : value;
@@ -68,8 +67,6 @@ export default (signalize: Signalize): void => {
 							if (previousSettedValue !== undefined && previousSettedValue.length > 0) {
 								element.classList.remove(previousSettedValue);
 							}
-						} else {
-							attributeInitValue = element.getAttribute('class');
 						}
 
 						const valueToSet = value.trim();
@@ -92,11 +89,11 @@ export default (signalize: Signalize): void => {
 
 				if (attributeBinderIsSignal === true) {
 					signalsToWatch.push(attributeBinder);
-					getListener = attributeBinder;
-					setListener = attributeBinder.set;
-				} else if (signalsToWatch.length === 1) {
-					getListener = attributeBinder;
-					setListener = signalsToWatch[0].set;
+				}
+
+				if (attributeBinderIsSignal === true || signalsToWatch.length === 1) {
+					getListener = () => attributeBinder();
+					setListener = (value) => signalsToWatch[0].set(value);
 				} else {
 					getListener = typeof attributeBinder.get === 'function' ? () => attributeBinder.get() : null;
 					setListener = typeof attributeBinder.set === 'function' ? (value) => attributeBinder.set(value) : null
@@ -108,14 +105,14 @@ export default (signalize: Signalize): void => {
 
 				for (const signalToWatch of signalsToWatch) {
 					unwatchSignalCallbacks.push(
-						signalToWatch.watch(async (data) => {
+						signalToWatch.watch(async () => {
 							setOption(attr, getListener());
 						})
 					);
 				}
 
 				if (typeof setListener === 'function' && reactiveInputAttributes.includes(attr)) {
-					const inputListener = () => {
+					const inputListener = (): void => {
 						setListener(isNumericInput ? Number(element[attr] as string) : element[attr] as string);
 					};
 					on('input', element, inputListener);

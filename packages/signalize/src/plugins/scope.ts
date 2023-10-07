@@ -34,7 +34,8 @@ export class Scope {
 		scopeAttribute: string
 		data?: Record<string, any>
 	}) {
-		const { merge, CallableClass } = signalize;
+		console.log('created');
+		const { merge } = signalize;
 		this.element = element;
 		this.#signalize = signalize;
 		this.#scopeAttribute = scopeAttribute;
@@ -52,17 +53,24 @@ export class Scope {
 			return getElementData(element.parentNode, data);
 		}
 
-		class CallableData extends CallableClass {
-			set(target, key, newValue) {
-				data[key] = newValue;
-				return true;
-			}
-			apply() {
-				return merge(data, getElementData(element.parentNode))
+		class CallableData extends Function {
+			constructor () {
+				super();
+
+				return new Proxy(this, {
+					set: (target, key: string, newValue: any) => {
+						data[key] = newValue;
+						return true;
+					},
+					apply: () => {
+						return merge(data, getElementData(element.parentNode))
+					}
+				})
 			}
 		}
 
-		this.data = new CallableData();
+		const callableData = new CallableData();
+		this.data = callableData;
 		this.element.__signalizeScope = this;
 
 		if (init !== undefined) {

@@ -1,34 +1,32 @@
 import AsyncFunctionPlugin from './plugins/AsyncFunction';
 import BindPlugin from './plugins/bind';
-import CallableClassPlugin from './plugins/CallableClass';
 import DirectivePlugin from './plugins/directives';
 import DispatchPlugin from './plugins/dispatch'
 import DomReadyPlugin from './plugins/domReady';
 import MergePlugin from './plugins/merge';
-import ObservePlugin from './plugins/observe';
+import ObservePlugin from './plugins/mutation-observer';
 import OnPlugin from './plugins/on';
 import OffPlugin from './plugins/off';
-import ParseHtmlPlugin from './plugins/parseHTML'
 import RefPlugin from './plugins/ref';
 import ScopePlugin from './plugins/scope';
 import SelectPlugin from './plugins/select';
 import SignalPlugin from './plugins/signal';
+import TaskPlugin from './plugins/task';
 
 export * from './plugins/AsyncFunction';
 export * from './plugins/bind';
-export * from './plugins/CallableClass';
 export * from './plugins/directives';
 export * from './plugins/dispatch'
 export * from './plugins/domReady';
 export * from './plugins/merge';
-export * from './plugins/observe';
+export * from './plugins/mutation-observer';
 export * from './plugins/on';
 export * from './plugins/off';
-export * from './plugins/parseHTML'
 export * from './plugins/ref';
 export * from './plugins/scope';
 export * from './plugins/select';
 export * from './plugins/signal';
+export * from './plugins/task'
 
 declare global {
 	interface Window {
@@ -50,8 +48,10 @@ export class Signalize {
 		root: document,
 		exposeSignalize: true,
 		attributesPrefix: '',
-		directivesSeparator: '\\:'
+		directivesSeparator: '-'
 	}
+
+	globals: Record<string, any> = {}
 
 	constructor (config?: Partial<SignalizeConfig>) {
 		this.#init(config);
@@ -71,8 +71,7 @@ export class Signalize {
 		this.config = this.merge(this.config, config ?? {}) as SignalizeConfig;
 
 		this.use(AsyncFunctionPlugin);
-		this.use(CallableClassPlugin);
-		this.use(ParseHtmlPlugin);
+		this.use(TaskPlugin)
 		this.use(DomReadyPlugin);
 		this.use(SelectPlugin);
 		this.use(DispatchPlugin);
@@ -85,7 +84,9 @@ export class Signalize {
 		this.use(RefPlugin);
 		this.use(DirectivePlugin);
 
-		this.observe(this.config.root);
+		this.on('dom:ready', () => {
+			this.observeMutations(this.config.root);
+		})
 	}
 }
 

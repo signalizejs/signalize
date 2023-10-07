@@ -33,11 +33,13 @@ export default (signalize: Signalize): void => {
 	signalize.configure({
 		customEventListeners: {
 			'dom:ready': (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
-				if (isDomReady()) {
-					listener()
-				} else {
-					domReadyListeners.push(listener);
-				}
+				signalize.task(() => {
+					if (isDomReady()) {
+						listener()
+					} else {
+						domReadyListeners.push(listener);
+					}
+				})
 			}
 		}
 	})

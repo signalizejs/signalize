@@ -3,7 +3,7 @@ import type { CustomEventListener } from './on';
 
 declare module '..' {
 	interface Signalize {
-		observe: (root: HTMLElement | Document | DocumentFragment, callback?: ObserveCallback) => void
+		observeMutations: (root: HTMLElement | Document | DocumentFragment, callback?: ObserveCallback) => void
 	}
 
 	interface CustomEventListeners {
@@ -17,7 +17,7 @@ type ObserveCallback = (mutationRecords: MutationRecord[]) => void;
 
 export default (signalize: Signalize): void => {
 	const { dispatch } = signalize;
-	signalize.observe = (root: HTMLElement | Document | DocumentFragment = document, callback?: ObserveCallback): void => {
+	signalize.observeMutations = (root: HTMLElement | Document | DocumentFragment = document, callback?: ObserveCallback): void => {
 		const domMutationEvent = 'dom:mutation';
 		const domMutationNodeAddedEvent = 'dom:mutation:node:added';
 		const domMutationNodeRemovedEvent = 'dom:mutation:node:removed';
