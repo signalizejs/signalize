@@ -65,6 +65,10 @@ export default (signalize: Signalize): void => {
 					const child = element.lastChild;
 					targetSnippetToSync.insertBefore(child, targetSnippetToSync.firstChild);
 				}
+			} else if (snippetAction === 'attributes') {
+				for (const attribute of element.attributes) {
+					targetSnippetToSync.setAttribute(attribute.name, attribute.value);
+				}
 			}
 
 			dispatch('snippets:redraw:end', eventDispatcherData);

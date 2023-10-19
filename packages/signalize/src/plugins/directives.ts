@@ -191,7 +191,6 @@ export default (signalize: Signalize): void => {
 			const functionDataKeys = Object.keys({...globals, ...context});
 			createFunctionCache[cacheKey] = async function (data) {
 				let functionData = {...globals, ...data}
-				console.log(this);
 				try {
 					return new AsyncFunction('_context', '_element', `
 						try {
@@ -482,7 +481,7 @@ export default (signalize: Signalize): void => {
 					}
 				})
 			}
-		})
+		});
 
 		directive('if', {
 			matcher: new RegExp(`(?::|${config.attributesPrefix})if`),
@@ -494,7 +493,7 @@ export default (signalize: Signalize): void => {
 					}
 				});
 			},
-			callback: async ({ matches, element, data, attribute }) => {
+			callback: async ({ element, data, attribute }) => {
 				const fn = createFunction({
 					functionString: `return ${attribute.value}`,
 					context: data()
@@ -513,33 +512,18 @@ export default (signalize: Signalize): void => {
 				}
 
 				let nextSibling = element.nextSibling;
-				const cleanup = (): void => {
-					while (nextSibling !== null) {
-						const siblingScope = scope(nextSibling);
-						if (siblingScope?.condition !== element) {
-							break;
-						}
-
-						const siblingToRemove = nextSibling;
-						nextSibling = nextSibling.nextSibling;
-						siblingScope.cleanup();
-						siblingToRemove.remove();
-					}
-				}
-
 				const nextSiblingScope = scope(nextSibling);
-				let rendered = nextSiblingScope?.condition === element;
+				const rendered = signal(nextSiblingScope?.condition === element)
 				const render = async (): Promise<void> => {
 					const conditionResult = await fn(data());
 					let lastInsertPoint = element;
 
-					if (conditionResult === true && rendered === true) {
+					if (conditionResult === true && rendered() === true) {
 						return;
 					}
 
 					if (conditionResult !== true) {
-						cleanup();
-						rendered = false;
+						rendered.set(false);
 						return;
 					}
 
@@ -550,17 +534,25 @@ export default (signalize: Signalize): void => {
 							data[key] = value;
 						}
 					});
+
 					fragment = await processDirectives({ root: fragment });
 					const children = [...fragment.childNodes];
 					while (children.length > 0) {
 						const root = children.shift();
 						scope(root, (rootScope) => {
 							rootScope.condition = element;
+
+							const unwatch = rendered.watch(({ newValue }) => {
+								if (newValue === false) {
+									unwatch();
+									root.remove();
+								}
+							})
 						});
 						lastInsertPoint.after(root);
 						lastInsertPoint = root;
 					}
-					rendered = true;
+					rendered.set(true);
 				}
 
 				await render();
@@ -610,7 +602,7 @@ export default (signalize: Signalize): void => {
 					[matches[1]]: [...signalsToWatch, () => fn(currentData)]
 				});
 			}
-		})
+		});
 
 		directive('on', {
 			matcher: new RegExp(`(?:\\@|${config.attributesPrefix}on${config.directivesSeparator})(\\S+)`),
@@ -627,7 +619,6 @@ export default (signalize: Signalize): void => {
 						element
 					});
 
-					console.log(fn);
 					const result = await fn.call(element, {
 						event,
 						...currentData

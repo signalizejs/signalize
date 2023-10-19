@@ -17,7 +17,7 @@
 		}
 	</style>
 
-	<div $text="" $count="5" cloak>
+	<div $text="" $count="1000" cloak>
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -109,12 +109,17 @@
 		</div>
 	</div> -->
 
+	<!-- <div $number="0">
+		<button @click="number.set(number() + 1)">+</button>
+		<button @click="number.set(number() - 1)">-</button>
+		<template :if="number() > 0">
+			<div>Yupí! <span :html="number"></span></div>
+		</template>
+	</div> -->
+
 	<script type="module">
 		import Signalize from 'signalizejs';
 		const signalize = new Signalize();
-
-		signalize.scope('counter', (elementScope) => {
-		});
 	</script>
 
 </body>

@@ -34,7 +34,6 @@ export class Scope {
 		scopeAttribute: string
 		data?: Record<string, any>
 	}) {
-		console.log('created');
 		const { merge } = signalize;
 		this.element = element;
 		this.#signalize = signalize;
@@ -142,7 +141,7 @@ export default (signalize: Signalize): void => {
 		}
 	}
 
-	const scope = (nameOrElement: string | HTMLElement | Document | DocumentFragment, init: ScopeInitFunction): void | undefined | Scope => {
+	const scope = (nameOrElement: string | HTMLElement | Document | DocumentFragment, init: ScopeInitFunction): undefined | Scope => {
 		const nameOrElementIsString = typeof nameOrElement === 'string';
 		const name = nameOrElementIsString ? nameOrElement : undefined;
 		const nameIsDefined = name !== undefined;
@@ -151,7 +150,6 @@ export default (signalize: Signalize): void => {
 		if (element !== undefined && init === undefined && element[scopeKey] !== undefined) {
 			return element[scopeKey];
 		}
-
 
 		if (nameIsDefined) {
 			if (name in definedScopes) {

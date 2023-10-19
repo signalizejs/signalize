@@ -35,7 +35,9 @@ export default (signalize: Signalize): void => {
 
 			if (dataType !== 'undefined') {
 				if (typeof options.body === 'undefined') {
-					options.body = ['string', 'number'].includes(dataType) ? options.data : JSON.parse(options.data);
+					options.body = ['string', 'number'].includes(dataType)
+						? options.data
+						: JSON.stringify(options.data);
 				}
 
 				delete options.data;
@@ -48,6 +50,7 @@ export default (signalize: Signalize): void => {
 			const url = options.url;
 
 			const requestInit = { ...options };
+			requestInit.headers = { ...{ 'X-Requested-With': 'XMLHttpRequest' }, ...requestInit.headers ?? {} }
 
 			delete requestInit.url;
 
@@ -67,8 +70,9 @@ export default (signalize: Signalize): void => {
 
 			dispatch('ajax:request:success', { options, request });
 		} catch (requestError: any) {
-			response = requestError.cause.response ?? undefined;
+			response = requestError.cause?.response ?? undefined;
 			error = requestError
+			console.error(error);
 			dispatch('ajax:request:error', { options, response, error });
 		}
 
@@ -79,5 +83,4 @@ export default (signalize: Signalize): void => {
 			error
 		}
 	}
-
 }
