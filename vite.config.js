@@ -1,21 +1,23 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
-const packagesDir = resolve('./packages');
+const packagesDir = resolve('./packages') + '/signalizejs';
 
 export default defineConfig({
 	base: './',
 	resolve: {
 		conditions: ['development', 'browser'],
 		alias: {
-			'signalizejs/ajax': `${packagesDir}/signalize/ajax/src/index.ts`,
-			'signalizejs/asset-loader': `${packagesDir}/signalize/asset-loader/src/index.ts`,
-			'signalizejs/dialog': `${packagesDir}/signalize/dialog/src/index.ts`,
-			'signalizejs/h': `${packagesDir}/signalize/h/src/index.ts`,
-			'signalizejs/logger': `${packagesDir}/signalize/logger/src/index.ts`,
-			'signalizejs/snippets': `${packagesDir}/signalize/snippets/src/index.ts`,
-			'signalizejs/spa': `${packagesDir}/signalize/spa/src/index.ts`,
-			signalizejs: `${packagesDir}/signalize/src/index.ts`
+			'signalizejs/ajax': `${packagesDir}/ajax/src/index.ts`,
+			'signalizejs/asset-loader': `${packagesDir}/asset-loader/src/index.ts`,
+			'signalizejs/core': `${packagesDir}/core/src/index.ts`,
+			'signalizejs/dialog': `${packagesDir}/dialog/src/index.ts`,
+			'signalizejs/directives': `${packagesDir}/directives/src/index.ts`,
+			'signalizejs/h': `${packagesDir}/h/src/index.ts`,
+			'signalizejs/logger': `${packagesDir}/logger/src/index.ts`,
+			'signalizejs/snippets': `${packagesDir}/snippets/src/index.ts`,
+			'signalizejs/spa': `${packagesDir}/spa/src/index.ts`,
+			signalizejs: `${packagesDir}/src/index.ts`
 		}
 	},
 	server: {

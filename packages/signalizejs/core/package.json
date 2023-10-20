@@ -1,0 +1,8 @@
+{
+	"name": "signalizejs/core",
+	"main": "./dist/core.cjs",
+	"module": "./dist/core.js",
+	"types": "./dist/index.d.ts",
+	"type": "module",
+	"sideEffects": false
+}

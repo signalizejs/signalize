@@ -2,13 +2,13 @@ import type { Signalize, Signal } from 'signalizejs';
 
 declare module 'signalizejs' {
 	interface Signalize {
-		h: <T extends HTMLElement>(tagName: string, ...children: Array<HypertextChildAttrs | HypertextChild | HypertextChild[]>) => T
+		h: <T extends HTMLElement>(tagName: string, ...children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>) => T
 	}
 }
 
-type HypertextChild = string | number | Element | Node | Signal<any>;
+type HyperscriptChild = string | number | Element | Node | Signal<any>;
 
-type HypertextChildAttrs = Record<string, string | Signal>;
+type HyperscriptChildAttrs = Record<string, string | Signal>;
 
 export default (signalize: Signalize): void => {
 	const { bind, Signal } = signalize;
@@ -16,7 +16,7 @@ export default (signalize: Signalize): void => {
 	const renderDom = (
 		tagName: string,
 		attrs: Record<string, any>,
-		children: Array<HypertextChildAttrs | HypertextChild | HypertextChild[]>
+		children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>
 	): HTMLElement => {
 		const el = document.createElement(tagName);
 
@@ -70,11 +70,11 @@ export default (signalize: Signalize): void => {
 		return el;
 	}
 
-	const h = <T extends HTMLElement>(tagName: string, ...children: Array<HypertextChildAttrs | HypertextChild | HypertextChild[]>): T => {
-		let attrs: HypertextChildAttrs = {};
+	const h = <T extends HTMLElement>(tagName: string, ...children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>): T => {
+		let attrs: HyperscriptChildAttrs = {};
 
 		if (children[0]?.constructor?.name === 'Object') {
-			attrs = children.shift() as HypertextChildAttrs;
+			attrs = children.shift() as HyperscriptChildAttrs;
 		}
 
 		children = children.flat(Infinity);

@@ -1,5 +1,5 @@
-import type Signalize from '..'
-import type { CustomEventListener, Scope } from '..';
+import type Signalize from 'signalizejs/core'
+import type { CustomEventListener, Scope } from 'signalizejs/core';
 
 declare module '..' {
 	interface Signalize {
@@ -78,7 +78,7 @@ export default (signalize: Signalize): void => {
 			const matcher = directives[directiveName].matcher;
 			return matcher instanceof RegExp ? matcher.source : matcher
 		}).join('|');
-		const re = new RegExp(directivesMatchersRegExpString);
+		const re = new RegExp(`^${directivesMatchersRegExpString}`);
 
 		const processDirective = async (directiveName: string, attribute: Attr, matches: RegExpMatchArray): Promise<void> => {
 			const canBeProcessed = dispatch('directive:beforeProcess', {
@@ -114,8 +114,8 @@ export default (signalize: Signalize): void => {
 						if (!(directives[directiveName].matcher instanceof RegExp)) {
 							continue;
 						}
-
-						const matches = directives[directiveName].matcher.exec(attribute.name);
+						const re = new RegExp(`^${directives[directiveName].matcher.source}`);
+						const matches = re.exec(attribute.name);
 						if (matches) {
 							directivesPromises.push(processDirective(directiveName, attribute, matches));
 							break;
@@ -194,6 +194,7 @@ export default (signalize: Signalize): void => {
 				try {
 					return new AsyncFunction('_context', '_element', `
 						try {
+							console.log('he');
 							let { ${functionDataKeys.join(',')} } = _context;
 							${functionString}
 						} catch(e) {
@@ -496,7 +497,8 @@ export default (signalize: Signalize): void => {
 			callback: async ({ element, data, attribute }) => {
 				const fn = createFunction({
 					functionString: `return ${attribute.value}`,
-					context: data()
+					context: data(),
+					element
 				});
 				const signalsToWatch = [];
 
@@ -581,7 +583,8 @@ export default (signalize: Signalize): void => {
 						const result = ${attribute.value};
 						return typeof result === 'function' ? result.call(null, _context) : result;
 					`,
-					context: currentData
+					context: currentData,
+					element
 				})
 				const signalsToWatch = [];
 
@@ -611,7 +614,7 @@ export default (signalize: Signalize): void => {
 				on(matches[1], element, async (event) => {
 					const currentData = data();
 					const fn = createFunction({
-						functionString: `return ${attribute.value}`,
+						functionString: `${attribute.value}`,
 						context: {
 							event,
 							...currentData

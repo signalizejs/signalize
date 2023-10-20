@@ -1,4 +1,5 @@
 import type Signalize from '..'
+import { Scope } from './scope';
 
 declare module '..' {
 	interface Signalize {
@@ -117,17 +118,21 @@ export default (signalize: Signalize): void => {
 					};
 					on('input', element, inputListener);
 
-					elementScope.cleanup(() => {
-						off('input', element, inputListener);
-					})
+					if (elementScope instanceof Scope) {
+						elementScope.cleanup(() => {
+							off('input', element, inputListener);
+						})
+					}
 				}
 			}
 
-			elementScope.cleanup(() => {
-				for (const unwatch of unwatchSignalCallbacks) {
-					unwatch();
-				}
-			})
+			if (elementScope instanceof Scope) {
+				elementScope.cleanup(() => {
+					for (const unwatch of unwatchSignalCallbacks) {
+						unwatch();
+					}
+				})
+			}
 		}
 	}
 

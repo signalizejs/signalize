@@ -3,7 +3,7 @@ import type { CustomEventListener } from './on';
 
 declare module '..' {
 	interface Signalize {
-		scope: (nameOrElement: string | HTMLElement | Document | DocumentFragment, init: ScopeInitFunction) => void | ScopeInstance
+		scope: (nameOrElement: string | HTMLElement | Document | DocumentFragment, init: ScopeInitFunction) => undefined | Scope
 	}
 
 	interface CustomEventListeners {

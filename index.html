@@ -17,7 +17,7 @@
 		}
 	</style>
 
-	<div $text="" $count="1000" cloak>
+	<!-- <div $text="" $count="1000" cloak>
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -35,7 +35,7 @@
 				</div>
 			</template>
 		</ul>
-	</div>
+	</div> -->
 
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();
@@ -117,9 +117,30 @@
 		</template>
 	</div> -->
 
+	<div id="app"></div>
+
 	<script type="module">
+		// Import signalize
 		import Signalize from 'signalizejs';
+		// Import Hyperscript Plugin
+		import HyperscriptPlugin from 'signalizejs/h'
+
+		// Init signalize
 		const signalize = new Signalize();
+		// Use Hyperscript Plugin
+		signalize.use(HyperscriptPlugin);
+		const { signal, select, h } = signalize;
+		// Create text signal
+		const text = signal(0);
+
+		select('#app').replaceWith(
+			// Create elements
+			h('div', {id: app},
+				// Bind text signal to element attributes
+				h('input', {value: text}),
+				h('div', text)
+			)
+		);
 	</script>
 
 </body>

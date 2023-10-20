@@ -1,6 +1,5 @@
 import AsyncFunctionPlugin from './plugins/AsyncFunction';
 import BindPlugin from './plugins/bind';
-import DirectivePlugin from './plugins/directives';
 import DispatchPlugin from './plugins/dispatch'
 import DomReadyPlugin from './plugins/domReady';
 import MergePlugin from './plugins/merge';
@@ -15,7 +14,6 @@ import TaskPlugin from './plugins/task';
 
 export * from './plugins/AsyncFunction';
 export * from './plugins/bind';
-export * from './plugins/directives';
 export * from './plugins/dispatch'
 export * from './plugins/domReady';
 export * from './plugins/merge';
@@ -40,15 +38,13 @@ export interface SignalizeConfig extends Record<string, any> {
 	root: HTMLElement | Document | DocumentFragment
 	exposeSignalize: boolean
 	attributesPrefix: string
-	directivesSeparator: string
 }
 
 export class Signalize {
 	config: SignalizeConfig = {
 		root: document,
 		exposeSignalize: true,
-		attributesPrefix: '',
-		directivesSeparator: '-'
+		attributesPrefix: ''
 	}
 
 	globals: Record<string, any> = {}
@@ -82,7 +78,6 @@ export class Signalize {
 		this.use(ObservePlugin);
 		this.use(BindPlugin);
 		this.use(RefPlugin);
-		this.use(DirectivePlugin);
 
 		this.on('dom:ready', () => {
 			this.observeMutations(this.config.root);
