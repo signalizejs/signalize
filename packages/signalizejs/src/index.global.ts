@@ -1,4 +1,4 @@
-import { Signalize } from './Signalize';
+import Signalize from './Signalize';
 
 if (window?.Signalize === undefined) {
 	if (document.currentScript?.hasAttribute('noinit') === false

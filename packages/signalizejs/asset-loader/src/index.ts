@@ -138,5 +138,5 @@ export default (signalize: Signalize): void => {
 		})
 	});
 
-	signalize.load = load;
+	signalize.loadAsset = load;
 }

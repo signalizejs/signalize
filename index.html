@@ -5,8 +5,8 @@
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta data-snippet="spa-cache-control" name="spa-cache-control" content="cache">
-	<title data-snippet="title">First page</title>
+	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
+	<title snippet="title">First page</title>
 	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
@@ -117,30 +117,22 @@
 		</template>
 	</div> -->
 
-	<div id="app"></div>
+	<div>
+
+	</div>
 
 	<script type="module">
-		// Import signalize
 		import Signalize from 'signalizejs';
-		// Import Hyperscript Plugin
-		import HyperscriptPlugin from 'signalizejs/h'
 
-		// Init signalize
-		const signalize = new Signalize();
-		// Use Hyperscript Plugin
-		signalize.use(HyperscriptPlugin);
-		const { signal, select, h } = signalize;
-		// Create text signal
-		const text = signal(0);
-
-		select('#app').replaceWith(
-			// Create elements
-			h('div', {id: app},
-				// Bind text signal to element attributes
-				h('input', {value: text}),
-				h('div', text)
-			)
-		);
+		const { Signal } = new Signalize();
+		class Number extends Signal {
+			increment() {
+				this.set(this.get() + 1);
+			}
+		}
+		const number = new Number(0);
+		number.increment();
+		console.log(number())
 	</script>
 
 </body>

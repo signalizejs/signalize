@@ -43,7 +43,6 @@ export default (signalize: Signalize): void => {
 			}, options);
 		},
 		remove: (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
-			// TODO on remove
 			on('dom:mutation:node:removed', (event: CustomEvent) => {
 				if (event.detail === target) {
 					listener();
@@ -58,7 +57,7 @@ export default (signalize: Signalize): void => {
 		callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 		options?: AddEventListenerOptions
 	): void {
-		const events = event.split(',').map((event) => event.trim());
+		const events = event.split(' ').map((event) => event.trim());
 		let target: Selectable;
 		let callback: CallableFunction;
 		const root = config.root ?? document;

@@ -1,5 +1,5 @@
-import type Signalize from 'signalizejs/core'
-import type { CustomEventListener, Scope } from 'signalizejs/core';
+import type Signalize from 'signalizejs'
+import type { CustomEventListener, Scope } from 'signalizejs';
 
 declare module '..' {
 	interface Signalize {
@@ -190,11 +190,10 @@ export default (signalize: Signalize): void => {
 		if (!(cacheKey in createFunctionCache)) {
 			const functionDataKeys = Object.keys({...globals, ...context});
 			createFunctionCache[cacheKey] = async function (data) {
-				let functionData = {...globals, ...data}
+				let functionData = {signalize, ...globals, ...data}
 				try {
 					return new AsyncFunction('_context', '_element', `
 						try {
-							console.log('he');
 							let { ${functionDataKeys.join(',')} } = _context;
 							${functionString}
 						} catch(e) {
@@ -653,5 +652,4 @@ export default (signalize: Signalize): void => {
 	})
 
 	signalize.directive = directive;
-
 }

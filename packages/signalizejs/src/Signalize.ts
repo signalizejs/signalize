@@ -1,5 +1,30 @@
-import { default as SignalizeCore, SignalizeConfig } from 'signalizejs/core';
-import DirectivesPlugin from 'signalizejs/directives';
+import AsyncFunctionPlugin from './plugins/AsyncFunction';
+import BindPlugin from './plugins/bind';
+import DispatchPlugin from './plugins/dispatch'
+import DomReadyPlugin from './plugins/domReady';
+import MergePlugin from './plugins/merge';
+import ObservePlugin from './plugins/mutation-observer';
+import OnPlugin from './plugins/on';
+import OffPlugin from './plugins/off';
+import RefPlugin from './plugins/ref';
+import ScopePlugin from './plugins/scope';
+import SelectPlugin from './plugins/select';
+import SignalPlugin from './plugins/signal';
+import TaskPlugin from './plugins/task';
+
+export * from './plugins/AsyncFunction';
+export * from './plugins/bind';
+export * from './plugins/dispatch'
+export * from './plugins/domReady';
+export * from './plugins/merge';
+export * from './plugins/mutation-observer';
+export * from './plugins/on';
+export * from './plugins/off';
+export * from './plugins/ref';
+export * from './plugins/scope';
+export * from './plugins/select';
+export * from './plugins/signal';
+export * from './plugins/task'
 
 declare global {
 	interface Window {
@@ -7,33 +32,35 @@ declare global {
 	}
 }
 
-export class Signalize extends SignalizeCore {
-	constructor (config?: Partial<SignalizeConfig>) {
-		super(config)
-		this.#init();
-	}
+export type Plugin<O> = (signalize: Signalize, options?: O) => void;
 
-	#init (): void {
-		this.use(DirectivesPlugin);
-	}
+export interface SignalizeConfig extends Record<string, any> {
+	root: HTMLElement | Document | DocumentFragment
+	exposeSignalize: boolean
+	attributesPrefix: string
 }
 
-/*
+export type SignalizeGlobals = Record<string, any>
+
+export interface SignalizeOptions {
+	config?: SignalizeConfig
+	globals?: SignalizeGlobals
+}
+
 export class Signalize {
 	config: SignalizeConfig = {
 		root: document,
 		exposeSignalize: true,
-		attributesPrefix: '',
-		directivesSeparator: '-'
+		attributesPrefix: ''
 	}
 
-	globals: Record<string, any> = {}
+	globals: SignalizeGlobals = {};
 
-	constructor (config?: Partial<SignalizeConfig>) {
-		this.#init(config);
+	constructor (options?: Partial<SignalizeOptions>) {
+		this.#init(options);
 	}
 
-	use<O = Record<string, any>>(plugin: Plugin<O>, options?: O): void {
+	use = <O = Record<string, any>>(plugin: Plugin<O>, options?: O): void => {
 		plugin(this, options);
 	}
 
@@ -41,10 +68,11 @@ export class Signalize {
 		this.config = this.merge(this.config, config) as SignalizeConfig
 	}
 
-	#init (config?: Partial<SignalizeConfig>): void {
+	#init = (options?: Partial<SignalizeOptions>): void => {
 		this.use(MergePlugin);
 
-		this.config = this.merge(this.config, config ?? {}) as SignalizeConfig;
+		this.globals = this.merge(this.globals, options?.globals ?? {});
+		this.config = this.merge(this.config, options?.config ?? {}) as SignalizeConfig;
 
 		this.use(AsyncFunctionPlugin);
 		this.use(TaskPlugin)
@@ -58,7 +86,6 @@ export class Signalize {
 		this.use(ObservePlugin);
 		this.use(BindPlugin);
 		this.use(RefPlugin);
-		this.use(DirectivePlugin);
 
 		this.on('dom:ready', () => {
 			this.observeMutations(this.config.root);
@@ -67,4 +94,3 @@ export class Signalize {
 }
 
 export default Signalize;
- */

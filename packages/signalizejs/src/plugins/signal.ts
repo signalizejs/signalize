@@ -40,7 +40,7 @@ class Signal<T = any> extends Function {
 		})
 	}
 
-	get (): T {
+	get = (): T => {
 		for (const watcher of this.watchers.onGet) {
 			watcher({ newValue: this.value, oldValue: this.value });
 		}
@@ -48,7 +48,7 @@ class Signal<T = any> extends Function {
 		return this.value;
 	}
 
-	set (newValue: T): void {
+	set = (newValue: T): void => {
 		const oldValue = this.value;
 
 		if (['string', 'number'].includes(typeof newValue) && newValue === oldValue) {
@@ -78,7 +78,7 @@ class Signal<T = any> extends Function {
 		}
 	}
 
-	watch(listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}) {
+	watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}) => {
 		const immediate = options.immediate ?? false;
 		const execution = options.execution ?? 'afterSet';
 
@@ -96,15 +96,15 @@ class Signal<T = any> extends Function {
 		}
 	}
 
-	toString (): string {
+	toString = (): string => {
 		return String(this.get())
 	}
 
-	toJSON (): T {
+	toJSON = (): T => {
 		return this.get();
 	}
 
-	valueOf (): T {
+	valueOf = (): T => {
 		return this.get();
 	}
 }

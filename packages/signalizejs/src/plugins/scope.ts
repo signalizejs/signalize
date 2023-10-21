@@ -38,6 +38,7 @@ export class Scope {
 		this.element = element;
 		this.#signalize = signalize;
 		this.#scopeAttribute = scopeAttribute;
+
 		const getElementData = (element, data = {}): Scope => {
 			if (element === null) {
 				return data;
@@ -68,8 +69,7 @@ export class Scope {
 			}
 		}
 
-		const callableData = new CallableData();
-		this.data = callableData;
+		this.data = new CallableData();
 		this.element.__signalizeScope = this;
 
 		if (init !== undefined) {
@@ -77,7 +77,7 @@ export class Scope {
 		}
 	}
 
-	cleanup (callback: CallableFunction): void {
+	cleanup = (callback: CallableFunction): void => {
 		if (callback === undefined) {
 			for (const cleanup of this.#cleanups) {
 				cleanup();
@@ -90,17 +90,18 @@ export class Scope {
 		this.#cleanups.add(callback);
 	}
 
-	ref<T extends HTMLElement>(id: string): T | null {
+	ref = <T extends HTMLElement>(id: string): T | null => {
+		console.log(this);
 		const refEl = this.#signalize.ref<T>(id, this.element);
 		return refEl !== null && this.#parentScopeIsEl(refEl) ? refEl : null
 	}
 
-	refs (id: string): HTMLElement[] {
+	refs = (id: string): HTMLElement[] => {
 		return [...this.#signalize.refs(id, this.element)].filter(this.#parentScopeIsEl)
 	}
 
-	#parentScopeIsEl (refElement: HTMLElement): boolean {
-		return refElement.closest(`[${this.#scopeAttribute}]`) === el;
+	#parentScopeIsEl = (refElement: HTMLElement): boolean => {
+		return refElement.closest(`[${this.#scopeAttribute}]`) === this.element;
 	}
 }
 

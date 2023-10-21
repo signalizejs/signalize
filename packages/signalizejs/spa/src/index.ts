@@ -22,7 +22,13 @@ type StateAction = 'push' | 'replace';
 
 interface VisitData {
 	url: string | URL
+	scrollX?: number
+	scrollY?: number
 	stateAction?: StateAction
+}
+
+interface SpaHistoryState extends Partial<VisitData> {
+	spa?: true
 }
 
 interface SpaDispatchEventData extends VisitData {
@@ -123,10 +129,20 @@ export default (signalize: Signalize): void => {
 				redraw(responseData);
 			}
 
+			console.log(data);
 			if (stateAction === 'replace') {
 				window.history.replaceState(window.history.state, '', urlString);
 			} else if (stateAction === 'push') {
-				window.history.pushState({ spa: true }, '', urlString);
+				window.history.pushState(
+					{
+						url: data.url,
+						spa: true,
+						scrollX: data.scrollX ?? window.scrollX,
+						scrollY: data.scrollY ?? window.scrollY
+					},
+					'',
+					urlString
+				);
 			}
 
 			if (shouldCacheResponse === null) {
@@ -168,7 +184,7 @@ export default (signalize: Signalize): void => {
 						});
 					}
 				} else {
-					window.scrollTo(0, 0)
+					window.scrollTo(data.scrollX ?? 0, data.scrollY ?? 0)
 				}
 			}
 
@@ -182,18 +198,23 @@ export default (signalize: Signalize): void => {
 	}
 
 	const onPopState = (): void => {
-		if (typeof window.history.state?.spa !== 'boolean') {
+		const state = window.history.state as SpaHistoryState;
+		console.log(state?.spa ?? false);
+		if (!(state?.spa ?? false)) {
 			return;
 		}
 
+		console.log(state);
 		const location = new URL(window.location.href);
 
 		if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
 			return;
 		}
 
-		const visitConfig = {
-			url: location
+		const visitConfig: VisitData = {
+			url: location,
+			scrollX: state.scrollX,
+			scrollY: state.scrollY
 		};
 
 		dispatch('spa:popstate', visitConfig);
@@ -230,7 +251,13 @@ export default (signalize: Signalize): void => {
 		}
 
 		if (window.history.state === null) {
-			window.history.replaceState({ spa: true }, '', window.location.href);
+			window.history.replaceState(
+				{
+					spa: true, scrollX: window.scrollX, scrollY: window.scrollY
+				},
+				'',
+				window.location.href
+			);
 		}
 
 		event.preventDefault();

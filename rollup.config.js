@@ -11,24 +11,25 @@ const signalizeDir = `${packagesDir}/signalizejs`;
  * @type { RollupOptions[] }
  */
 const packages = [
-	// signalizejs/core
+	// signalizejs
 	{
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${signalizeDir}/core/src`,
-				declarationDir: `${signalizeDir}/core/dist`
-			})
+				rootDir: `${signalizeDir}/src`,
+				declarationDir: `${signalizeDir}/dist`
+			}),
+			nodeResolve()
 		],
-		input: `${signalizeDir}/core/src/index.ts`,
+		input: `${signalizeDir}/src/index.ts`,
 		treeshake: false,
 		output: [
 			{
-				file: `${signalizeDir}/core/dist/core.js`,
+				file: `${signalizeDir}/dist/signalize.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/core/dist/core.cjs`,
+				file: `${signalizeDir}/dist/signalize.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -37,15 +38,15 @@ const packages = [
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${signalizeDir}/core/src`,
-				declarationDir: `${signalizeDir}/core/dist`
+				rootDir: `${signalizeDir}/src`,
+				declarationDir: `${signalizeDir}/dist`
 			})
 		],
-		input: `${signalizeDir}/core/src/index.global.ts`,
+		input: `${signalizeDir}/src/index.global.ts`,
 		treeshake: false,
 		output: [
 			{
-				file: `${signalizeDir}/core/dist/core.global.js`,
+				file: `${signalizeDir}/dist/signalize.global.js`,
 				format: 'iife'
 			}
 		]
@@ -239,47 +240,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/spa/dist/spa.cjs`,
 				format: 'cjs'
-			}
-		]
-	},
-
-	// signalizejs
-	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/src`,
-				declarationDir: `${signalizeDir}/dist`
-			}),
-			nodeResolve()
-		],
-		input: `${signalizeDir}/src/index.ts`,
-		treeshake: false,
-		output: [
-			{
-				file: `${signalizeDir}/dist/signalize.js`,
-				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/signalize.cjs`,
-				format: 'cjs'
-			}
-		]
-	},
-	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/src`,
-				declarationDir: `${signalizeDir}/dist`
-			})
-		],
-		input: `${signalizeDir}/src/index.global.ts`,
-		treeshake: false,
-		output: [
-			{
-				file: `${signalizeDir}/dist/signalize.global.js`,
-				format: 'iife'
 			}
 		]
 	}

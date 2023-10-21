@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
+	<title snippet="title">First page</title>
+	<script type="module" src="http://localhost:5173/@vite/client"></script>
+</head>
+
+<body>
+	<style>
+		[cloak] {
+			visibility: hidden;
+		}
+	</style>
+
+	<div snippet="content">
+		<a href="/first.html">First</a>
+	</div>
+
+	<script type="module">
+		import Signalize from 'signalizejs';
+		import ajax from 'signalizejs/ajax';
+		import snippets from 'signalizejs/snippets';
+		import spa from 'signalizejs/spa';
+
+		const signalize = new Signalize();
+		signalize.use(ajax);
+		signalize.use(snippets);
+		signalize.use(spa);
+	</script>
+
+</body>
+
+</html>
