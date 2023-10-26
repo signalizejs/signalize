@@ -81,9 +81,5 @@
 	"unpkg": "dist/signalize.global.js",
 	"module": "dist/signalize.js",
 	"types": "dist/index.d.ts",
-	"license": "MIT",
-	"dependencies": {
-		"signalizejs/core": "file:./core",
-		"signalizejs/diectives": "file:./directives"
-	}
+	"license": "MIT"
 }

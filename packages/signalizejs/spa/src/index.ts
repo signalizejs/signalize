@@ -129,7 +129,6 @@ export default (signalize: Signalize): void => {
 				redraw(responseData);
 			}
 
-			console.log(data);
 			if (stateAction === 'replace') {
 				window.history.replaceState(window.history.state, '', urlString);
 			} else if (stateAction === 'push') {
@@ -199,12 +198,11 @@ export default (signalize: Signalize): void => {
 
 	const onPopState = (): void => {
 		const state = window.history.state as SpaHistoryState;
-		console.log(state?.spa ?? false);
+
 		if (!(state?.spa ?? false)) {
 			return;
 		}
 
-		console.log(state);
 		const location = new URL(window.location.href);
 
 		if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {

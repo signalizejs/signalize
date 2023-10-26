@@ -22,6 +22,8 @@ interface SignalWatcherArguments<T> {
 	oldValue?: T
 }
 
+type Unwatch = () => void
+
 class Signal<T = any> extends Function {
 	value: T;
 	watchers: Record<SignalWatcherExecutionOption, Set<CallableFunction>> = {
@@ -78,7 +80,7 @@ class Signal<T = any> extends Function {
 		}
 	}
 
-	watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}) => {
+	watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}): Unwatch => {
 		const immediate = options.immediate ?? false;
 		const execution = options.execution ?? 'afterSet';
 

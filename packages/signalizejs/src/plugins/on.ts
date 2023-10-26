@@ -74,7 +74,6 @@ export default (signalize: Signalize): void => {
 		const listenerType = typeof target === 'string' ? 'global' : 'direct';
 		const handlers = {
 			global: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {
-				console.log(`"${event}"`)
 				document.addEventListener(event, (listenerEvent) => {
 					const eventTarget = listenerEvent.target as HTMLElement;
 

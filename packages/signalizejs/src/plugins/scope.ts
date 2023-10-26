@@ -14,9 +14,9 @@ declare module '..' {
 type ScopeInitFunction = (Scope: Scope) => void;
 
 export class Scope {
-	#signalize: Signalize;
-	#scopeAttribute: string;
-	#cleanups = new Set<CallableFunction>();
+	readonly #signalize: Signalize;
+	readonly #scopeAttribute: string;
+	readonly #cleanups = new Set<CallableFunction>();
 
 	element: HTMLElement | Document | DocumentFragment;
 	data;
@@ -91,7 +91,6 @@ export class Scope {
 	}
 
 	ref = <T extends HTMLElement>(id: string): T | null => {
-		console.log(this);
 		const refEl = this.#signalize.ref<T>(id, this.element);
 		return refEl !== null && this.#parentScopeIsEl(refEl) ? refEl : null
 	}
@@ -100,7 +99,7 @@ export class Scope {
 		return [...this.#signalize.refs(id, this.element)].filter(this.#parentScopeIsEl)
 	}
 
-	#parentScopeIsEl = (refElement: HTMLElement): boolean => {
+	readonly #parentScopeIsEl = (refElement: HTMLElement): boolean => {
 		return refElement.closest(`[${this.#scopeAttribute}]`) === this.element;
 	}
 }
@@ -213,7 +212,7 @@ export default (signalize: Signalize): void => {
 		});
 	});
 
- 	configure({
+	configure({
 		customEventListeners: {
 			'scopes:inited': (target: HTMLElement | string, listener: CallableFunction): void => {
 				if (inited) {

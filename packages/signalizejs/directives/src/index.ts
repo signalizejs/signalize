@@ -1,13 +1,8 @@
-import type Signalize from 'signalizejs'
-import type { CustomEventListener, Scope } from 'signalizejs';
+import type { Signalize, Scope } from 'signalizejs'
 
 declare module '..' {
 	interface Signalize {
 		directive: (name: string, data: Directive) => void
-	}
-
-	interface CustomEventListeners {
-		'directive:beforeProcess': CustomEventListener
 	}
 }
 
@@ -17,12 +12,25 @@ interface DirectiveCallbackData extends Scope {
 	element: HTMLElement
 	matches: RegExpMatchArray
 	attribute: Attr
+	// TODO doplnit data
 }
 
+interface DirectiveMatcherParameters {
+	element: HTMLElement
+	attribute: Attr
+}
+
+type DirectiveMatcherReturn = RegExp | undefined
+
+type DirectiveMatcher = (params: DirectiveMatcherParameters) => DirectiveMatcherReturn
+
 interface Directive {
-	matcher?: RegExp | string
-	setup?: CallableFunction
+	matcher?: RegExp | DirectiveMatcher
 	callback: DirectiveCallback
+}
+
+interface RegisteredDirective extends Directive {
+	matcher?: DirectiveMatcher
 }
 
 interface ProcessDirectiveOptions {
@@ -42,15 +50,16 @@ export default (signalize: Signalize): void => {
 		bind,
 		isDomReady,
 		on,
-		dispatch,
 		Signal, scope, signal,
 		config,
 		globals
 	} = signalize;
 
-	const directives: Record<string, Directive> = {};
+	const directives: Record<string, RegisteredDirective> = {};
 	let cloakAttribute = `${config.attributesPrefix}cloak`;
 	let ignoreAttribute = `${config.attributesPrefix}directives${config.directivesSeparator}ignore`;
+	const renderedTemplateStartComment = config.directivesRenderedBlockStart = 'template';
+	const renderedTemplateEndComment = config.directivesRenderedBlockEnd = '/template';
 	let inited = false;
 
 	const processElement = async (element: HTMLElement, directivesToProcess?: string[]): Promise<HTMLElement> => {
@@ -59,7 +68,7 @@ export default (signalize: Signalize): void => {
 
 		if (elementClosestScope && typeof elementClosestScope[config.scopeKey] === 'undefined') {
 			scopeInitPromise = new Promise((resolve) => {
-				on('scope:inited', ({detail}) => {
+				on('scope:inited', ({ detail }) => {
 					if (detail.element === elementClosestScope) {
 						resolve(true);
 					}
@@ -74,23 +83,7 @@ export default (signalize: Signalize): void => {
 		directivesToProcess = directivesToProcess ?? Object.keys(directives);
 
 		const directivesQueue = [...directivesToProcess];
-		const directivesMatchersRegExpString = directivesQueue.map((directiveName) => {
-			const matcher = directives[directiveName].matcher;
-			return matcher instanceof RegExp ? matcher.source : matcher
-		}).join('|');
-		const re = new RegExp(`^${directivesMatchersRegExpString}`);
-
 		const processDirective = async (directiveName: string, attribute: Attr, matches: RegExpMatchArray): Promise<void> => {
-			const canBeProcessed = dispatch('directive:beforeProcess', {
-				directiveName,
-				attribute,
-				element
-			});
-
-			if (!canBeProcessed) {
-				return;
-			}
-
 			const directive = directives[directiveName];
 
 			const elementScope = scope(element, (elementScope) => {
@@ -109,17 +102,26 @@ export default (signalize: Signalize): void => {
 			for (const attribute of element.attributes) {
 				if (attribute.name in directivesQueue) {
 					directivesPromises.push(processDirective(attribute.name, attribute));
-				} else if (re.test(attribute.name)) {
-					for (const directiveName of directivesQueue) {
-						if (!(directives[directiveName].matcher instanceof RegExp)) {
-							continue;
-						}
-						const re = new RegExp(`^${directives[directiveName].matcher.source}`);
-						const matches = re.exec(attribute.name);
-						if (matches) {
-							directivesPromises.push(processDirective(directiveName, attribute, matches));
-							break;
-						}
+					continue;
+				}
+
+				for (const directiveName of directivesQueue) {
+					const matcher = directives[directiveName]?.matcher
+
+					if (matcher === undefined) {
+						continue;
+					}
+
+					const matcherReturn = matcher({ element, attribute });
+					if (matcherReturn === undefined) {
+						continue;
+					}
+
+					const matches = matcherReturn.exec(attribute.name);
+
+					if (matches !== null) {
+						directivesPromises.push(processDirective(directiveName, attribute, matches));
+						break;
 					}
 				}
 			}
@@ -161,22 +163,17 @@ export default (signalize: Signalize): void => {
 		return root;
 	}
 
-	const directive = (name: string, data: Directive): void => {
+	const directive = (name: string, { matcher, callback }: Directive): void => {
 		if (name in directives) {
 			throw new Error(`Directive "${name}" already defined.`);
 		}
 
-		if (!('matcher' in data)) {
-			data.matcher = `${config.attributesPrefix}${name}`;
+		directives[name] = {
+			callback,
+			matcher: typeof matcher === 'function' ? matcher : () => matcher
 		}
 
-		directives[name] = data;
-
-		if (typeof data.setup === 'function') {
-			data.setup();
-		}
-
-		if (isDomReady() && inited) {
+		if (isDomReady() === true && inited) {
 			void processDirectives({ directiveName: name })
 		}
 	}
@@ -188,9 +185,9 @@ export default (signalize: Signalize): void => {
 		const cacheKey = `${options.functionString.replace(/\s*/g, '_')}-${Object.keys(options.context).join('-')}`;
 
 		if (!(cacheKey in createFunctionCache)) {
-			const functionDataKeys = Object.keys({...globals, ...context});
-			createFunctionCache[cacheKey] = async function (data) {
-				let functionData = {signalize, ...globals, ...data}
+			const functionDataKeys = Object.keys({ ...globals, ...context });
+			createFunctionCache[cacheKey] = async function (data: Record<string, any>) {
+				let functionData = { signalize, ...globals, ...data }
 				try {
 					return new AsyncFunction('_context', '_element', `
 						try {
@@ -233,14 +230,12 @@ export default (signalize: Signalize): void => {
 		});
 
 		directive('for', {
-			matcher: new RegExp(`(?::|${config.attributesPrefix})for`),
-			setup: () => {
-				on('directive:beforeProcess', (event) => {
-					const { directiveName, attribute, element } = event.detail;
-					if (directiveName === 'bind' && attribute.name.includes('for') && element.tagName.toLocaleLowerCase() === 'template') {
-						event.preventDefault();
-					}
-				});
+			matcher: ({ element }) => {
+				if (element.tagName.toLocaleLowerCase() !== 'template') {
+					return;
+				}
+
+				return new RegExp(`(?::|${config.attributesPrefix})for`);
 			},
 			callback: async ({ element, data, attribute }) => {
 				if (element.tagName.toLowerCase() !== 'template') {
@@ -277,7 +272,7 @@ export default (signalize: Signalize): void => {
 						const templateFragment = element.cloneNode(true).content;
 						for (const child of templateFragment.children) {
 							scope(child, ({ data }) => {
-								for (const [key, value] of Object.entries({...scopeToProcess, ...currentData})) {
+								for (const [key, value] of Object.entries({ ...scopeToProcess, ...currentData })) {
 									data[key] = value;
 								}
 							});
@@ -364,7 +359,7 @@ export default (signalize: Signalize): void => {
 							elementScope.cleanup();
 							const directivesQueue = elementScope.directives;
 							elementScope.directives = [];
-							processElement(element,directivesQueue);
+							processElement(element, directivesQueue);
 						}
 
 						for (const child of element.children) {
@@ -484,14 +479,12 @@ export default (signalize: Signalize): void => {
 		});
 
 		directive('if', {
-			matcher: new RegExp(`(?::|${config.attributesPrefix})if`),
-			setup: () => {
-				on('directive:beforeProcess', (event) => {
-					const { directiveName, attribute } = event.detail;
-					if (directiveName !== 'if' && attribute.name.includes('if')) {
-						event.preventDefault();
-					}
-				});
+			matcher: ({ element }) => {
+				if (element.tagName.toLowerCase() !== 'template') {
+					return;
+				}
+
+				return new RegExp(`(?::|${config.attributesPrefix})if`);
 			},
 			callback: async ({ element, data, attribute }) => {
 				const fn = createFunction({
@@ -514,7 +507,53 @@ export default (signalize: Signalize): void => {
 
 				let nextSibling = element.nextSibling;
 				const nextSiblingScope = scope(nextSibling);
-				const rendered = signal(nextSiblingScope?.condition === element)
+				const rendered = signal(nextSiblingScope?.template === element)
+
+				const bindElementToRenderedSignal = (root: ChildNode) => {
+					scope(root, (rootScope) => {
+						rootScope.template = element;
+
+						const unwatch = rendered.watch(({ newValue }) => {
+							if (newValue === false) {
+								unwatch();
+								root.remove();
+							}
+						})
+					});
+				}
+
+				if (rendered() === false) {
+					let renderedTemplateSibling = element.nextSibling;
+					let renderedTemplateOpenned = false;
+
+					while (renderedTemplateSibling) {
+						if (!renderedTemplateOpenned && renderedTemplateSibling.nodeType === Node.TEXT_NODE && renderedTemplateSibling.textContent.trim().length > 0) {
+							break;
+						}
+
+						if (renderedTemplateSibling.nodeType === Node.COMMENT_NODE) {
+							const content = renderedTemplateSibling.textContent?.trim();
+							if (content === renderedTemplateStartComment) {
+								rendered.set(true);
+								bindElementToRenderedSignal(renderedTemplateSibling)
+								renderedTemplateOpenned = true;
+								renderedTemplateSibling = renderedTemplateSibling.nextSibling;
+								continue;
+							} else if (content === renderedTemplateEndComment) {
+								bindElementToRenderedSignal(renderedTemplateSibling)
+								renderedTemplateOpenned = false;
+								break;
+							}
+						}
+
+						if (renderedTemplateOpenned) {
+							bindElementToRenderedSignal(renderedTemplateSibling);
+						}
+
+						renderedTemplateSibling = renderedTemplateSibling.nextSibling;
+					}
+				}
+
 				const render = async (): Promise<void> => {
 					const conditionResult = await fn(data());
 					let lastInsertPoint = element;
@@ -540,16 +579,7 @@ export default (signalize: Signalize): void => {
 					const children = [...fragment.childNodes];
 					while (children.length > 0) {
 						const root = children.shift();
-						scope(root, (rootScope) => {
-							rootScope.condition = element;
-
-							const unwatch = rendered.watch(({ newValue }) => {
-								if (newValue === false) {
-									unwatch();
-									root.remove();
-								}
-							})
-						});
+						bindElementToRenderedSignal(root)
 						lastInsertPoint.after(root);
 						lastInsertPoint = root;
 					}
@@ -573,7 +603,13 @@ export default (signalize: Signalize): void => {
 		})
 
 		directive('bind', {
-			matcher: new RegExp(`(?::|${config.attributesPrefix}bind${config.directivesSeparator})(\\S+)`),
+			matcher: ({ element, attribute }) => {
+				if ([':for', ':if'].includes(attribute.name) && element.tagName.toLowerCase() === 'template') {
+					return;
+				}
+
+				return new RegExp(`(?::|${config.attributesPrefix}bind${config.directivesSeparator})(\\S+)`)
+			},
 			callback: async (elscope) => {
 				const { matches, element, data, attribute } = elscope;
 				const currentData = data();

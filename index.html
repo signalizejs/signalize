@@ -6,7 +6,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
-	<title snippet="title">First page</title>
+	<title snippet="title">Index page</title>
 	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
@@ -17,7 +17,7 @@
 		}
 	</style>
 
-	<!-- <div $text="" $count="1000" cloak>
+	<div $text="" $count="5" cloak>
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -35,7 +35,7 @@
 				</div>
 			</template>
 		</ul>
-	</div> -->
+	</div>
 
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();
@@ -116,23 +116,57 @@
 			<div>Yupí! <span :html="number"></span></div>
 		</template>
 	</div> -->
+	<!-- <div id="cart-form"></div>
 
-	<div>
+	<div $count="1">
+		<button @click="count.set(count() + 1)">+</button>
+		<button @click="count.set(count() - 1)">-</button>
+		<template id="loop" singleroot :if="count > 0">
+			<div></div>
 
+		</template>
+		<div template="loop">
+			<div></div>
+		</div>
+	</div> -->
+
+	<!-- <div $items="{
+		birth: 0,
+		label: 2
+	}">
+		<template :for="key in items">
+			<div :html="key + ' - ' + items()[key]"></div>
+		</template>
 	</div>
+ -->
+
+	<!-- <div $renderForm>
+		<template :if="renderForm">
+			<div>Text</div>
+		</template>
+		<template :if="!renderForm">
+
+		</template>
+	</div>
+ -->
+
+ 	<!-- <div $count="1">
+		<button @click="count.set(count() + 1)">+</button>
+		<button @click="count.set(count() - 1)">-</button>
+		<template template="text" :if="count() > 0">
+			Ahoj
+		</template> -->
+		<!-- template  -->
+			<!-- Ahoj -->
+		<!-- /template -->
+	<!-- </div> -->
 
 	<script type="module">
 		import Signalize from 'signalizejs';
+		import Directives from 'signalizejs/directives';
 
-		const { Signal } = new Signalize();
-		class Number extends Signal {
-			increment() {
-				this.set(this.get() + 1);
-			}
-		}
-		const number = new Number(0);
-		number.increment();
-		console.log(number())
+		const { use } = new Signalize();
+		use(Directives);
 	</script>
 
 </body>
