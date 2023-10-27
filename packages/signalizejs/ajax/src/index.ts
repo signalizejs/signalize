@@ -24,7 +24,8 @@ export interface AjaxOptions extends RequestInit {
 }
 
 export default (signalize: Signalize): void => {
-	const { dispatch } = signalize;
+	const { dispatch, config } = signalize;
+	const requestedWithHeader = config.ajaxRequestedWithHeader ?? 'XMLHttpRequest';
 
 	signalize.ajax = async (options: AjaxOptions): Promise<AjaxReturn> => {
 		let response: Response | null = null;
@@ -50,7 +51,7 @@ export default (signalize: Signalize): void => {
 			const url = options.url;
 
 			const requestInit = { ...options };
-			requestInit.headers = { ...{ 'X-Requested-With': 'XMLHttpRequest' }, ...requestInit.headers ?? {} }
+			requestInit.headers = { ...{ 'X-Requested-With': requestedWithHeader }, ...requestInit.headers ?? {} }
 
 			delete requestInit.url;
 

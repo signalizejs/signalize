@@ -21,7 +21,7 @@ export default (signalize: Signalize): void => {
 
 				if (Array.isArray(value)) {
 					mergedObject[key] = [...mergedObject[key], ...value];
-				} else if (value !== null && valueType === 'object') {
+				} else if (value !== null && !(value instanceof Element) && !(value instanceof Document) && !(value instanceof DocumentFragment) && valueType === 'object') {
 					mergedObject[key] = merge(mergedObject[key], value as T);
 				} else {
 					mergedObject[key] = value;

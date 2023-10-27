@@ -17,25 +17,23 @@
 		}
 	</style>
 
-	<div $text="" $count="5" cloak>
+	<!-- <div $text="" $count="1000" cloak>
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
 		<ul>
 			<template :for="i of count()">
-				<div>
+				<li :kei="i">
 					<template :if="i % 2 !== 0">
 						<span :text="'Odd' + i + ' - ' + text"></span>
 					</template>
-				</div>
-				<div>
 					<template :if="i % 2 === 0">
 						<span :text="'Even' + i + ' - ' + text" :style="text().length > 2 ? 'color:red' : 'color:blue'"></span>
 					</template>
-				</div>
+				</li>
 			</template>
 		</ul>
-	</div>
+	</div> -->
 
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();
@@ -54,12 +52,12 @@
 							items.set(newItems);
 						"
 					>
-						<span :text="item"></span> -	X
+						<span :text="item"></span> - X
 					</a>
 				</li>
 			</template>
 		</ul>
-	</form> -->
+	</form>  -->
 
 	<!-- <template :for="[name, surname] of Object.entries({name: 'vladimir', surname: 'Macháček'})">
 		<li :text="name + ' ' + surname"></li>
@@ -79,16 +77,15 @@
 		</template>
 	</div> -->
 
-	<!-- <br><br>
-	<div $items="[]">
+	<!-- <div $items="[]">
 		<button @click="items.set([items().length, ...items()])" :text="'+' + items().length"></button>
 		<button @click="items.set(items().slice(1))" :text="'-' + items().length"></button>
 
 		<template :for="i of items()">
-			<div $text="i"><input :value="text"><span :text="text"></span></div>
+			<div $text="i" :key="i"><input :value="text"><span :text="text"></span></div>
 		</template>
-	</div>
- -->
+	</div> -->
+
 	<!-- <template :for="i in 1100">
 		<div :text="i"></div>
 	</template> -->
@@ -140,32 +137,13 @@
 	</div>
  -->
 
-	<!-- <div $renderForm>
-		<template :if="renderForm">
-			<div>Text</div>
-		</template>
-		<template :if="!renderForm">
-
-		</template>
-	</div>
- -->
-
- 	<!-- <div $count="1">
-		<button @click="count.set(count() + 1)">+</button>
-		<button @click="count.set(count() - 1)">-</button>
-		<template template="text" :if="count() > 0">
-			Ahoj
-		</template> -->
-		<!-- template  -->
-			<!-- Ahoj -->
-		<!-- /template -->
-	<!-- </div> -->
 
 	<script type="module">
 		import Signalize from 'signalizejs';
 		import Directives from 'signalizejs/directives';
 
 		const { use } = new Signalize();
+
 		use(Directives);
 	</script>
 

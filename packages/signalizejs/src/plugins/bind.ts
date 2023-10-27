@@ -95,6 +95,8 @@ export default (signalize: Signalize): void => {
 				if (attributeBinderIsSignal === true || signalsToWatch.length === 1) {
 					getListener = () => attributeBinder();
 					setListener = (value) => signalsToWatch[0].set(value);
+				} else if (typeof attributeBinder === 'function') {
+					getListener = () => attributeBinder();
 				} else {
 					getListener = typeof attributeBinder.get === 'function' ? () => attributeBinder.get() : null;
 					setListener = typeof attributeBinder.set === 'function' ? (value) => attributeBinder.set(value) : null

@@ -24,7 +24,6 @@ export interface CustomEventListeners extends HTMLElementEventMap {
 
 export default (signalize: Signalize): void => {
 	const { config, selectorToIterable } = signalize;
-	const domMutationRemoveListeners = new Set();
 
 	const customEventListeners: Record<string, CustomEventListener> = {
 		clickOutside: (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {

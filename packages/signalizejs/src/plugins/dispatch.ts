@@ -14,8 +14,9 @@ interface Options {
 }
 
 export default (signalize: Signalize): void => {
+	const { config } = signalize;
 	signalize.dispatch = (eventName: string, eventData: any = undefined, options: Options = {}): boolean => {
-		return (options?.target ?? document).dispatchEvent(
+		return (options?.target ?? config.root).dispatchEvent(
 			new window.CustomEvent(eventName, {
 				detail: eventData,
 				cancelable: options?.cancelable ?? true,

@@ -507,22 +507,10 @@ export default (signalize: Signalize): void => {
 
 				let nextSibling = element.nextSibling;
 				const nextSiblingScope = scope(nextSibling);
-				const rendered = signal(nextSiblingScope?.template === element)
+				let rendered = nextSiblingScope?.template === element;
+				const renderedElements = [];
 
-				const bindElementToRenderedSignal = (root: ChildNode) => {
-					scope(root, (rootScope) => {
-						rootScope.template = element;
-
-						const unwatch = rendered.watch(({ newValue }) => {
-							if (newValue === false) {
-								unwatch();
-								root.remove();
-							}
-						})
-					});
-				}
-
-				if (rendered() === false) {
+				if (rendered === false) {
 					let renderedTemplateSibling = element.nextSibling;
 					let renderedTemplateOpenned = false;
 
@@ -534,23 +522,29 @@ export default (signalize: Signalize): void => {
 						if (renderedTemplateSibling.nodeType === Node.COMMENT_NODE) {
 							const content = renderedTemplateSibling.textContent?.trim();
 							if (content === renderedTemplateStartComment) {
-								rendered.set(true);
-								bindElementToRenderedSignal(renderedTemplateSibling)
+								rendered = true;
+								renderedElements.push(renderedTemplateSibling);
 								renderedTemplateOpenned = true;
 								renderedTemplateSibling = renderedTemplateSibling.nextSibling;
 								continue;
 							} else if (content === renderedTemplateEndComment) {
-								bindElementToRenderedSignal(renderedTemplateSibling)
+								renderedElements.push(renderedTemplateSibling);
 								renderedTemplateOpenned = false;
 								break;
 							}
 						}
 
 						if (renderedTemplateOpenned) {
-							bindElementToRenderedSignal(renderedTemplateSibling);
+							renderedElements.push(renderedTemplateSibling);
 						}
 
 						renderedTemplateSibling = renderedTemplateSibling.nextSibling;
+					}
+				}
+
+				const cleanElements = () => {
+					while (renderedElements.length) {
+						renderedElements.pop().remove()
 					}
 				}
 
@@ -558,12 +552,13 @@ export default (signalize: Signalize): void => {
 					const conditionResult = await fn(data());
 					let lastInsertPoint = element;
 
-					if (conditionResult === true && rendered() === true) {
+					if (conditionResult === true && rendered === true) {
 						return;
 					}
 
 					if (conditionResult !== true) {
-						rendered.set(false);
+						cleanElements();
+						rendered = false;
 						return;
 					}
 
@@ -577,24 +572,27 @@ export default (signalize: Signalize): void => {
 
 					fragment = await processDirectives({ root: fragment });
 					const children = [...fragment.childNodes];
+
 					while (children.length > 0) {
 						const root = children.shift();
-						bindElementToRenderedSignal(root)
+						renderedElements.push(root);
 						lastInsertPoint.after(root);
 						lastInsertPoint = root;
 					}
-					rendered.set(true);
+
+					rendered = true;
 				}
 
 				await render();
 
 				const unwatchSignalCallbacks = [];
 
-				for (const signalToWatch of signalsToWatch) {
-					unwatchSignalCallbacks.push(signalToWatch.watch(render));
+				while (signalsToWatch.length) {
+					unwatchSignalCallbacks.push(signalsToWatch.pop().watch(render));
 				}
 
 				scope(element).cleanup(() => {
+					cleanElements();
 					for (const unwatch of unwatchSignalCallbacks) {
 						unwatch();
 					}
@@ -621,7 +619,7 @@ export default (signalize: Signalize): void => {
 					context: currentData,
 					element
 				})
-				const signalsToWatch = [];
+				let signalsToWatch = [];
 
 				for (const signal of Object.values(currentData)) {
 					if (!(signal instanceof Signal)) {
