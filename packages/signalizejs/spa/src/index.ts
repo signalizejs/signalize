@@ -221,7 +221,7 @@ export default (signalize: Signalize): void => {
 	}
 
 	const onClick = async (event: CustomEvent): Promise<void> => {
-		const element = event.target as HTMLElement;
+		const element = event.target.closest('a') as HTMLAnchorElement;
 		const targetAttribute = element.getAttribute('target');
 
 		if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute) || element.hasAttribute('download')) {

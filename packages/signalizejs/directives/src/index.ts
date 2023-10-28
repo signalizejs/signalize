@@ -85,7 +85,6 @@ export default (signalize: Signalize): void => {
 		const directivesQueue = [...directivesToProcess];
 		const processDirective = async (directiveName: string, attribute: Attr, matches: RegExpMatchArray): Promise<void> => {
 			const directive = directives[directiveName];
-
 			const elementScope = scope(element, (elementScope) => {
 				if (!('directives' in elementScope)) {
 					elementScope.directives = [];
@@ -99,12 +98,12 @@ export default (signalize: Signalize): void => {
 
 		const directivesPromises = [];
 		if (directivesQueue.length > 0) {
+
 			for (const attribute of element.attributes) {
 				if (attribute.name in directivesQueue) {
 					directivesPromises.push(processDirective(attribute.name, attribute));
 					continue;
 				}
-
 				for (const directiveName of directivesQueue) {
 					const matcher = directives[directiveName]?.matcher
 
@@ -116,7 +115,6 @@ export default (signalize: Signalize): void => {
 					if (matcherReturn === undefined) {
 						continue;
 					}
-
 					const matches = matcherReturn.exec(attribute.name);
 
 					if (matches !== null) {
@@ -135,7 +133,7 @@ export default (signalize: Signalize): void => {
 	};
 
 	const processDirectives = async (options: ProcessDirectiveOptions = {}): Promise<HTMLElement | Document | DocumentFragment> => {
-		const { root = document, directiveName } = options;
+		const { root = config.root, directiveName } = options;
 		const directivesToProcess = directiveName === undefined ? Object.keys(directives) : [directiveName];
 
 		const processElements = async (root): Promise<void> => {
@@ -488,7 +486,10 @@ export default (signalize: Signalize): void => {
 			},
 			callback: async ({ element, data, attribute }) => {
 				const fn = createFunction({
-					functionString: `return ${attribute.value}`,
+					functionString: `
+						const result = ${attribute.value};
+						return typeof result === 'function' ? result() : result;
+					`,
 					context: data(),
 					element
 				});
@@ -614,7 +615,7 @@ export default (signalize: Signalize): void => {
 				const fn = createFunction({
 					functionString: `
 						const result = ${attribute.value};
-						return typeof result === 'function' ? result.call(null, _context) : result;
+						return typeof result === 'function' ? result() : result;
 					`,
 					context: currentData,
 					element
@@ -647,7 +648,10 @@ export default (signalize: Signalize): void => {
 				on(matches[1], element, async (event) => {
 					const currentData = data();
 					const fn = createFunction({
-						functionString: `${attribute.value}`,
+						functionString: `
+							const result = ${attribute.value};
+							typeof result === 'function' ? result.call(this, event) : result;
+						`,
 						context: {
 							event,
 							...currentData
@@ -673,11 +677,7 @@ export default (signalize: Signalize): void => {
 
 		on('dom:mutation:node:added', (event) => {
 			const node = event.detail;
-			if (!(node instanceof HTMLElement)) {
-				return;
-			}
-
-			if (scope(node) !== undefined) {
+			if (!(node instanceof HTMLElement) || scope(node)?.directives !== undefined) {
 				return;
 			}
 
