@@ -17,13 +17,13 @@
 		}
 	</style>
 
-	<div $text="" $count="1" cloak>
+	<div $text="'aHOJ'" $count="1000">
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
 		<ul>
 			<template :for="i of count()">
-				<li :kei="i">
+				<li :key="i">
 					<template :if="i % 2 !== 0">
 						<span :text="'Odd' + i + ' - ' + text"></span>
 					</template>
@@ -34,6 +34,12 @@
 			</template>
 		</ul>
 	</div>
+	<!-- <div id="test">
+		<template $count="1" :if="true">
+			<template :if="true"><span :html="count"></span></template>
+		</template>
+	</div> -->
+
 
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();

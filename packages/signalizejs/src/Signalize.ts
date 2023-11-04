@@ -1,4 +1,3 @@
-import AsyncFunctionPlugin from './plugins/async-function';
 import BindPlugin from './plugins/bind';
 import DispatchPlugin from './plugins/dispatch'
 import DomReadyPlugin from './plugins/domReady';
@@ -11,7 +10,6 @@ import MutationsObserverPlugin from './plugins/mutation-observer';
 import OffPlugin from './plugins/off';
 import OffsetPlugin from './plugins/offset';
 import OnPlugin from './plugins/on';
-import RefPlugin from './plugins/ref';
 import ScopePlugin from './plugins/scope';
 import SelectPlugin from './plugins/select';
 import SignalPlugin from './plugins/signal';
@@ -80,7 +78,6 @@ export class Signalize {
 		this.globals = this.merge(this.globals, options?.globals ?? {});
 		this.config = this.merge(this.config, options?.config ?? {}) as SignalizeConfig;
 
-		this.use(AsyncFunctionPlugin);
 		this.use(TaskPlugin)
 		this.use(DomReadyPlugin);
 		this.use(HeightPlugin);
@@ -96,7 +93,6 @@ export class Signalize {
 		this.use(IntersectionObserverPlugin);
 		this.use(ScopePlugin);
 		this.use(BindPlugin);
-		this.use(RefPlugin);
 		this.use(MutationsObserverPlugin);
 
 		this.on('dom:ready', () => {

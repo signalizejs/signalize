@@ -74,7 +74,6 @@ class Signal<T = any> extends Function {
 		}
 
 		this.value = newValue;
-
 		for (const watcher of this.watchers.afterSet) {
 			watcher({ newValue, oldValue });
 		}

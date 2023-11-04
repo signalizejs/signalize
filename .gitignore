@@ -3,7 +3,7 @@ node_modules
 *.tgz
 .idea
 /.idea
-**/dist
+dist
 /test-results/
 /playwright-report/
 /playwright/.cache/

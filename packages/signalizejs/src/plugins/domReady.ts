@@ -12,6 +12,7 @@ declare module '..' {
 }
 
 export default (signalize: Signalize): void => {
+	const { config } = signalize
 	const domReadyListeners: CallableFunction[] = [];
 
 	const callOnDomReadyListeners = (): void => {
@@ -20,7 +21,10 @@ export default (signalize: Signalize): void => {
 		}
 	}
 
-	const isDomReady = (): boolean => document.readyState !== 'loading';
+	const isDomReady = (): boolean => {
+		const documentElement = config.root instanceof Document ? config.root : config.root?.ownerDocument;
+		return documentElement.readyState !== 'loading'
+	};
 	signalize.isDomReady = isDomReady;
 
 	if (isDomReady()) {
@@ -33,13 +37,11 @@ export default (signalize: Signalize): void => {
 	signalize.configure({
 		customEventListeners: {
 			'dom:ready': (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
-				signalize.task(() => {
-					if (isDomReady()) {
-						listener()
-					} else {
-						domReadyListeners.push(listener);
-					}
-				})
+				if (isDomReady()) {
+					listener()
+				} else {
+					domReadyListeners.push(listener);
+				}
 			}
 		}
 	})
