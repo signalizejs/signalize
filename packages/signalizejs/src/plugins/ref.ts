@@ -13,12 +13,12 @@ export default (signalize: Signalize): void => {
 	const { config, selectAll } = signalize;
 	const refAttribute = `${config.attributesPrefix}ref`;
 
-	const refs = <T extends HTMLElement>(id: string, root: RefRootElement = document.documentElement): T[] => {
+	const refs = <T extends HTMLElement>(id: string, root: RefRootElement = config.root): T[] => {
 		return selectAll<T>(`[${refAttribute}="${id}"]`, root)
 	};
 
 	signalize.refs = refs;
-	signalize.ref = <T extends HTMLElement>(id: string, root: RefRootElement = document.documentElement): T | null => {
+	signalize.ref = <T extends HTMLElement>(id: string, root: RefRootElement = config.root): T | null => {
 		return refs<T>(id, root)[0] ?? null;
 	}
 }
