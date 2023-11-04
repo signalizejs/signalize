@@ -11,13 +11,18 @@ declare module '..' {
 		) => void
 		customEventListeners: Record<string, CustomEventListener>
 	}
+
+	interface CustomEventListeners {
+		'remove': CustomEventListener
+		'clickOutside': CustomEventListener
+	}
 }
 
-export type EventTarget = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window;
+export type EventTarget = string | NodeListOf<Element> | Element[] | Element | Window;
 
-export type CustomEventListener = (target: HTMLElement, callback: CallableFunction, options: AddEventListenerOptions) => void;
+export type CustomEventListener = (target: Element, callback: CallableFunction, options: AddEventListenerOptions) => void;
 
-export interface CustomEventListeners extends HTMLElementEventMap {
+export interface CustomEventListeners extends ElementEventMap {
 	clickOutside: CustomEventListener
 	remove: CustomEventListener
 }
@@ -26,12 +31,12 @@ export default (signalize: Signalize): void => {
 	const { config, selectorToIterable } = signalize;
 
 	const customEventListeners: Record<string, CustomEventListener> = {
-		clickOutside: (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
+		clickOutside: (target: Element | string, listener: CallableFunction, options: AddEventListenerOptions) => {
 			document.addEventListener('click', (listenerEvent) => {
-				const eventTarget = listenerEvent.target as HTMLElement;
+				const eventTarget = listenerEvent.target as Element;
 
 				if ((typeof target === 'string' && (eventTarget.matches(target) || eventTarget.closest(target) !== null)) ||
-					(target instanceof HTMLElement && target === eventTarget)
+					(target instanceof Element && target === eventTarget)
 				) {
 					return
 				}
@@ -41,7 +46,7 @@ export default (signalize: Signalize): void => {
 				}
 			}, options);
 		},
-		remove: (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
+		remove: (target: Element | string, listener: CallableFunction, options: AddEventListenerOptions) => {
 			on('dom:mutation:node:removed', (event: CustomEvent) => {
 				if (event.detail === target) {
 					listener();
@@ -74,7 +79,7 @@ export default (signalize: Signalize): void => {
 		const handlers = {
 			global: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {
 				document.addEventListener(event, (listenerEvent) => {
-					const eventTarget = listenerEvent.target as HTMLElement;
+					const eventTarget = listenerEvent.target as Element;
 
 					if (eventTarget.matches(target as string) || (eventTarget.closest(target as string) != null)) {
 						callback(listenerEvent);

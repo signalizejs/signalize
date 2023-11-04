@@ -1,18 +1,24 @@
-import AsyncFunctionPlugin from './plugins/AsyncFunction';
+import AsyncFunctionPlugin from './plugins/async-function';
 import BindPlugin from './plugins/bind';
 import DispatchPlugin from './plugins/dispatch'
 import DomReadyPlugin from './plugins/domReady';
+import HeightPlugin from './plugins/height';
+import IntersectionObserverPlugin from './plugins/intersection-observer';
+import IsInViewportPlugin from './plugins/is-in-viewport';
+import IsVisiblePlugin from './plugins/is-visible';
 import MergePlugin from './plugins/merge';
-import ObservePlugin from './plugins/mutation-observer';
-import OnPlugin from './plugins/on';
+import MutationsObserverPlugin from './plugins/mutation-observer';
 import OffPlugin from './plugins/off';
+import OffsetPlugin from './plugins/offset';
+import OnPlugin from './plugins/on';
 import RefPlugin from './plugins/ref';
 import ScopePlugin from './plugins/scope';
 import SelectPlugin from './plugins/select';
 import SignalPlugin from './plugins/signal';
 import TaskPlugin from './plugins/task';
+import WidthPlugin from './plugins/width';
 
-export * from './plugins/AsyncFunction';
+/* export * from './plugins/async-function';
 export * from './plugins/bind';
 export * from './plugins/dispatch'
 export * from './plugins/domReady';
@@ -24,7 +30,7 @@ export * from './plugins/ref';
 export * from './plugins/scope';
 export * from './plugins/select';
 export * from './plugins/signal';
-export * from './plugins/task'
+export * from './plugins/task' */
 
 declare global {
 	interface Window {
@@ -35,7 +41,7 @@ declare global {
 export type Plugin<O> = (signalize: Signalize, options?: O) => void;
 
 export interface SignalizeConfig extends Record<string, any> {
-	root: HTMLElement | Document | DocumentFragment
+	root: Element | Document | DocumentFragment
 	exposeSignalize: boolean
 	attributesPrefix: string
 }
@@ -48,7 +54,7 @@ export interface SignalizeOptions {
 }
 
 export class Signalize {
-	config: SignalizeConfig = {
+	config: Partial<SignalizeConfig> = {
 		root: document,
 		exposeSignalize: true,
 		attributesPrefix: ''
@@ -68,7 +74,7 @@ export class Signalize {
 		this.config = this.merge(this.config, config) as SignalizeConfig
 	}
 
-	#init = (options?: Partial<SignalizeOptions>): void => {
+	readonly #init = (options?: Partial<SignalizeOptions>): void => {
 		this.use(MergePlugin);
 
 		this.globals = this.merge(this.globals, options?.globals ?? {});
@@ -77,15 +83,21 @@ export class Signalize {
 		this.use(AsyncFunctionPlugin);
 		this.use(TaskPlugin)
 		this.use(DomReadyPlugin);
+		this.use(HeightPlugin);
+		this.use(WidthPlugin);
 		this.use(SelectPlugin);
 		this.use(DispatchPlugin);
+		this.use(OffsetPlugin);
+		this.use(IsVisiblePlugin);
+		this.use(IsInViewportPlugin);
 		this.use(OnPlugin);
 		this.use(OffPlugin);
 		this.use(SignalPlugin);
+		this.use(IntersectionObserverPlugin);
 		this.use(ScopePlugin);
-		this.use(ObservePlugin);
 		this.use(BindPlugin);
 		this.use(RefPlugin);
+		this.use(MutationsObserverPlugin);
 
 		this.on('dom:ready', () => {
 			this.observeMutations(this.config.root);

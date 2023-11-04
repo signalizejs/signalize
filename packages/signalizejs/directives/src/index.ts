@@ -56,7 +56,6 @@ export default (signalize: Signalize): void => {
 	} = signalize;
 
 	const directives: Record<string, RegisteredDirective> = {};
-	let cloakAttribute = `${config.attributesPrefix}cloak`;
 	let ignoreAttribute = `${config.attributesPrefix}directives${config.directivesSeparator}ignore`;
 	const renderedTemplateStartComment = config.directivesRenderedBlockStart = 'template';
 	const renderedTemplateEndComment = config.directivesRenderedBlockEnd = '/template';
@@ -124,7 +123,7 @@ export default (signalize: Signalize): void => {
 				}
 			}
 
-			element.removeAttribute(cloakAttribute);
+			element.removeAttribute(config.cloakAttribute);
 		}
 
 		await Promise.all(directivesPromises);
@@ -149,8 +148,8 @@ export default (signalize: Signalize): void => {
 
 			const elementsProcessingPromises = []
 
-			for (const children of [...root.children]) {
-				elementsProcessingPromises.push(processElements(children));
+			for (const child of [...root.children]) {
+				elementsProcessingPromises.push(processElements(child));
 			}
 
 			await Promise.all(elementsProcessingPromises);
@@ -205,7 +204,6 @@ export default (signalize: Signalize): void => {
 	}
 
 	on('dom:ready', async () => {
-		cloakAttribute = `${config.attributesPrefix}${cloakAttribute}`;
 		ignoreAttribute = `${config.attributesPrefix}${ignoreAttribute}`;
 
 		directive('signal', {

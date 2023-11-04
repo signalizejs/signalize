@@ -4,8 +4,8 @@ declare module 'signalizejs' {
 
 	interface Signalize {
 		dialog: (dialogOrId: string | HTMLDialogElement) => HTMLDialogElement | null
-		closeDialog:  (dialogOrId: string | HTMLDialogElement) => HTMLDialogElement | null
-		openDialog:  (dialogOrId: string | HTMLDialogElement, modelessly?: boolean) => HTMLDialogElement | null
+		closeDialog: (dialogOrId: string | HTMLDialogElement) => HTMLDialogElement | null
+		openDialog: (dialogOrId: string | HTMLDialogElement, modelessly?: boolean) => HTMLDialogElement | null
 	}
 
 	interface CustomEventListeners {
@@ -16,10 +16,10 @@ declare module 'signalizejs' {
 
 export default (signalize: Signalize): void => {
 	const { dispatch, select, on, config } = signalize;
-	let dialogAttribute = 'dialog';
-	let dialogModelessAttribute = `${dialogAttribute}-modeless`;
-	let dialogCloseButtonAttribute = `${dialogAttribute}-close`;
-	let dialogOpenButtonAttribute = `${dialogAttribute}-open`;
+	const dialogAttribute = `${config.attributesPrefix}dialog`;
+	const dialogModelessAttribute = `${dialogAttribute}-modeless`;
+	const dialogCloseButtonAttribute = `${dialogAttribute}-close`;
+	const dialogOpenButtonAttribute = `${dialogAttribute}-open`;
 
 	const getDialog = (id: string): HTMLDialogElement | null => select<HTMLDialogElement>(`[${dialogAttribute}=${id}]`);
 
@@ -64,11 +64,6 @@ export default (signalize: Signalize): void => {
 	}
 
 	on('dom:ready', () => {
-		dialogAttribute = `${config.attributesPrefix}${dialogAttribute}`;
-		dialogModelessAttribute = `${config.attributesPrefix}${dialogModelessAttribute}`;
-		dialogCloseButtonAttribute = `${config.attributesPrefix}${dialogCloseButtonAttribute}`;
-		dialogOpenButtonAttribute = `${config.attributesPrefix}${dialogOpenButtonAttribute}-open`;
-
 		on('click', `[${dialogCloseButtonAttribute}]`, ({ target }) => {
 			const dialog = target.getAttribute[`${dialogCloseButtonAttribute}`] ?? target.closest(`[${dialogAttribute}]`);
 

@@ -17,7 +17,7 @@
 		}
 	</style>
 
-	<!-- <div $text="" $count="1000" cloak>
+	<div $text="" $count="1" cloak>
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -33,7 +33,7 @@
 				</li>
 			</template>
 		</ul>
-	</div> -->
+	</div>
 
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();
@@ -137,14 +137,12 @@
 	</div>
  -->
 
-
 	<script type="module">
 		import Signalize from 'signalizejs';
 		import Directives from 'signalizejs/directives';
 
-		const { use } = new Signalize();
-
-		use(Directives);
+		const $ = new Signalize();
+		$.use(Directives);
 	</script>
 
 </body>

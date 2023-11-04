@@ -1,4 +1,4 @@
-import type Signalize from '..';
+import type { Signalize } from '..';
 import type { CustomEventListener } from './on';
 
 declare module '..' {
@@ -7,7 +7,7 @@ declare module '..' {
 	}
 
 	interface CustomEventListeners {
-		'scopes:inited': CustomEventListener
+		'scope:inited': CustomEventListener
 	}
 }
 
@@ -141,7 +141,7 @@ export default (signalize: Signalize): void => {
 		}
 	}
 
-	const scope = (nameOrElement: string | HTMLElement | Document | DocumentFragment, init: ScopeInitFunction): undefined | Scope => {
+	const scope = (nameOrElement: string | HTMLElement | Document | DocumentFragment, init?: ScopeInitFunction): undefined | Scope => {
 		const nameOrElementIsString = typeof nameOrElement === 'string';
 		const name = nameOrElementIsString ? nameOrElement : undefined;
 		const nameIsDefined = name !== undefined;
@@ -157,7 +157,7 @@ export default (signalize: Signalize): void => {
 			}
 			definedScopes[name] = init;
 
-			if (isDomReady()) {
+			if (isDomReady() && inited) {
 				initScopes(document.documentElement, name);
 				return;
 			}
@@ -168,18 +168,11 @@ export default (signalize: Signalize): void => {
 		return element[scopeKey];
 	};
 
-	const scopesInitedListeners: CallableFunction[] = [];
-
 	on('dom:ready', () => {
 		scopeAttribute = `${config.attributesPrefix}${scopeAttribute}`;
 
 		initScopes(config.root);
 		inited = true;
-		dispatch('scopes:inited');
-
-		for (const listener of scopesInitedListeners) {
-			listener();
-		}
 
 		const cleanScope = (element: HTMLElement | DocumentFragment | Document) => {
 			if (element[scopeKey] !== undefined) {
@@ -192,11 +185,9 @@ export default (signalize: Signalize): void => {
 		};
 
 		on('dom:mutation:node:removed', (event) => {
-			setTimeout(() => {
-				if (event.detail instanceof HTMLElement) {
-					cleanScope(event.detail)
-				}
-			}, 0);
+			if (event.detail instanceof Element) {
+				cleanScope(event.detail)
+			}
 		});
 
 		on('dom:mutation:node:added' as keyof CustomEventListener, document, ({ detail }: { detail: Node }): void => {
@@ -210,18 +201,6 @@ export default (signalize: Signalize): void => {
 
 			initScopes(detail);
 		});
-	});
-
-	configure({
-		customEventListeners: {
-			'scopes:inited': (target: HTMLElement | string, listener: CallableFunction): void => {
-				if (inited) {
-					listener();
-				} else {
-					scopesInitedListeners.push(listener);
-				}
-			}
-		}
 	});
 
 	signalize.config.scopeAttribute = scopeAttribute;
