@@ -30,18 +30,10 @@ export * from './plugins/select';
 export * from './plugins/signal';
 export * from './plugins/task' */
 
-declare global {
-	interface Window {
-		Signalize: Signalize
-	}
-}
-
-export type Plugin<O> = (signalize: Signalize, options?: O) => void;
-
 export interface SignalizeConfig extends Record<string, any> {
 	root: Element | Document | DocumentFragment
-	exposeSignalize: boolean
-	attributesPrefix: string
+	attributeSeparator: string
+	attributePrefix: string
 }
 
 export type SignalizeGlobals = Record<string, any>
@@ -49,13 +41,17 @@ export type SignalizeGlobals = Record<string, any>
 export interface SignalizeOptions {
 	config?: SignalizeConfig
 	globals?: SignalizeGlobals
+	plugins?: SignalizePlugin
 }
+
+export type SignalizePlugin = (signalize: Signalize) => void
 
 export class Signalize {
 	config: Partial<SignalizeConfig> = {
 		root: document,
-		exposeSignalize: true,
-		attributesPrefix: ''
+		attributeSeparator: '-',
+		attributePrefix: '',
+		customEventListeners: {}
 	}
 
 	globals: SignalizeGlobals = {};
@@ -64,40 +60,45 @@ export class Signalize {
 		this.#init(options);
 	}
 
-	use = <O = Record<string, any>>(plugin: Plugin<O>, options?: O): void => {
-		plugin(this, options);
-	}
-
-	configure = (config: Partial<SignalizeConfig>): void => {
-		this.config = this.merge(this.config, config) as SignalizeConfig
-	}
-
 	readonly #init = (options?: Partial<SignalizeOptions>): void => {
-		this.use(MergePlugin);
+		const readyListeners: CallableFunction = [];
+
+		this.config.customEventListeners['signalize:ready'] = (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
+			readyListeners.push(listener);
+		}
+
+		MergePlugin(this);
+		TaskPlugin(this);
+		HeightPlugin(this);
+		WidthPlugin(this);
+		SelectPlugin(this);
+		DispatchPlugin(this);
+		OffsetPlugin(this);
+		IsVisiblePlugin(this);
+		IsInViewportPlugin(this);
+		OnPlugin(this);
+		DomReadyPlugin(this);
+		OffPlugin(this);
+		SignalPlugin(this);
+		IntersectionObserverPlugin(this);
+		ScopePlugin(this);
+		BindPlugin(this);
+		MutationsObserverPlugin(this);
+
+		for (const plugin of options?.plugins ?? []) {
+			plugin(this);
+		}
 
 		this.globals = this.merge(this.globals, options?.globals ?? {});
 		this.config = this.merge(this.config, options?.config ?? {}) as SignalizeConfig;
 
-		this.use(TaskPlugin)
-		this.use(DomReadyPlugin);
-		this.use(HeightPlugin);
-		this.use(WidthPlugin);
-		this.use(SelectPlugin);
-		this.use(DispatchPlugin);
-		this.use(OffsetPlugin);
-		this.use(IsVisiblePlugin);
-		this.use(IsInViewportPlugin);
-		this.use(OnPlugin);
-		this.use(OffPlugin);
-		this.use(SignalPlugin);
-		this.use(IntersectionObserverPlugin);
-		this.use(ScopePlugin);
-		this.use(BindPlugin);
-		this.use(MutationsObserverPlugin);
+		while(readyListeners.length) {
+			readyListeners.shift()(this)
+		}
 
 		this.on('dom:ready', () => {
 			this.observeMutations(this.config.root);
-		})
+		});
 	}
 }
 

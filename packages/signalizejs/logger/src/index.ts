@@ -28,106 +28,106 @@ interface CompleteLogData extends Log {
 
 type Levels = 'log' | 'error' | 'warn';
 
-export default (signalize: Signalize): void => {
-	const { ajax, dispatch } = signalize;
-	let enabledLevels: Levels[] = ['error'];
+export default ($: Signalize): void => {
+	$.on('signalize:ready', () => {
+		const { ajax, dispatch, config } = $;
+		let enabledLevels: Levels[] = ['error'];
 
-	const originalConsoleError = console.error;
-	const originalConsoleInfo = console.info;
-	const originalConsoleLog = console.log;
-	const originalConsoleWarn = console.warn;
-	const originalWindowOnError = window.onerror;
+		const originalConsoleError = console.error;
+		const originalConsoleInfo = console.info;
+		const originalConsoleLog = console.log;
+		const originalConsoleWarn = console.warn;
+		const originalWindowOnError = window.onerror;
 
-	window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-		// TODO test
-		if ('error' in enabledLevels) {
-			handler({ });
-		}
-	});
-
-	const sendToServer = async (url: string, data: CompleteLogData): Promise<AjaxReturn> => {
-		return ajax({ url, data });
-	}
-
-	const handler = (log: Log): void => {
-		const completeData: CompleteLogData = {
-			...log,
-			url: window.location.href
+		const sendToServer = async (url: string, data: CompleteLogData): Promise<AjaxReturn> => {
+			return ajax({ url, data });
 		}
 
-		dispatch(`logger:${log.type}`, {
-			...completeData,
-			sendToServer: async (url: string): Promise<AjaxReturn> => await sendToServer(url, completeData)
-		});
-	}
+		const handler = (log: Log): void => {
+			const data: CompleteLogData = {
+				...log,
+				url: window.location.href
+			}
 
-	console.error = (...args: any[]): void => {
-		if ('error' in enabledLevels) {
-			handler({
-				type: 'error',
-				message: args
-			})
+			dispatch(`logger:${log.type}`, {
+				data,
+				sendToServer: async (url: string, customData = data): Promise<AjaxReturn> => await sendToServer(url, customData)
+			});
 		}
 
-		originalConsoleError(...args);
-	}
+		console.error = (...args: any[]): void => {
+			if ('error' in enabledLevels) {
+				handler({
+					type: 'error',
+					message: args
+				})
+			}
 
-	console.log = (...args: any[]): void => {
-		if ('log' in enabledLevels) {
-			handler({
-				type: 'log',
-				message: args
-			})
+			originalConsoleError(...args);
 		}
 
-		originalConsoleLog(...args);
-	}
+		console.log = (...args: any[]): void => {
+			if ('log' in enabledLevels) {
+				handler({
+					type: 'log',
+					message: args
+				})
+			}
 
-	console.info = (...args: any[]): void => {
-		if ('log' in enabledLevels) {
-			handler({
-				type: 'log',
-				message: args
-			})
+			originalConsoleLog(...args);
 		}
 
-		originalConsoleInfo(...args);
-	}
+		console.info = (...args: any[]): void => {
+			if ('log' in enabledLevels) {
+				handler({
+					type: 'log',
+					message: args
+				})
+			}
 
-	console.warn = (...args: any[]): void => {
-		if ('warn' in enabledLevels) {
-			handler({
-				type: 'warn',
-				message: args
-			})
+			originalConsoleInfo(...args);
 		}
 
-		originalConsoleWarn(...args);
-	}
+		console.warn = (...args: any[]): void => {
+			if ('warn' in enabledLevels) {
+				handler({
+					type: 'warn',
+					message: args
+				})
+			}
 
-	window.onerror = (message: Event | string, file?: string, lineNumber?: number, columnNumber?: number, error?: Error) => {
-		if (message === 'Script error.') {
-			// https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
-			return;
+			originalConsoleWarn(...args);
 		}
 
-		if ('error' in enabledLevels) {
-			handler({
-				type: 'error',
-				message: message instanceof Event ? message.type : message,
-				file: file ?? null,
-				lineNumber: lineNumber ?? 0,
-				columnNumber: columnNumber ?? 0,
-				stack: error?.stack ? error.stack : null
-			})
+		window.onerror = (message: Event | string, file?: string, lineNumber?: number, columnNumber?: number, error?: Error) => {
+			if (message === 'Script error.') {
+				// https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
+				return;
+			}
+
+			if ('error' in enabledLevels) {
+				handler({
+					type: 'error',
+					message: message instanceof Event ? message.type : message,
+					file: file ?? null,
+					lineNumber: lineNumber ?? 0,
+					columnNumber: columnNumber ?? 0,
+					stack: error?.stack ? error.stack : null
+				})
+			}
+
+			originalWindowOnError(message, file, lineNumber, columnNumber, error);
 		}
 
-		originalWindowOnError(message, file, lineNumber, columnNumber, error);
-	}
-
-	on('dom:ready', () => {
 		enabledLevels = config.logger?.enabledLevels ?? enabledLevels;
-	});
 
-	signalize.sendToServer = sendToServer;
+		window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+			// TODO test
+			if ('error' in enabledLevels) {
+				handler({});
+			}
+		});
+
+		$.sendToServer = sendToServer;
+	});
 }

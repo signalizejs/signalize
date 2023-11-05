@@ -6,8 +6,8 @@ declare module '..' {
 	}
 }
 
-export default (signalize: Signalize): void => {
-	signalize.isVisible = (element: HTMLElement): boolean => {
+export default ($: Signalize): void => {
+	$.isVisible = (element: HTMLElement): boolean => {
 		if (element.getClientRects().length !== 0) {
 			return true;
 		}

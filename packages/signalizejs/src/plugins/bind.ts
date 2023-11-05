@@ -7,8 +7,8 @@ declare module '..' {
 	}
 }
 
-export default (signalize: Signalize): void => {
-	const { scope, Signal, on, off, task } = signalize;
+export default ($: Signalize): void => {
+	const { scope, Signal, on, off, task } = $;
 
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
@@ -33,7 +33,7 @@ export default (signalize: Signalize): void => {
 		html: 'innerHTML'
 	}
 
-	const bind = (element: EventTarget, attributes: Record<string, any>): void => {
+	$.bind = (element: EventTarget, attributes: Record<string, any>): void => {
 		const unwatchSignalCallbacks: CallableFunction[] = [];
 		const elementScope = scope(element);
 
@@ -140,6 +140,4 @@ export default (signalize: Signalize): void => {
 			})
 		}
 	}
-
-	signalize.bind = bind;
 }

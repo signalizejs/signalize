@@ -13,8 +13,12 @@ declare module '..' {
 	}
 
 	interface CustomEventListeners {
-		'remove': CustomEventListener
-		'clickOutside': CustomEventListener
+		remove: CustomEventListener
+		clickOutside: CustomEventListener
+	}
+
+	interface SignalizeConfig {
+		customEventListeners: Record<string, CustomEventListener>
 	}
 }
 
@@ -27,10 +31,9 @@ export interface CustomEventListeners extends ElementEventMap {
 	remove: CustomEventListener
 }
 
-export default (signalize: Signalize): void => {
-	const { config, selectorToIterable } = signalize;
-
-	const customEventListeners: Record<string, CustomEventListener> = {
+export default ($: Signalize): void => {
+	let customEventListeners: Record<string, CustomEventListener> = {
+		...$.config.customEventListeners,
 		clickOutside: (target: Element | string, listener: CallableFunction, options: AddEventListenerOptions) => {
 			document.addEventListener('click', (listenerEvent) => {
 				const eventTarget = listenerEvent.target as Element;
@@ -53,18 +56,18 @@ export default (signalize: Signalize): void => {
 				}
 			}, { once: true });
 		}
-	};
+	}
 
-	const on = function (
+	const on = (
 		event: keyof CustomEventListeners,
-		targetOrCallback: Selectable | CallableFunction,
+		targetOrCallback: EventTarget | CallableFunction,
 		callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 		options?: AddEventListenerOptions
-	): void {
+	): void => {
 		const events = event.split(' ').map((event) => event.trim());
 		let target: Selectable;
 		let callback: CallableFunction;
-		const root = config.root ?? document;
+		const root = $.config.root ?? document;
 		options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
 
 		if (typeof targetOrCallback === 'function') {
@@ -87,15 +90,15 @@ export default (signalize: Signalize): void => {
 				}, options);
 			},
 			direct: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {
-				for (const element of selectorToIterable(target)) {
+				for (const element of $.selectorToIterable(target)) {
 					element.addEventListener(event, callback, options)
 				}
 			}
 		}
 
 		for (const event of events) {
-			if (event in signalize.config.customEventListeners) {
-				signalize.config.customEventListeners[event].call(this, target, callback, options);
+			if (event in customEventListeners) {
+				customEventListeners[event].call(this, target, callback, options);
 				continue;
 			}
 
@@ -103,6 +106,12 @@ export default (signalize: Signalize): void => {
 		}
 	}
 
-	signalize.configure({ customEventListeners })
-	signalize.on = on;
+	on('signalize:ready', () => {
+		customEventListeners = {
+			...customEventListeners,
+			...$.config.customEventListeners ?? {}
+		};
+	});
+
+	$.on = on;
 }

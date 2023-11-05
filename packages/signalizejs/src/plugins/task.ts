@@ -19,16 +19,16 @@ declare module '..' {
 
 export type DomReady = (callback: CallableFunction) => void;
 
-export default (signalize: Signalize): void => {
-	const DEADLINE_INTERVAL = 50;
+export default ($: Signalize): void => {
+	const deadlineInterval = 50;
 
 	const tasks: CallableFunction[] = [];
 
-	const yieldToMain = (): Promise<void> => new Promise((resolve) => {
-		window.setTimeout(resolve, 0);
-	});
+	const yieldToMain = (): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, 0));
+
 	let processing = false;
-	signalize.task = (callback: CallableFunction): void => {
+
+	$.task = (callback: CallableFunction): void => {
 		tasks.push(callback);
 
 		if (processing) {
@@ -37,17 +37,14 @@ export default (signalize: Signalize): void => {
 
 		processing = true;
 		void (async () => {
-			let deadline = window.performance.now() + DEADLINE_INTERVAL;
+			let deadline = window.performance.now() + deadlineInterval;
 
 			while (tasks.length > 0) {
-				if (window.performance.now() >= deadline ||
-					(
-						typeof window.navigator.scheduling !== 'undefined'
-						&& window.navigator.scheduling.isInputPending()
-					)
-				) {
+				if (window.performance.now() >= deadline || (
+					typeof window.navigator.scheduling !== 'undefined' && window.navigator.scheduling.isInputPending()
+				)) {
 					await yieldToMain();
-					deadline = window.performance.now() + DEADLINE_INTERVAL;
+					deadline = window.performance.now() + deadlineInterval;
 					continue;
 				}
 

@@ -12,14 +12,40 @@ export type Selectable = string | NodeListOf<HTMLElement> | HTMLElement[] | HTML
 
 export type IterableElements = Array<HTMLElement | Document | Window>
 
-export default (signalize: Signalize): void => {
-	const { config } = signalize;
+export default ($: Signalize): void => {
+	$.select = <T extends HTMLElement>(selector: string, root?: string | HTMLElement): T | null => {
+		root = root ?? $.config.root
+		if (typeof root === 'string') {
+			const rootSelector = root;
+			root = root.querySelector(rootSelector) as HTMLElement;
 
-	signalize.selectorToIterable = (target: Selectable, normalizeDocument = false): IterableElements => {
+			if (root === null) {
+				throw new Error(`Signalize: Root element "${rootSelector}" not found.`);
+			}
+		}
+
+		return root.querySelector(selector);
+	}
+
+	$.selectAll = <T extends HTMLElement>(selector: string, root?: string | HTMLElement): NodeListOf<T> => {
+		root = root ?? $.config.root;
+		if (typeof root === 'string') {
+			const rootSelector = root;
+			root = root.querySelector(rootSelector) as HTMLElement;
+
+			if (root === null) {
+				throw new Error(`Signalize: Root element "${rootSelector}" not found.`);
+			}
+		}
+
+		return root.querySelectorAll(selector);
+	}
+
+	$.selectorToIterable = (target: Selectable, normalizeDocument = false): IterableElements => {
 		let elements: IterableElements;
 
 		if (typeof target === 'string') {
-			elements = [...signalize.selectAll<HTMLElement>(target)];
+			elements = [...$.selectAll<HTMLElement>(target)];
 		} else {
 			const targetIsDocument = target instanceof Document;
 			if (target instanceof HTMLElement || targetIsDocument || target instanceof Window) {
@@ -30,31 +56,5 @@ export default (signalize: Signalize): void => {
 		}
 
 		return elements.filter((element) => element !== null);
-	}
-
-	signalize.select = <T extends HTMLElement>(selector: string, root: string | HTMLElement = config.root): T | null => {
-		if (typeof root === 'string') {
-			const rootSelector = root;
-			root = config.root.querySelector(rootSelector) as HTMLElement;
-
-			if (root === null) {
-				throw new Error(`Signalize: Root element "${rootSelector}" not found.`);
-			}
-		}
-
-		return root.querySelector(selector);
-	}
-
-	signalize.selectAll = <T extends HTMLElement>(selector: string, root: string | HTMLElement = config.root): NodeListOf<T> => {
-		if (typeof root === 'string') {
-			const rootSelector = root;
-			root = config.root.querySelector(rootSelector) as HTMLElement;
-
-			if (root === null) {
-				throw new Error(`Signalize: Root element "${rootSelector}" not found.`);
-			}
-		}
-
-		return root.querySelectorAll(selector);
 	}
 }

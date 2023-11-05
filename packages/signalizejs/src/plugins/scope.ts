@@ -10,18 +10,12 @@ declare module '..' {
 		'scope:inited': CustomEventListener
 		'scope:defined': CustomEventListener
 	}
-
-	interface SignalizeConfig {
-		scopeAttribute: string
-		refAttribute: string
-		scopeKey: string
-	}
 }
 
 type ScopeInitFunction = (Scope: Scope) => void | Promise<void>;
 
 export class Scope {
-	readonly #signalize: Signalize;
+	readonly #$: Signalize;
 	readonly #cleanups = new Set<CallableFunction>();
 	readonly #localData = {};
 
@@ -34,10 +28,9 @@ export class Scope {
 		signalize: Signalize
 		element: Element | Document | DocumentFragment
 	}) {
-		const { config } = signalize;
 		this.element = element;
-		this.#signalize = signalize;
-		this.element[config.scopeKey] = this;
+		this.#$ = signalize;
+		this.element[signalize.config.scopeKey] = this;
 	}
 
 	set data (newValue) {
@@ -45,12 +38,11 @@ export class Scope {
 	}
 
 	get data() {
-		const { scope, merge } = this.#signalize;
+		const { scope, merge } = this.#$;
 		const getScopedData = (element, data = {}) => {
 			if (element === null) {
 				return data;
 			}
-
 
 			return merge(data, scope(element)?.data ?? getScopedData(element.parentNode, data))
 		}
@@ -59,7 +51,7 @@ export class Scope {
 				return;
 			}
 
-			return element[this.#signalize.config.scopeKey] === undefined ? getParentData(element.parentNode, key) : scope(element).data[key];
+			return element[this.#$.config.scopeKey] === undefined ? getParentData(element.parentNode, key) : scope(element).data[key];
 		}
 
 		const setParentData = (element, key: string, value: any) => {
@@ -67,8 +59,8 @@ export class Scope {
 				return false;
 			}
 
-			if (element[this.#signalize.config.scopeKey] !== undefined) {
-				this.#signalize.scope(element).data[key] = value;
+			if (element[this.#$.config.scopeKey] !== undefined) {
+				this.#$.scope(element).data[key] = value;
 			} else {
 				setParentData(element.parentNode, key, value);
 			}
@@ -90,7 +82,7 @@ export class Scope {
 			const cleanChildren = (element) => {
 				for (const child of [...element.childNodes]) {
 					setTimeout(() => {
-						this.#signalize.scope(child)?.cleanup();
+						this.#$.scope(child)?.cleanup();
 						if (child instanceof Element && child.childNodes.length) {
 							cleanChildren(child);
 						}
@@ -117,28 +109,25 @@ export class Scope {
 	}
 
 	refs = <T extends Element>(id: string): T[] => {
-		return [...this.#signalize.selectAll<T>(
-			`[${this.#signalize.config.attributesPrefix}${this.#signalize.config.refAttribute}="${id}"]`,
+		return [...this.#$.selectAll<T>(
+			`[${this.#$.config.attributePrefix}ref="${id}"]`,
 			this.element
 		)].filter((element: Element) => {
 			return element.closest(
-				`[${this.#signalize.config.attributesPrefix}${this.#signalize.config.scopeAttribute}]`
+				`[${this.#$.config.attributePrefix}scope]`
 			) === this.element
 		})
 	}
 }
 
-export default (signalize: Signalize): void => {
-	const { on, config, selectAll, dispatch } = signalize;
+export default ($: Signalize): void => {
+	const { on, selectAll, dispatch } = $;
 
-	config.scopeAttribute = config.scopeAttribute ?? 'scope';
-	config.cloakAttribute = config.cloakAttribute ?? 'cloak';
-	config.refAttribute = config.refAttribute ?? 'ref';
-	config.scopeKey = config.scopeKey ?? '__signalizeScope';
+	$.config.cloakAttribute = 'cloak';
 
-	const scopeAttribute = `${config.attributesPrefix}${config.scopeAttribute}`;
-	const scopeKey = config.scopeKey;
-	const definedScopes: Record<string, ScopeInitFunction> = signalize.config.scopes ?? {};
+	let scopeAttribute: string;
+	const scopeKey = '__signalizeScope';
+	const definedScopes: Record<string, ScopeInitFunction> = {};
 
 	const scope = (nameOrElement: string | Element | Document | DocumentFragment, init?: ScopeInitFunction): undefined | Scope => {
 		if (typeof nameOrElement === 'string') {
@@ -149,42 +138,41 @@ export default (signalize: Signalize): void => {
 			dispatch('scope:defined', { name: nameOrElement })
 		} else if (typeof init !== 'undefined') {
 			if (nameOrElement[scopeKey] === undefined) {
-				nameOrElement[scopeKey] = new Scope({ signalize, element: nameOrElement })
+				nameOrElement[scopeKey] = new Scope({ signalize: $, element: nameOrElement })
 			}
 
-			const inited = init(nameOrElement[scopeKey]);
-			if (inited instanceof Promise) {
-				inited.then(() => nameOrElement[scopeKey].inited = true);
-			} else {
-				nameOrElement[scopeKey].inited = true;
-			}
+			init(nameOrElement[scopeKey]);
 		}
 
 		return nameOrElement[scopeKey];
 	};
 
-	on('dom:ready, scope:defined', (event) => {
-		let selector = `[${scopeAttribute}]`
-		if (event.detail?.name === undefined) {
-			selector += `="${event.detail.name}"`
-		}
+	on('signalize:ready', () => {
+		scopeAttribute = `${$.config.attributePrefix}scope`;
 
-		for (const element of selectAll(selector)) {
-			scope(element, definedScopes[element.getAttribute(scopeAttribute)]);
-		}
-	});
+		on('dom:ready scope:defined', (event) => {
+			let selector = `[${scopeAttribute}]`
+			if (event !== undefined && event.detail?.name === undefined) {
+				selector += `="${event.detail.name}"`
+			}
 
-	on('dom:mutation:node:removed', (event) => {
-		scope(event.detail)?.cleanup();
-	});
+			for (const element of selectAll(selector)) {
+				scope(element, definedScopes[element.getAttribute(scopeAttribute)]);
+			}
+		});
 
-	on('dom:mutation:node:added' as keyof CustomEventListener, document, ({ detail }: { detail: Node }): void => {
-		if (!(detail instanceof Element) || scope(detail) !== undefined) {
-			return;
-		}
+		on('dom:mutation:node:removed', (event) => {
+			scope(event.detail)?.cleanup();
+		});
 
-		scope(detail, detail.getAttribute(scopeAttribute));
-	});
+		on('dom:mutation:node:added' as keyof CustomEventListener, $.config.root, ({ detail }: { detail: Node }): void => {
+			if (!(detail instanceof Element) || scope(detail) !== undefined) {
+				return;
+			}
 
-	signalize.scope = scope;
+			scope(detail, detail.getAttribute(scopeAttribute));
+		});
+	})
+
+	$.scope = scope;
 }

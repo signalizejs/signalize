@@ -16,9 +16,10 @@ interface IsInViewportInfo {
 	whole: boolean
 }
 
-export default (signalize: Signalize): void => {
-	const { offset, height } = signalize;
-	signalize.isInViewport = (element, options): IsInViewportInfo => {
+export default ($: Signalize): void => {
+	const { offset, height } = $;
+
+	$.isInViewport = (element, options): IsInViewportInfo => {
 		const windowTop = window.scrollY;
 		const windowBottom = windowTop + window.innerHeight;
 		const elementTop = offset(element).top + (options?.offset ?? 0)

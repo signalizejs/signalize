@@ -2,7 +2,7 @@ import type Signalize from '..';
 
 declare module '..' {
 	interface Signalize {
-		Signal: Signal
+		Signal: typeof Signal
 		signal: <T>(defaultValue: T) => Signal<T>
 	}
 }
@@ -24,7 +24,7 @@ interface SignalWatcherArguments<T> {
 
 type Unwatch = () => void
 
-class Signal<T = any> extends Function {
+export class Signal<T = any> extends Function {
 	value: T;
 	watchers: Record<SignalWatcherExecutionOption, Set<CallableFunction>> = {
 		beforeSet: new Set(),
@@ -110,7 +110,7 @@ class Signal<T = any> extends Function {
 	}
 }
 
-export default (signalize: Signalize): void => {
-	signalize.Signal = Signal;
-	signalize.signal = <T>(defaultValue: T): Signal<T> => new Signal(defaultValue);
+export default ($: Signalize): void => {
+	$.Signal = Signal;
+	$.signal = <T>(defaultValue: T): Signal<T> => new Signal(defaultValue);
 }

@@ -10,14 +10,18 @@ type HyperscriptChild = string | number | Element | Node | Signal<any>;
 
 type HyperscriptChildAttrs = Record<string, string | Signal>;
 
-export default (signalize: Signalize): void => {
-	const { bind, Signal } = signalize;
+export default ($: Signalize): void => {
+	const { bind, Signal } = $;
 
-	const renderDom = (
-		tagName: string,
-		attrs: Record<string, any>,
-		children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>
-	): HTMLElement => {
+	$.h = <T extends HTMLElement>(tagName: string, ...children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>): T => {
+		let attrs: HyperscriptChildAttrs = {};
+
+		if (children[0]?.constructor?.name === 'Object') {
+			attrs = children.shift() as HyperscriptChildAttrs;
+		}
+
+		children = children.flat(Infinity);
+
 		const el = document.createElement(tagName);
 
 		if (Object.keys(attrs).length > 0) {
@@ -67,20 +71,6 @@ export default (signalize: Signalize): void => {
 
 		el.appendChild(fragment);
 
-		return el;
+		return el as T
 	}
-
-	const h = <T extends HTMLElement>(tagName: string, ...children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>): T => {
-		let attrs: HyperscriptChildAttrs = {};
-
-		if (children[0]?.constructor?.name === 'Object') {
-			attrs = children.shift() as HyperscriptChildAttrs;
-		}
-
-		children = children.flat(Infinity);
-
-		return renderDom(tagName, attrs, children) as T
-	}
-
-	signalize.h = h;
 }

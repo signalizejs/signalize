@@ -17,8 +17,8 @@ interface Offset {
 	right: number
 }
 
-export default (signalize: Signalize): void => {
-	signalize.offset = (element: HTMLElement): Offset => {
+export default ($: Signalize): void => {
+	$.offset = (element: HTMLElement): Offset => {
 		const rect = element.getBoundingClientRect();
 		const defaultView = element.ownerDocument.defaultView;
 

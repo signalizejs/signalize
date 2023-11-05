@@ -6,7 +6,7 @@ declare module '..' {
 	}
 }
 
-export default (signalize: Signalize): void => {
+export default ($: Signalize): void => {
 	const merge = <T extends object>(...objects: T[]): T => {
 		const mergedObject: T = {} as T;
 
@@ -32,5 +32,5 @@ export default (signalize: Signalize): void => {
 		return mergedObject;
 	}
 
-	signalize.merge = merge;
+	$.merge = merge;
 }

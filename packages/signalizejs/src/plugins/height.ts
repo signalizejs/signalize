@@ -6,8 +6,8 @@ declare module '..' {
 	}
 }
 
-export default (signalize: Signalize): void => {
-	signalize.height = (element) => {
+export default ($: Signalize): void => {
+	$.height = (element) => {
 		if (element === document) {
 			return window.innerHeight;
 		}

@@ -16,6 +16,11 @@ declare module 'signalizejs' {
 		'spa:popstate': CustomEventListener
 		'spa:clicked': CustomEventListener
 	}
+
+	interface SignalizeConfig {
+		spaAppVersionHeader: string
+		spaCacheHeader: string
+	}
 }
 
 type StateAction = 'push' | 'replace';
@@ -35,253 +40,249 @@ interface SpaDispatchEventData extends VisitData {
 	success?: boolean
 }
 
-export default (signalize: Signalize): void => {
-	const { dispatch, ajax, redraw, select, on, config } = signalize;
-	let spaUrlAttribute = `spa-url`;
-	let spaIgnoreAttribute = `spa-ignore`;
-	let spaStateActionAttribute = `spa-state-action`;
-	let spaMetaCacheNameAttribute = `spa-cache-control`;
-	let spaCacheHeader = `X-Spa-Cache-Control`;
-	let spaAppVersionHeader = `X-Spa-App-Version`;
+export default ($: Signalize): void => {
+	$.on('signalize:ready', () => {
+		const { dispatch, ajax, redraw, select, on, config } = $;
 
-	let currentLocation = new URL(window.location.href);
+		const spaAttribute = `${config.attributePrefix}spa`;
+		const spaUrlAttribute = `${spaAttribute}${config.attributeSeparator}url`;
+		const spaIgnoreAttribute = `${spaAttribute}${config.attributeSeparator}ignore`;
+		const spaStateActionAttribute = `${spaAttribute}${config.attributeSeparator}state-action`;
+		const spaMetaCacheNameAttribute = `${spaAttribute}${config.attributeSeparator}cache-control`;
+		const spaCacheHeader = config?.spaCacheHeader ?? 'X-Spa-Cache-Control';
+		const spaAppVersionHeader = config?.spaAppVersionHeader ?? 'X-Spa-App-Version';
 
-	const spaVersion = null;
+		let currentLocation = new URL(window.location.href);
+		const spaVersion = null;
+		const host = window.location.host;
+		const responseCache: Record<string, string> = {};
 
-	const host = window.location.host;
+		const createUrl = (urlString: string): URL | null => {
+			try {
+				const url = new URL(urlString);
+				return url;
+			} catch (error) {
+			}
 
-	const responseCache: Record<string, string> = {};
-
-	const createUrl = (urlString: string): URL | null => {
-		try {
-			const url = new URL(urlString);
-			return url;
-		} catch (error) {
+			return null;
 		}
 
-		return null;
-	}
-
-	const isJson = (content: any): boolean => {
-		try {
-			JSON.parse(content);
-		} catch (e) {
-			return false;
-		}
-		return true;
-	}
-
-	const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
-		const dispatchEventData: SpaDispatchEventData = {
-			...data,
-			success: undefined
+		const isJson = (content: any): boolean => {
+			try {
+				JSON.parse(content);
+			} catch (e) {
+				return false;
+			}
+			return true;
 		}
 
-		dispatch('spa:visit:start', { ...dispatchEventData });
+		const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
+			const dispatchEventData: SpaDispatchEventData = {
+				...data,
+				success: undefined
+			}
 
-		const { url, stateAction } = data;
+			dispatch('spa:visit:start', { ...dispatchEventData });
 
-		const urlString = url instanceof URL ? url.toString() : url;
+			const { url, stateAction } = data;
 
-		let request;
-		let responseData = null;
+			const urlString = url instanceof URL ? url.toString() : url;
 
-		const urlIsCached = urlString in responseCache;
+			let request;
+			let responseData = null;
 
-		if (urlIsCached) {
-			responseData = responseCache[urlString];
-		} else {
-			dispatch('spa:request:start', { ...dispatchEventData });
+			const urlIsCached = urlString in responseCache;
 
-			request = await ajax({ url: urlString });
-			const requestIsWithoutErroor = request.error === null;
+			if (urlIsCached) {
+				responseData = responseCache[urlString];
+			} else {
+				dispatch('spa:request:start', { ...dispatchEventData });
 
-			if (requestIsWithoutErroor) {
-				try {
-					responseData = request.response === null ? '' : await request.response.text();
-				} catch (error) {
-					console.error(error);
+				request = await ajax({ url: urlString });
+				const requestIsWithoutErroor = request.error === null;
+
+				if (requestIsWithoutErroor) {
+					try {
+						responseData = request.response === null ? '' : await request.response.text();
+					} catch (error) {
+						console.error(error);
+					}
+				}
+
+				dispatch('spa:request:end', { request, ...dispatchEventData, success: responseData !== null });
+			}
+
+			const updateDom = (): void => {
+				let shouldCacheResponse: boolean | null = null;
+
+				const headers = request?.response?.headers ?? {};
+
+				if (Object.keys(headers).length > 0) {
+					const cacheHeader = headers[spaCacheHeader] ?? null;
+					if (cacheHeader !== null) {
+						shouldCacheResponse = cacheHeader !== 'no-cache';
+					}
+
+					const spaVersionFromHeader = headers[spaAppVersionHeader] ?? null;
+
+					if (spaVersionFromHeader !== null && spaVersion !== null && spaVersion !== spaVersionFromHeader) {
+						dispatch('spa:app-version:changed');
+					}
+				}
+
+				if (!isJson(responseData)) {
+					redraw(responseData);
+				}
+
+				if (stateAction === 'replace') {
+					window.history.replaceState(window.history.state, '', urlString);
+				} else if (stateAction === 'push') {
+					window.history.pushState(
+						{
+							url: data.url,
+							spa: true,
+							scrollX: data.scrollX ?? window.scrollX,
+							scrollY: data.scrollY ?? window.scrollY
+						},
+						'',
+						urlString
+					);
+				}
+
+				if (shouldCacheResponse === null) {
+					const metaCacheControlElement = select(`meta[name="${spaMetaCacheNameAttribute}"]`);
+					shouldCacheResponse = !urlIsCached && (
+						metaCacheControlElement === null || metaCacheControlElement.getAttribute('content') !== 'no-cache'
+					)
+				}
+
+				if (shouldCacheResponse) {
+					responseCache[urlString] = responseData;
 				}
 			}
 
-			dispatch('spa:request:end', { request, ...dispatchEventData, success: responseData !== null });
+			if (responseData !== null) {
+				if (typeof document.startViewTransition === 'undefined') {
+					updateDom();
+				} else {
+					dispatch('spa:transition:start', dispatchEventData);
+					const transition = document.startViewTransition(() => updateDom());
+					await transition.ready;
+					dispatch('spa:transition:end', dispatchEventData)
+				}
+			}
+
+			if (responseData !== null) {
+				let urlHash = window.location.hash ?? null;
+
+				const visitScrollStopped = dispatch('spa:visit:beforeScroll') === false;
+
+				if (!visitScrollStopped) {
+					if (urlHash !== null && urlHash.trim().length > 2) {
+						urlHash = urlHash.slice(1);
+						const element = select(`#${urlHash}`);
+						if (element !== null) {
+							element.scrollIntoView({
+								block: 'start',
+								inline: 'nearest'
+							});
+						}
+					} else {
+						window.scrollTo(data.scrollX ?? 0, data.scrollY ?? 0)
+					}
+				}
+
+				currentLocation = new URL(window.location.href);
+			}
+
+			const visitEndData = { ...dispatchEventData, success: responseData !== null };
+			dispatch('spa:visit:end', visitEndData);
+
+			return visitEndData;
 		}
 
-		const updateDom = (): void => {
-			let shouldCacheResponse: boolean | null = null;
+		const onPopState = (): void => {
+			const state = window.history.state as SpaHistoryState;
 
-			const headers = request?.response?.headers ?? {};
-
-			if (Object.keys(headers).length > 0) {
-				const cacheHeader = headers[spaCacheHeader] ?? null;
-				if (cacheHeader !== null) {
-					shouldCacheResponse = cacheHeader !== 'no-cache';
-				}
-
-				const spaVersionFromHeader = headers[spaAppVersionHeader] ?? null;
-
-				if (spaVersionFromHeader !== null && spaVersion !== null && spaVersion !== spaVersionFromHeader) {
-					dispatch('spa:app-version:changed');
-				}
+			if (!(state?.spa ?? false)) {
+				return;
 			}
 
-			if (!isJson(responseData)) {
-				redraw(responseData);
+			const location = new URL(window.location.href);
+
+			if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
+				return;
 			}
 
-			if (stateAction === 'replace') {
-				window.history.replaceState(window.history.state, '', urlString);
-			} else if (stateAction === 'push') {
-				window.history.pushState(
+			const visitConfig: VisitData = {
+				url: location,
+				scrollX: state.scrollX,
+				scrollY: state.scrollY
+			};
+
+			dispatch('spa:popstate', visitConfig);
+
+			void visit(visitConfig);
+		}
+
+		const onClick = async (event: CustomEvent): Promise<void> => {
+			const element = event.target.closest('a') as HTMLAnchorElement;
+			const targetAttribute = element.getAttribute('target');
+
+			if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute) || element.hasAttribute('download')) {
+				return;
+			}
+
+			const url = element.getAttribute('href') ??
+				element.getAttribute(spaUrlAttribute) ??
+				element.closest('[href]')?.getAttribute('href') ??
+				element.closest(`[${spaUrlAttribute}]`)?.getAttribute(spaUrlAttribute);
+
+			if (url === null || url === undefined || url.startsWith('#')) {
+				return;
+			}
+
+			const parsedOriginalUrl = createUrl(url);
+
+			if (parsedOriginalUrl !== null && parsedOriginalUrl.host !== host) {
+				return;
+			}
+			const hrefUrl = createUrl(`${window.location.origin}${url}`);
+
+			if (hrefUrl === null || (hrefUrl.pathname === window.location.pathname && hrefUrl.hash !== currentLocation.hash)) {
+				return;
+			}
+
+			if (window.history.state === null) {
+				window.history.replaceState(
 					{
-						url: data.url,
-						spa: true,
-						scrollX: data.scrollX ?? window.scrollX,
-						scrollY: data.scrollY ?? window.scrollY
+						spa: true, scrollX: window.scrollX, scrollY: window.scrollY
 					},
 					'',
-					urlString
+					window.location.href
 				);
 			}
 
-			if (shouldCacheResponse === null) {
-				const metaCacheControlElement = select(`meta[name="${spaMetaCacheNameAttribute}"]`);
-				shouldCacheResponse = !urlIsCached && (
-					metaCacheControlElement === null || metaCacheControlElement.getAttribute('content') !== 'no-cache'
-				)
+			event.preventDefault();
+
+			const clickCanceled = dispatch('spa:clicked', { element }) === false;
+
+			if (clickCanceled) {
+				return;
 			}
 
-			if (shouldCacheResponse) {
-				responseCache[urlString] = responseData;
-			}
+			void visit({
+				url,
+				stateAction: (element.getAttribute(spaStateActionAttribute) ?? 'push') as StateAction
+			});
 		}
 
-		if (responseData !== null) {
-			if (typeof document.startViewTransition === 'undefined') {
-				updateDom();
-			} else {
-				dispatch('spa:transition:start', dispatchEventData);
-				const transition = document.startViewTransition(() => updateDom());
-				await transition.ready;
-				dispatch('spa:transition:end', dispatchEventData)
-			}
-		}
+		on('dom:ready', () => {
+			on('click', `a[href], [${spaUrlAttribute}]`, onClick);
 
-		if (responseData !== null) {
-			let urlHash = window.location.hash ?? null;
-
-			const visitScrollStopped = dispatch('spa:visit:beforeScroll') === false;
-
-			if (!visitScrollStopped) {
-				if (urlHash !== null && urlHash.trim().length > 2) {
-					urlHash = urlHash.slice(1);
-					const element = select(`#${urlHash}`);
-					if (element !== null) {
-						element.scrollIntoView({
-							block: 'start',
-							inline: 'nearest'
-						});
-					}
-				} else {
-					window.scrollTo(data.scrollX ?? 0, data.scrollY ?? 0)
-				}
-			}
-
-			currentLocation = new URL(window.location.href);
-		}
-
-		const visitEndData = { ...dispatchEventData, success: responseData !== null };
-		dispatch('spa:visit:end', visitEndData);
-
-		return visitEndData;
-	}
-
-	const onPopState = (): void => {
-		const state = window.history.state as SpaHistoryState;
-
-		if (!(state?.spa ?? false)) {
-			return;
-		}
-
-		const location = new URL(window.location.href);
-
-		if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
-			return;
-		}
-
-		const visitConfig: VisitData = {
-			url: location,
-			scrollX: state.scrollX,
-			scrollY: state.scrollY
-		};
-
-		dispatch('spa:popstate', visitConfig);
-
-		void visit(visitConfig);
-	}
-
-	const onClick = async (event: CustomEvent): Promise<void> => {
-		const element = event.target.closest('a') as HTMLAnchorElement;
-		const targetAttribute = element.getAttribute('target');
-
-		if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute) || element.hasAttribute('download')) {
-			return;
-		}
-
-		const url = element.getAttribute('href') ??
-			element.getAttribute(spaUrlAttribute) ??
-			element.closest('[href]')?.getAttribute('href') ??
-			element.closest(`[${spaUrlAttribute}]`)?.getAttribute(spaUrlAttribute);
-
-		if (url === null || url === undefined || url.startsWith('#')) {
-			return;
-		}
-
-		const parsedOriginalUrl = createUrl(url);
-
-		if (parsedOriginalUrl !== null && parsedOriginalUrl.host !== host) {
-			return;
-		}
-		const hrefUrl = createUrl(`${window.location.origin}${url}`);
-
-		if (hrefUrl === null || (hrefUrl.pathname === window.location.pathname && hrefUrl.hash !== currentLocation.hash)) {
-			return;
-		}
-
-		if (window.history.state === null) {
-			window.history.replaceState(
-				{
-					spa: true, scrollX: window.scrollX, scrollY: window.scrollY
-				},
-				'',
-				window.location.href
-			);
-		}
-
-		event.preventDefault();
-
-		const clickCanceled = dispatch('spa:clicked', { element }) === false;
-
-		if (clickCanceled) {
-			return;
-		}
-
-		void visit({
-			url,
-			stateAction: (element.getAttribute(spaStateActionAttribute) ?? 'push') as StateAction
+			window.addEventListener('popstate', onPopState);
 		});
-	}
 
-	on('dom:ready', () => {
-		spaUrlAttribute = `${config.attributesPrefix}${spaUrlAttribute}`;
-		spaIgnoreAttribute = `${config.attributesPrefix}${spaIgnoreAttribute}`;
-		spaStateActionAttribute = `${config.attributesPrefix}${spaStateActionAttribute}`;
-		spaMetaCacheNameAttribute = `${config.attributesPrefix}${spaMetaCacheNameAttribute}`;
-
-		on('click', `a[href], [${spaUrlAttribute}]`, onClick);
-
-		window.addEventListener('popstate', onPopState);
-	});
-
-	signalize.visit = visit;
+		$.visit = visit;
+	})
 }

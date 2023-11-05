@@ -11,6 +11,10 @@ declare module 'signalizejs' {
 		'ajax:request:error': CustomEventListener
 		'ajax:request:end': CustomEventListener
 	}
+
+	interface SignalizeConfig {
+		ajaxRequestedWithHeader: string
+	}
 }
 
 export interface AjaxReturn {
@@ -23,65 +27,65 @@ export interface AjaxOptions extends RequestInit {
 	data?: Record<string, any>
 }
 
-export default (signalize: Signalize): void => {
-	const { dispatch, config } = signalize;
-	const requestedWithHeader = config.ajaxRequestedWithHeader ?? 'XMLHttpRequest';
+export default ($: Signalize): void => {
+	$.on('signalize:ready', () => {
+		const { config, dispatch } = $;
+		$.ajax = async (options: AjaxOptions): Promise<AjaxReturn> => {
+			let response: Response | null = null;
+			let error: Error | null = null
 
-	signalize.ajax = async (options: AjaxOptions): Promise<AjaxReturn> => {
-		let response: Response | null = null;
-		let error: Error | null = null
+			try {
+				const dataType = typeof options.data;
 
-		try {
-			const dataType = typeof options.data;
+				if (dataType !== 'undefined') {
+					if (typeof options.body === 'undefined') {
+						options.body = ['string', 'number'].includes(dataType)
+							? options.data
+							: JSON.stringify(options.data);
+					}
 
-			if (dataType !== 'undefined') {
-				if (typeof options.body === 'undefined') {
-					options.body = ['string', 'number'].includes(dataType)
-						? options.data
-						: JSON.stringify(options.data);
+					delete options.data;
 				}
 
-				delete options.data;
+				if (typeof options.method === 'undefined' && typeof options.body !== 'undefined') {
+					options.method = 'POST';
+				}
+
+				const url = options.url;
+
+				const requestInit = { ...options };
+				requestInit.headers = { ...{ 'X-Requested-With': config.ajaxRequestedWithHeader ?? 'XMLHttpRequest' }, ...requestInit.headers ?? {} }
+
+				delete requestInit.url;
+
+				const request = fetch(url, requestInit);
+
+				dispatch('ajax:request:start', { options, request });
+
+				response = await request;
+
+				if (!response.ok) {
+					throw new Error('Ajax error', {
+						cause: {
+							response
+						}
+					})
+				}
+
+				dispatch('ajax:request:success', { options, request });
+			} catch (requestError: any) {
+				response = requestError.cause?.response ?? undefined;
+				error = requestError
+				console.error(error);
+				dispatch('ajax:request:error', { options, response, error });
 			}
 
-			if (typeof options.method === 'undefined' && typeof options.body !== 'undefined') {
-				options.method = 'POST';
+			dispatch('ajax:request:end', { options, response, error });
+
+			return {
+				response,
+				error
 			}
-
-			const url = options.url;
-
-			const requestInit = { ...options };
-			requestInit.headers = { ...{ 'X-Requested-With': requestedWithHeader }, ...requestInit.headers ?? {} }
-
-			delete requestInit.url;
-
-			const request = fetch(url, requestInit);
-
-			dispatch('ajax:request:start', { options, request });
-
-			response = await request;
-
-			if (!response.ok) {
-				throw new Error('Ajax error', {
-					cause: {
-						response
-					}
-				})
-			}
-
-			dispatch('ajax:request:success', { options, request });
-		} catch (requestError: any) {
-			response = requestError.cause?.response ?? undefined;
-			error = requestError
-			console.error(error);
-			dispatch('ajax:request:error', { options, response, error });
 		}
-
-		dispatch('ajax:request:end', { options, response, error });
-
-		return {
-			response,
-			error
-		}
-	}
+	});
 }

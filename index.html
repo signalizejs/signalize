@@ -7,7 +7,15 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
 	<title snippet="title">Index page</title>
-	<script type="module" src="http://localhost:5173/@vite/client"></script>
+	<!-- <script type="module" src="http://localhost:5173/@vite/client"></script> -->
+	<script type="module">
+		import Signalize from 'signalizejs';
+		import directives from 'signalizejs/directives';
+
+		const $ = new Signalize({
+			plugins: [ directives ]
+		});
+	</script>
 </head>
 
 <body>
@@ -17,7 +25,8 @@
 		}
 	</style>
 
-	<div $text="'aHOJ'" $count="1000">
+	<!-- Conditional loop for large amount of elements -->
+ 	<!-- <div $text="'Hello World!'" $count="10">
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -33,13 +42,12 @@
 				</li>
 			</template>
 		</ul>
-	</div>
-	<!-- <div id="test">
-		<template $count="1" :if="true">
-			<template :if="true"><span :html="count"></span></template>
-		</template>
 	</div> -->
 
+	<!-- <div $text="">
+		<input :value="text">
+		<div :text="text"></div>
+	</div> -->
 
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();
@@ -52,10 +60,11 @@
 				<li :key="item.replace(/s/g, '')">
 					<a
 						role="button"
-						@click="
+						@click="() => {
 							const newItems = items();
 							delete newItems[item];
 							items.set(newItems);
+						}
 						"
 					>
 						<span :text="item"></span> - X
@@ -63,7 +72,7 @@
 				</li>
 			</template>
 		</ul>
-	</form>  -->
+	</form> -->
 
 	<!-- <template :for="[name, surname] of Object.entries({name: 'vladimir', surname: 'Macháček'})">
 		<li :text="name + ' ' + surname"></li>
@@ -142,14 +151,6 @@
 		</template>
 	</div>
  -->
-
-	<script type="module">
-		import Signalize from 'signalizejs';
-		import Directives from 'signalizejs/directives';
-
-		const $ = new Signalize();
-		$.use(Directives);
-	</script>
 
 </body>
 

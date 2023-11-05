@@ -2,9 +2,8 @@ import type Signalize from '..';
 
 declare module '..' {
 	interface Signalize {
-		dispatch: (eventName: string, eventData?: any, target?: HTMLElement | Document | DocumentFragment) => boolean
+		dispatch: (eventName: string, eventData?: any, options?: Options) => boolean
 	}
-
 }
 
 interface Options {
@@ -13,10 +12,9 @@ interface Options {
 	cancelable?: boolean
 }
 
-export default (signalize: Signalize): void => {
-	const { config } = signalize;
-	signalize.dispatch = (eventName: string, eventData: any = undefined, options: Options = {}): boolean => {
-		return (options?.target ?? config.root).dispatchEvent(
+export default ($: Signalize): void => {
+	$.dispatch = (eventName: string, eventData?, options?): boolean => {
+		return (options?.target ?? $.config.root).dispatchEvent(
 			new window.CustomEvent(eventName, {
 				detail: eventData,
 				cancelable: options?.cancelable ?? true,
