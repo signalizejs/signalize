@@ -27,10 +27,9 @@
 		import snippets from 'signalizejs/snippets';
 		import spa from 'signalizejs/spa';
 
-		const signalize = new Signalize();
-		signalize.use(ajax);
-		signalize.use(snippets);
-		signalize.use(spa);
+		new Signalize({
+			plugins: [ ajax, snippets, spa ]
+		});
 	</script>
 
 </body>

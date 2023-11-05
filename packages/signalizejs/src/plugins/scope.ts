@@ -136,7 +136,7 @@ export default ($: Signalize): void => {
 			}
 			definedScopes[nameOrElement] = init;
 			dispatch('scope:defined', { name: nameOrElement })
-		} else if (typeof init !== 'undefined') {
+		} else if (typeof init === 'function') {
 			if (nameOrElement[scopeKey] === undefined) {
 				nameOrElement[scopeKey] = new Scope({ signalize: $, element: nameOrElement })
 			}
