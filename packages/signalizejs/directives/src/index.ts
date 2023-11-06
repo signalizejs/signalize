@@ -3,6 +3,7 @@ import type { Signalize, Scope } from 'signalizejs'
 declare module '..' {
 	interface Signalize {
 		directive: (name: string, data: Directive) => void
+		createDirectiveFunction: (options: CreateFunctionOptions) => () => Promise<any>
 		AsyncFunction: () => Promise<any>
 	}
 
@@ -113,10 +114,10 @@ export default ($: Signalize): void => {
 						const directive = directives[directiveName];
 						const elementScope = scope(element, (elementScope) => {
 							if (!('directives' in elementScope)) {
-								elementScope.directives = [];
+								elementScope.directives = new Set();
 							}
 
-							elementScope.directives.push(directiveName);
+							elementScope.directives.add(directiveName);
 						});
 
 						countdown --;
@@ -262,20 +263,26 @@ export default ($: Signalize): void => {
 				const newContextVariables: string[] = argumentsMatch[1].replace(/[[({})\]\s]/g, '').split(',');
 
 				let unwatchSignalCallbacks = [];
+				const signalsToWatch = [];
+
+				for (const signal of Object.values(data)) {
+					if (typeof signal !== 'function') {
+						continue;
+					}
+
+					const unwatch = signal.watch(() => {
+						signalsToWatch.push(signal);
+						unwatch();
+					}, { execution: 'onGet' })
+				}
+
+				const stackFn = createFunction({
+					functionString: `return typeof ${argumentsMatch[3]} === 'function' ? ${argumentsMatch[3]}() : ${argumentsMatch[3]};`,
+					context: data,
+					element
+				});
 
 				const process = async (): Promise<void> => {
-					const signalsToWatch = [];
-
-					for (const signal of Object.values(data)) {
-						if (typeof signal !== 'function') {
-							continue;
-						}
-
-						const unwatch = signal.watch(() => {
-							signalsToWatch.push(signal);
-							unwatch();
-						}, { execution: 'onGet' })
-					}
 					const directivesProcessingPromises = [];
 					const processScope = async (scopeToProcess) => {
 						const templateFragment = element.cloneNode(true).content;
@@ -289,11 +296,6 @@ export default ($: Signalize): void => {
 						}
 					}
 
-					const stackFn = createFunction({
-						functionString: `return typeof ${argumentsMatch[3]} === 'function' ? ${argumentsMatch[3]}() : ${argumentsMatch[3]};`,
-						context: data,
-						element
-					});
 					let stack = await stackFn(data);
 
 					if (typeof stack === 'number') {
@@ -364,7 +366,7 @@ export default ($: Signalize): void => {
 						if (elementScope !== undefined && elementScope?.directives !== undefined) {
 							elementScope.cleanup();
 							const directivesQueue = elementScope.directives;
-							elementScope.directives = [];
+							elementScope.directives.clear();
 							processElement(element, directivesQueue);
 						}
 
@@ -461,18 +463,14 @@ export default ($: Signalize): void => {
 						nextElementSibling = nextElementToRemove;
 						removeId++;
 					}
-
-					for (const unwatch of unwatchSignalCallbacks) {
-						unwatch();
-					}
-
-					unwatchSignalCallbacks = [];
-					for (const signalToWatch of signalsToWatch) {
-						unwatchSignalCallbacks.push(signalToWatch.watch(process))
-					}
 				}
 
 				await process();
+
+				unwatchSignalCallbacks = [];
+				for (const signalToWatch of signalsToWatch) {
+					unwatchSignalCallbacks.push(signalToWatch.watch(process))
+				}
 
 				scope(element).cleanup(() => {
 					for (const unwatch of unwatchSignalCallbacks) {
@@ -695,6 +693,7 @@ export default ($: Signalize): void => {
 		})
 
 		$.AsyncFunction = AsyncFunction;
+		$.createDirectiveFunction = createFunction;
 		$.directive = directive;
 	})
 }

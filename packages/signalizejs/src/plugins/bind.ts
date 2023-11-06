@@ -8,7 +8,7 @@ declare module '..' {
 }
 
 export default ($: Signalize): void => {
-	const { scope, Signal, on, off, task } = $;
+	const { scope, Signal, on, off } = $;
 
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
@@ -88,7 +88,7 @@ export default ($: Signalize): void => {
 			}
 
 			if (attributeBinderIsSignal === true) {
-				signalsToWatch.push(attributeBinder);
+				//signalsToWatch.push(attributeBinder);
 			}
 
 			if (attributeBinderIsSignal === true || signalsToWatch.length === 1) {
@@ -119,10 +119,8 @@ export default ($: Signalize): void => {
 				};
 
 				on('input', element, () => {
-					task(() => {
-						inputListener()
-					});
-				});
+					inputListener()
+				}, { passive: true });
 
 				if (elementScope instanceof Scope) {
 					elementScope.cleanup(() => {

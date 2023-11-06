@@ -32,6 +32,8 @@ export class Signal<T = any> extends Function {
 		onGet: new Set()
 	};
 
+	setTimeout = undefined;
+
 	constructor (defaultValue: T) {
 		super()
 		this.value = defaultValue;
@@ -51,32 +53,35 @@ export class Signal<T = any> extends Function {
 	}
 
 	set = (newValue: T): void => {
-		const oldValue = this.value;
+		clearTimeout(this.setTimeout);
+		this.setTimeout = setTimeout(() => {
+			const oldValue = this.value;
 
-		if (['string', 'number'].includes(typeof newValue) && newValue === oldValue) {
-			return;
-		}
-
-		let settable = true;
-		for (const watcher of this.watchers.beforeSet) {
-			const watcherData = watcher({ newValue, oldValue });
-			if (typeof watcherData !== 'undefined') {
-				settable = watcherData.settable ?? settable;
-				newValue = watcherData.value;
+			if (['string', 'number'].includes(typeof newValue) && newValue === oldValue) {
+				return;
 			}
+
+			let settable = true;
+			for (const watcher of this.watchers.beforeSet) {
+				const watcherData = watcher({ newValue, oldValue });
+				if (typeof watcherData !== 'undefined') {
+					settable = watcherData.settable ?? settable;
+					newValue = watcherData.value;
+				}
+				if (!settable) {
+					break;
+				}
+			}
+
 			if (!settable) {
-				break;
+				return;
 			}
-		}
 
-		if (!settable) {
-			return;
-		}
-
-		this.value = newValue;
-		for (const watcher of this.watchers.afterSet) {
-			watcher({ newValue, oldValue });
-		}
+			this.value = newValue;
+			for (const watcher of this.watchers.afterSet) {
+				watcher({ newValue, oldValue })
+			}
+		});
 	}
 
 	watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}): Unwatch => {
