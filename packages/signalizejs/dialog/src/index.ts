@@ -1,4 +1,4 @@
-import type { Signalize, CustomEventListener } from 'signalizejs';
+import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
 
 declare module 'signalizejs' {
 
@@ -14,13 +14,13 @@ declare module 'signalizejs' {
 	}
 }
 
-export default ($: Signalize): void => {
-	$.on('signalize:ready', () => {
-		const { dispatch, config, select, on } = $
-		const dialogAttribute = `${config.attributePrefix}dialog`;
-		const dialogModelessAttribute = `${dialogAttribute}${config.attributeSeparator}modeless`;
-		const dialogCloseButtonAttribute = `${dialogAttribute}${config.attributeSeparator}close`;
-		const dialogOpenButtonAttribute = `${dialogAttribute}${config.attributeSeparator}open`;
+export default (): SignalizePlugin => {
+	return ($: Signalize): void => {
+		const { dispatch, attributePrefix, attributeSeparator, select, on } = $
+		const dialogAttribute = `${attributePrefix}dialog`;
+		const dialogModelessAttribute = `${dialogAttribute}${attributeSeparator}modeless`;
+		const dialogCloseButtonAttribute = `${dialogAttribute}${attributeSeparator}close`;
+		const dialogOpenButtonAttribute = `${dialogAttribute}${attributeSeparator}open`;
 
 		const getDialog = (id: string): HTMLDialogElement | null => select<HTMLDialogElement>(`[${dialogAttribute}=${id}]`);
 
@@ -89,5 +89,5 @@ export default ($: Signalize): void => {
 		$.openDialog = openDialog;
 		$.closeDialog = closeDialog;
 		$.dialog = getDialog;
-	})
+	}
 }

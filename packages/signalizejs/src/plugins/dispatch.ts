@@ -7,14 +7,14 @@ declare module '..' {
 }
 
 interface Options {
-	target?: Document | HTMLElement | DocumentFragment
+	target?: Document | Element | DocumentFragment
 	bubbles?: boolean
 	cancelable?: boolean
 }
 
 export default ($: Signalize): void => {
-	$.dispatch = (eventName: string, eventData?, options?): boolean => {
-		return (options?.target ?? $.config.root).dispatchEvent(
+	$.dispatch = (eventName, eventData?, options?) => {
+		return (options?.target ?? $.root).dispatchEvent(
 			new window.CustomEvent(eventName, {
 				detail: eventData,
 				cancelable: options?.cancelable ?? true,

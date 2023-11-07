@@ -1,4 +1,4 @@
-import type { Signalize, CustomEventListener } from 'signalizejs';
+import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
 
 declare module 'signalizejs' {
 	interface Signalize {
@@ -11,10 +11,6 @@ declare module 'signalizejs' {
 		'ajax:request:error': CustomEventListener
 		'ajax:request:end': CustomEventListener
 	}
-
-	interface SignalizeConfig {
-		ajaxRequestedWithHeader: string
-	}
 }
 
 export interface AjaxReturn {
@@ -22,15 +18,20 @@ export interface AjaxReturn {
 	error: any
 }
 
-export interface AjaxOptions extends RequestInit {
+export interface AjaxRequestOptions extends RequestInit {
 	url: string
 	data?: Record<string, any>
 }
 
-export default ($: Signalize): void => {
-	$.on('signalize:ready', () => {
-		const { config, dispatch } = $;
-		$.ajax = async (options: AjaxOptions): Promise<AjaxReturn> => {
+export interface AjaxOptions {
+	requestedWithHeader: string
+}
+
+export default (pluginOptions?: AjaxOptions): SignalizePlugin => {
+	return ($: Signalize) => {
+		const { dispatch } = $;
+
+		$.ajax = async (options: AjaxRequestOptions): Promise<AjaxReturn> => {
 			let response: Response | null = null;
 			let error: Error | null = null
 
@@ -54,7 +55,7 @@ export default ($: Signalize): void => {
 				const url = options.url;
 
 				const requestInit = { ...options };
-				requestInit.headers = { ...{ 'X-Requested-With': config.ajaxRequestedWithHeader ?? 'XMLHttpRequest' }, ...requestInit.headers ?? {} }
+				requestInit.headers = { ...{ 'X-Requested-With': pluginOptions?.requestedWithHeader ?? 'XMLHttpRequest' }, ...requestInit.headers ?? {} }
 
 				delete requestInit.url;
 
@@ -87,5 +88,5 @@ export default ($: Signalize): void => {
 				error
 			}
 		}
-	});
+	}
 }

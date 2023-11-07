@@ -1,4 +1,4 @@
-import type { Signalize, Scope } from 'signalizejs'
+import type { Signalize, SignalizePlugin, Scope } from 'signalizejs'
 
 declare module '..' {
 	interface Signalize {
@@ -6,23 +6,17 @@ declare module '..' {
 		createDirectiveFunction: (options: CreateFunctionOptions) => () => Promise<any>
 		AsyncFunction: () => Promise<any>
 	}
-
-	interface SignalizeConfig {
-		directivesRenderedBlockStart: string
-		directivesRenderedBlockEnd: string
-	}
 }
 
 type DirectiveCallback = (data: DirectiveCallbackData) => Promise<void> | void;
 
 interface DirectiveCallbackData extends Scope {
-	element: HTMLElement
 	matches: RegExpMatchArray
 	attribute: Attr
 }
 
 interface DirectiveMatcherParameters {
-	element: HTMLElement
+	element: Element
 	attribute: Attr
 }
 
@@ -40,33 +34,39 @@ interface RegisteredDirective extends Directive {
 }
 
 interface ProcessDirectiveOptions {
-	root?: HTMLElement
+	root?: Element
 	directiveName?: string
 }
 
 interface CreateFunctionOptions {
 	functionString: string
 	context: Record<string, any>
-	element?: HTMLElement | Document | DocumentFragment
+	element?: Element | Document | DocumentFragment
 }
 
-export default ($: Signalize): void => {
-	$.on('signalize:ready', () => {
-		const { bind, on, Signal, scope, signal, config, globals } = $;
+interface PluginOptions {
+	renderedBlockStart?: string
+	renderedBlockEnd?: string
+}
+
+export default (options?: PluginOptions): SignalizePlugin => {
+
+	return ($: Signalize) => {
+		const { bind, on, Signal, scope, signal, globals, attributePrefix, attributeSeparator } = $;
 		const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
 		const directives: Record<string, RegisteredDirective> = {};
-		const directivesAttribute = `${config.attributePrefix}directives`;
-		const ignoreAttribute = `${directivesAttribute}${config.attributeSeparator}ignore`;
-		const orderAttribute = `${directivesAttribute}${config.attributeSeparator}order`
-		const renderedTemplateStartComment = config.directivesRenderedBlockStart ?? 'template';
-		const renderedTemplateEndComment = config.directivesRenderedBlockEnd ?? '/template';
+		const directivesAttribute = `${attributePrefix}directives`;
+		const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
+		const orderAttribute = `${directivesAttribute}${attributeSeparator}order`
+		const renderedTemplateStartComment = options?.renderedBlockStart ?? 'template';
+		const renderedTemplateEndComment = options?.renderedBlockEnd ?? '/template';
 		let inited = false;
 
-		const processElement = async (element: HTMLElement, directivesToProcess?: string[]): Promise<HTMLElement> => {
-			const elementClosestScope = element.closest(`[${config.scopeAttribute}]`);
+		const processElement = async (element: Element, directivesToProcess?: string[]): Promise<Element> => {
+			const elementClosestScope = element.closest(`[${$.scopeAttribute}]`);
 			let scopeInitPromise = null;
 
-			if (elementClosestScope && typeof elementClosestScope[config.scopeKey] === 'undefined') {
+			if (elementClosestScope && typeof elementClosestScope[$.scopeKey] === 'undefined') {
 				scopeInitPromise = new Promise((resolve) => {
 					on('scope:inited', ({ detail }) => {
 						if (detail.element === elementClosestScope) {
@@ -120,7 +120,7 @@ export default ($: Signalize): void => {
 							elementScope.directives.add(directiveName);
 						});
 
-						countdown --;
+						countdown--;
 						directivesPromises.push(
 							directive.callback({
 								...elementScope,
@@ -144,24 +144,24 @@ export default ($: Signalize): void => {
 
 				await processDirectiveFromQueue(directivesQueue.shift());
 
-				element.removeAttribute(config.cloakAttribute);
+				element.removeAttribute($.cloakAttribute);
 			}
 
 			return element;
 		};
 
-		const processDirectives = async (options: ProcessDirectiveOptions = {}): Promise<HTMLElement | Document | DocumentFragment> => {
-			const { root = config.root, directiveName } = options;
+		const processDirectives = async (options: ProcessDirectiveOptions = { root: $.root }): Promise<Element | Document | DocumentFragment> => {
+			let { root, directiveName } = options;
 			const directivesToProcess = directiveName === undefined ? Object.keys(directives) : [directiveName];
 
 			const processElements = async (root): Promise<void> => {
-				const rootIsHtmlElement = root instanceof HTMLElement;
+				const rootIsElement = root instanceof Element;
 
-				if (rootIsHtmlElement && root?.closest(`[${ignoreAttribute}]`)) {
+				if (rootIsElement && root?.closest(`[${ignoreAttribute}]`)) {
 					return;
 				}
 
-				if (rootIsHtmlElement) {
+				if (rootIsElement) {
 					await processElement(root, directivesToProcess);
 				}
 
@@ -219,11 +219,11 @@ export default ($: Signalize): void => {
 					return null
 				}
 			}
-			return createFunctionCache[cacheKey].bind(undefined)
+			return createFunctionCache[cacheKey];
 		}
 
 		directive('signal', {
-			matcher: new RegExp(`(?:\\$|${config.attributePrefix}signal${config.attributeSeparator})(\\S+)`),
+			matcher: new RegExp(`(?:\\$|${attributePrefix}signal${attributeSeparator})(\\S+)`),
 			callback: async ({ matches, element, data, attribute }): Promise<void> => {
 				const fn = createFunction({
 					functionString: `return ${attribute.value.length ? attribute.value : "''"}`,
@@ -246,7 +246,7 @@ export default ($: Signalize): void => {
 					return;
 				}
 
-				return new RegExp(`(?::|${config.attributePrefix})for`);
+				return new RegExp(`(?::|${attributePrefix})for`);
 			},
 			callback: async ({ element, data, attribute }) => {
 				if (element.tagName.toLowerCase() !== 'template') {
@@ -486,7 +486,7 @@ export default ($: Signalize): void => {
 					return;
 				}
 
-				return new RegExp(`(?::|${config.attributePrefix})if`);
+				return new RegExp(`(?::|${attributePrefix})if`);
 			},
 			callback: async ({ element, data, attribute }) => {
 				const fn = createFunction({
@@ -500,7 +500,7 @@ export default ($: Signalize): void => {
 				const signalsToWatch = [];
 
 				for (const signal of Object.values(data)) {
-					if (!(signal instanceof Signal)) {
+					if (!(signal instanceof $.Signal)) {
 						continue;
 					}
 
@@ -611,7 +611,7 @@ export default ($: Signalize): void => {
 					return;
 				}
 
-				return new RegExp(`(?::|${config.attributePrefix}bind${config.attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`)
+				return new RegExp(`(?::|${attributePrefix}bind${attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`)
 			},
 			callback: async ({ matches, element, data, attribute }) => {
 				const isShorthand = attribute.name.startsWith('{');
@@ -630,7 +630,7 @@ export default ($: Signalize): void => {
 				let signalsToWatch = [];
 
 				for (const signal of Object.values(data)) {
-					if (!(signal instanceof Signal)) {
+					if (!(signal instanceof $.Signal)) {
 						continue;
 					}
 
@@ -649,7 +649,7 @@ export default ($: Signalize): void => {
 		});
 
 		directive('on', {
-			matcher: new RegExp(`(?:\\@|${config.attributePrefix}on${config.attributeSeparator})(\\S+)`),
+			matcher: new RegExp(`(?:\\@|${attributePrefix}on${attributeSeparator})(\\S+)`),
 			callback: async (scope) => {
 				const { matches, element, data, attribute } = scope;
 
@@ -684,7 +684,7 @@ export default ($: Signalize): void => {
 
 			on('dom:mutation:node:added', (event) => {
 				const node = event.detail;
-				if (!(node instanceof HTMLElement) || scope(node)?.directives !== undefined) {
+				if (!(node instanceof Element) || scope(node)?.directives !== undefined) {
 					return;
 				}
 
@@ -695,5 +695,5 @@ export default ($: Signalize): void => {
 		$.AsyncFunction = AsyncFunction;
 		$.createDirectiveFunction = createFunction;
 		$.directive = directive;
-	})
+	}
 }

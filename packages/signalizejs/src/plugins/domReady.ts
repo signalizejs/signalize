@@ -21,25 +21,23 @@ export default ($: Signalize): void => {
 	}
 
 	const isDomReady = (): boolean => {
-		const documentElement = $.config.root instanceof Document ? $.config.root : $.config.root?.ownerDocument;
+		const documentElement = $.root instanceof Document ? $.root : $.root?.ownerDocument;
 		return documentElement.readyState !== 'loading'
 	};
 
-	$.config.customEventListeners['dom:ready'] = (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
+	$.customEventListener('dom:ready', (target: Element | string, listener: CallableFunction, options: AddEventListenerOptions) => {
 		if (isDomReady()) {
 			listener()
 		} else {
 			domReadyListeners.push(listener);
 		}
-	}
+	});
 
-	$.on('signalize:ready', () => {
-		if (isDomReady()) {
-			callOnDomReadyListeners();
-		} else {
-			document.addEventListener('DOMContentLoaded', callOnDomReadyListeners, { once: true })
-		}
-	})
+	if (isDomReady()) {
+		callOnDomReadyListeners();
+	} else {
+		document.addEventListener('DOMContentLoaded', callOnDomReadyListeners, { once: true })
+	}
 
 	$.isDomReady = isDomReady;
 }

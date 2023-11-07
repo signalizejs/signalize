@@ -1,4 +1,4 @@
-import type Signalize from '..';
+import type { Signalize, SignalizePlugin } from '..';
 import type { Selectable } from './select';
 
 declare module '..' {
@@ -9,16 +9,12 @@ declare module '..' {
 			callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 			options?: AddEventListenerOptions
 		) => void
-		customEventListeners: Record<string, CustomEventListener>
+		customEventListener: (name: string, listener: CustomEventListener) => void
 	}
 
 	interface CustomEventListeners {
 		remove: CustomEventListener
 		clickOutside: CustomEventListener
-	}
-
-	interface SignalizeConfig {
-		customEventListeners: Record<string, CustomEventListener>
 	}
 }
 
@@ -31,9 +27,12 @@ export interface CustomEventListeners extends ElementEventMap {
 	remove: CustomEventListener
 }
 
+export interface PluginOptions {
+	customEventListeners: Record<string, CustomEventListener>
+}
+
 export default ($: Signalize): void => {
-	let customEventListeners: Record<string, CustomEventListener> = {
-		...$.config.customEventListeners,
+	const customEventListeners: Record<string, CustomEventListener> = {
 		clickOutside: (target: Element | string, listener: CallableFunction, options: AddEventListenerOptions) => {
 			document.addEventListener('click', (listenerEvent) => {
 				const eventTarget = listenerEvent.target as Element;
@@ -67,7 +66,7 @@ export default ($: Signalize): void => {
 		const events = event.split(' ').map((event) => event.trim());
 		let target: Selectable;
 		let callback: CallableFunction;
-		const root = $.config.root ?? document;
+		const root = $.root ?? document;
 		options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
 
 		if (typeof targetOrCallback === 'function') {
@@ -106,12 +105,9 @@ export default ($: Signalize): void => {
 		}
 	}
 
-	on('signalize:ready', () => {
-		customEventListeners = {
-			...customEventListeners,
-			...$.config.customEventListeners ?? {}
-		};
-	});
+	$.customEventListener = (name, listener) => {
+		customEventListeners[name] = listener
+	}
 
 	$.on = on;
 }

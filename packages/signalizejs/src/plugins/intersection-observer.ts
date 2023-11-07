@@ -9,7 +9,7 @@ declare module '..' {
 export default ($: Signalize): void => {
 	$.observeIntersection = (element, callback, options) => {
 		const observer = new IntersectionObserver(callback, {
-			root: element.closest(`[${$.config.attributePrefix}intersection-observer-root]`),
+			root: element.closest(`[${$.attributePrefix}intersection-observer-root]`),
 			rootMargin: '0% 0%',
 			threshold: [0.0, 0.1],
 			...options ?? {}

@@ -2,11 +2,7 @@ import type { Signalize } from '..';
 
 declare module '..' {
 	interface Signalize {
-		offset: (element: HTMLElement) => Offset
-	}
-
-	interface SignalizeConfig {
-		intersectionObserverRootAttribute: string
+		offset: (element: Element) => Offset
 	}
 }
 
@@ -18,7 +14,7 @@ interface Offset {
 }
 
 export default ($: Signalize): void => {
-	$.offset = (element: HTMLElement): Offset => {
+	$.offset = (element) => {
 		const rect = element.getBoundingClientRect();
 		const defaultView = element.ownerDocument.defaultView;
 

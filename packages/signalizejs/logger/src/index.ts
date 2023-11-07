@@ -1,4 +1,4 @@
-import type { Signalize, CustomEventListener } from 'signalizejs';
+import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
 import type { AjaxOptions, AjaxReturn } from 'signalizejs/ajax';
 
 declare module '..' {
@@ -28,9 +28,13 @@ interface CompleteLogData extends Log {
 
 type Levels = 'log' | 'error' | 'warn';
 
-export default ($: Signalize): void => {
-	$.on('signalize:ready', () => {
-		const { ajax, dispatch, config } = $;
+export interface PluginOptions {
+	enabledLevels: Levels[]
+}
+
+export default (options: PluginOptions): SignalizePlugin => {
+	return ($: Signalize) => {
+		const { ajax, dispatch } = $;
 		let enabledLevels: Levels[] = ['error'];
 
 		const originalConsoleError = console.error;
@@ -119,7 +123,7 @@ export default ($: Signalize): void => {
 			originalWindowOnError(message, file, lineNumber, columnNumber, error);
 		}
 
-		enabledLevels = config.logger?.enabledLevels ?? enabledLevels;
+		enabledLevels = options?.enabledLevels ?? enabledLevels;
 
 		window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
 			// TODO test
@@ -129,5 +133,5 @@ export default ($: Signalize): void => {
 		});
 
 		$.sendToServer = sendToServer;
-	});
+	}
 }

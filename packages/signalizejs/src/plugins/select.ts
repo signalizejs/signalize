@@ -3,52 +3,44 @@ import type Signalize from '..';
 declare module '..' {
 	interface Signalize {
 		selectorToIterable: (target: Selectable, normalizeDocument?: boolean) => IterableElements
-		select: <T extends HTMLElement>(selector: string, root?: string | HTMLElement) => T | null
-		selectAll: <T extends HTMLElement>(selector: string, root?: string | HTMLElement) => NodeListOf<T>
+		select: <T extends Element>(selector: string, root?: string | Element) => T | null
+		selectAll: <T extends Element>(selector: string, root?: string | Element) => NodeListOf<T>
 	}
 }
 
-export type Selectable = string | NodeListOf<HTMLElement> | HTMLElement[] | HTMLElement | Window | Document
+export type Selectable = string | NodeListOf<Element> | Element[] | Element | Window | Document
 
-export type IterableElements = Array<HTMLElement | Document | Window>
+export type IterableElements = Array<Element | Document | Window>
 
 export default ($: Signalize): void => {
-	$.select = <T extends HTMLElement>(selector: string, root?: string | HTMLElement): T | null => {
-		root = root ?? $.config.root
-		if (typeof root === 'string') {
-			const rootSelector = root;
-			root = root.querySelector(rootSelector) as HTMLElement;
+	$.select = <T extends Element>(selector: string, root: string | Element | Document = $.root): T | null => {
+		const rootEl = typeof root === 'string' ? $.root.querySelector(root) : root;
 
-			if (root === null) {
-				throw new Error(`Signalize: Root element "${rootSelector}" not found.`);
-			}
+		if (rootEl === null) {
+			throw new Error('Signalize: root for select cannot be null.');
 		}
 
-		return root.querySelector(selector);
+		return rootEl.querySelector(selector);
 	}
 
-	$.selectAll = <T extends HTMLElement>(selector: string, root?: string | HTMLElement): NodeListOf<T> => {
-		root = root ?? $.config.root;
-		if (typeof root === 'string') {
-			const rootSelector = root;
-			root = root.querySelector(rootSelector) as HTMLElement;
+	$.selectAll = <T extends Element>(selector: string, root: string | Element | Document = $.root): NodeListOf<T> => {
+		const rootEl = typeof root === 'string' ? $.root.querySelector(root) : root;
 
-			if (root === null) {
-				throw new Error(`Signalize: Root element "${rootSelector}" not found.`);
-			}
+		if (rootEl === null) {
+			throw new Error('Signalize: root for selectAll cannot be null.');
 		}
 
-		return root.querySelectorAll(selector);
+		return rootEl.querySelectorAll(selector);
 	}
 
 	$.selectorToIterable = (target: Selectable, normalizeDocument = false): IterableElements => {
 		let elements: IterableElements;
 
 		if (typeof target === 'string') {
-			elements = [...$.selectAll<HTMLElement>(target)];
+			elements = [...$.selectAll<Element>(target)];
 		} else {
 			const targetIsDocument = target instanceof Document;
-			if (target instanceof HTMLElement || targetIsDocument || target instanceof Window) {
+			if (target instanceof Element || targetIsDocument || target instanceof Window) {
 				elements = [targetIsDocument && normalizeDocument ? target.documentElement : target]
 			} else {
 				elements = target instanceof Array || target instanceof NodeList ? [...target] : [target];

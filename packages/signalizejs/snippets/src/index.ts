@@ -1,8 +1,8 @@
-import type { Signalize, CustomEventListener } from 'signalizejs';
+import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
 
 declare module 'signalizejs' {
 	interface Signalize {
-		redraw: (content: string | DocumentFragment | HTMLElement | HTMLElement) => void
+		redrawSnippet: (content: string | DocumentFragment | Element | Element) => void
 	}
 
 	interface CustomEventListeners {
@@ -11,17 +11,17 @@ declare module 'signalizejs' {
 	}
 }
 
-export default ($: Signalize): void => {
-	$.on('signalize:ready', () => {
-		const { select, dispatch, config } = $;
-		const snippetAttribute = `${config.attributePrefix}snippet`;
-		const snippetRedrawedAttribute = `${snippetAttribute}${config.attributeSeparator}redrawed`;
-		const snippetActionAttribute = `${snippetAttribute}${config.attributeSeparator}action`;
+export default (): SignalizePlugin => {
+	return ($: Signalize): void => {
+		const { select, dispatch } = $;
+		const snippetAttribute = `${$.attributePrefix}snippet`;
+		const snippetRedrawedAttribute = `${snippetAttribute}${$.attributeSeparator}redrawed`;
+		const snippetActionAttribute = `${snippetAttribute}${$.attributeSeparator}action`;
 
 		const parseHtml = (html: string, type: DOMParserSupportedType = 'text/html'): Document =>
 			(new DOMParser()).parseFromString(html, type);
 
-		$.redraw = (content: string | DocumentFragment | HTMLElement | HTMLElement): void => {
+		$.redrawSnippet = (content: string | DocumentFragment | Element | Element): void => {
 			const fragment = parseHtml(content);
 
 			while (true) {
@@ -90,5 +90,5 @@ export default ($: Signalize): void => {
 				element.setAttribute(snippetRedrawedAttribute, '');
 			}
 		}
-	})
+	}
 }

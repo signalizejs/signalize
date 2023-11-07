@@ -24,7 +24,9 @@ export default ($: Signalize): void => {
 
 	const tasks: CallableFunction[] = [];
 
-	const yieldToMain = (): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, 0));
+	const yieldToMain = async (): Promise<void> => {
+		await new Promise((resolve) => window.setTimeout(resolve, 0));
+	}
 
 	let processing = false;
 

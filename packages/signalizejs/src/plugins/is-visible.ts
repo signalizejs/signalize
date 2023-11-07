@@ -2,12 +2,12 @@ import type { Signalize } from '..'
 
 declare module '..' {
 	interface Signalize {
-		isVisible: (element: HTMLElement) => boolean
+		isVisible: (element: Element) => boolean
 	}
 }
 
 export default ($: Signalize): void => {
-	$.isVisible = (element: HTMLElement): boolean => {
+	$.isVisible = (element: Element): boolean => {
 		if (element.getClientRects().length !== 0) {
 			return true;
 		}

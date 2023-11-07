@@ -1,4 +1,4 @@
-import type { Signalize, CustomEventListener } from 'signalizejs';
+import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
 
 declare module 'signalizejs' {
 	interface Signalize {
@@ -15,11 +15,6 @@ declare module 'signalizejs' {
 		'spa:visit:end': CustomEventListener
 		'spa:popstate': CustomEventListener
 		'spa:clicked': CustomEventListener
-	}
-
-	interface SignalizeConfig {
-		spaAppVersionHeader: string
-		spaCacheHeader: string
 	}
 }
 
@@ -40,17 +35,22 @@ interface SpaDispatchEventData extends VisitData {
 	success?: boolean
 }
 
-export default ($: Signalize): void => {
-	$.on('signalize:ready', () => {
-		const { dispatch, ajax, redraw, select, on, config } = $;
+export interface PluginOptions {
+	cacheHeader?: string
+	appVersionHeader?: string
+}
 
-		const spaAttribute = `${config.attributePrefix}spa`;
-		const spaUrlAttribute = `${spaAttribute}${config.attributeSeparator}url`;
-		const spaIgnoreAttribute = `${spaAttribute}${config.attributeSeparator}ignore`;
-		const spaStateActionAttribute = `${spaAttribute}${config.attributeSeparator}state-action`;
-		const spaMetaCacheNameAttribute = `${spaAttribute}${config.attributeSeparator}cache-control`;
-		const spaCacheHeader = config?.spaCacheHeader ?? 'X-Spa-Cache-Control';
-		const spaAppVersionHeader = config?.spaAppVersionHeader ?? 'X-Spa-App-Version';
+export default (options?: PluginOptions): SignalizePlugin => {
+	return ($: Signalize): void => {
+		const { dispatch, ajax, redraw, select, on } = $;
+
+		const spaAttribute = `${$.attributePrefix}spa`;
+		const spaUrlAttribute = `${spaAttribute}${$.attributeSeparator}url`;
+		const spaIgnoreAttribute = `${spaAttribute}${$.attributeSeparator}ignore`;
+		const spaStateActionAttribute = `${spaAttribute}${$.attributeSeparator}state-action`;
+		const spaMetaCacheNameAttribute = `${spaAttribute}${$.attributeSeparator}cache-control`;
+		const spaCacheHeader = options?.cacheHeader ?? 'X-Spa-Cache-Control';
+		const spaAppVersionHeader = options?.appVersionHeader ?? 'X-Spa-App-Version';
 
 		let currentLocation = new URL(window.location.href);
 		const spaVersion = null;
@@ -284,5 +284,5 @@ export default ($: Signalize): void => {
 		});
 
 		$.visit = visit;
-	})
+	}
 }

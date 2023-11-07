@@ -1,5 +1,4 @@
-import type Signalize from '..'
-import { Scope } from './scope';
+import type { Signalize } from '..'
 
 declare module '..' {
 	interface Signalize {
@@ -8,7 +7,7 @@ declare module '..' {
 }
 
 export default ($: Signalize): void => {
-	const { scope, Signal, on, off } = $;
+	const { scope, on, off, Signal, Scope } = $;
 
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
@@ -33,7 +32,7 @@ export default ($: Signalize): void => {
 		html: 'innerHTML'
 	}
 
-	$.bind = (element: EventTarget, attributes: Record<string, any>): void => {
+	$.bind = (element, attributes) => {
 		const unwatchSignalCallbacks: CallableFunction[] = [];
 		const elementScope = scope(element);
 
@@ -47,10 +46,10 @@ export default ($: Signalize): void => {
 			const attrOptionsAsArray = Array.isArray(attrOptions) ? attrOptions : [attrOptions];
 			const isNumericInput = numericInputAttributes.includes(element.getAttribute('type') ?? '');
 			const attributeBinder = attrOptionsAsArray.pop();
+			const signalsToWatch = attrOptionsAsArray;
 			const attributeBinderType = typeof attributeBinder;
 			const attributeBinderIsFunction = attributeBinderType === 'function';
 			const attributeBinderIsSignal = attributeBinder instanceof Signal;
-			const signalsToWatch = attrOptionsAsArray;
 			let attributeInited = false;
 			let previousSettedValue: any;
 
@@ -87,9 +86,9 @@ export default ($: Signalize): void => {
 				continue;
 			}
 
-			if (attributeBinderIsSignal === true) {
-				//signalsToWatch.push(attributeBinder);
-			}
+			/* if (attributeBinderIsSignal === true) {
+				signalsToWatch.push(attributeBinder);
+			} */
 
 			if (attributeBinderIsSignal === true || signalsToWatch.length === 1) {
 				getListener = () => attributeBinder();

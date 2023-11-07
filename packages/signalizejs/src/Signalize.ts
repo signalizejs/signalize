@@ -1,45 +1,45 @@
-import BindPlugin from './plugins/bind';
-import DispatchPlugin from './plugins/dispatch'
-import DomReadyPlugin from './plugins/domReady';
-import HeightPlugin from './plugins/height';
-import IntersectionObserverPlugin from './plugins/intersection-observer';
-import IsInViewportPlugin from './plugins/is-in-viewport';
-import IsVisiblePlugin from './plugins/is-visible';
-import MergePlugin from './plugins/merge';
-import MutationsObserverPlugin from './plugins/mutation-observer';
-import OffPlugin from './plugins/off';
-import OffsetPlugin from './plugins/offset';
-import OnPlugin from './plugins/on';
-import ScopePlugin from './plugins/scope';
-import SelectPlugin from './plugins/select';
-import SignalPlugin from './plugins/signal';
-import TaskPlugin from './plugins/task';
-import WidthPlugin from './plugins/width';
+import bind from './plugins/bind';
+import dispatch from './plugins/dispatch'
+import domReady from './plugins/domReady';
+import height from './plugins/height';
+import intersectionObserver from './plugins/intersection-observer';
+import isInViewport from './plugins/is-in-viewport';
+import isVisible from './plugins/is-visible';
+import merge from './plugins/merge';
+import mutationsObserver from './plugins/mutation-observer';
+import off from './plugins/off';
+import offset from './plugins/offset';
+import on from './plugins/on';
+import scope from './plugins/scope';
+import select from './plugins/select';
+import signal from './plugins/signal';
+import task from './plugins/task';
+import width from './plugins/width';
 
-/* export * from './plugins/async-function';
 export * from './plugins/bind';
 export * from './plugins/dispatch'
 export * from './plugins/domReady';
+export * from './plugins/height';
+export * from './plugins/intersection-observer';
+export * from './plugins/is-in-viewport';
+export * from './plugins/is-visible';
 export * from './plugins/merge';
 export * from './plugins/mutation-observer';
-export * from './plugins/on';
 export * from './plugins/off';
-export * from './plugins/ref';
+export * from './plugins/offset';
+export * from './plugins/on';
 export * from './plugins/scope';
 export * from './plugins/select';
 export * from './plugins/signal';
-export * from './plugins/task' */
-
-export interface SignalizeConfig extends Record<string, any> {
-	root: Element | Document | DocumentFragment
-	attributeSeparator: string
-	attributePrefix: string
-}
+export * from './plugins/task';
+export * from './plugins/width';
 
 export type SignalizeGlobals = Record<string, any>
 
 export interface SignalizeOptions {
-	config?: SignalizeConfig
+	root: Element | Document
+	attributeSeparator: string
+	attributePrefix: string
 	globals?: SignalizeGlobals
 	plugins?: SignalizePlugin
 }
@@ -47,57 +47,51 @@ export interface SignalizeOptions {
 export type SignalizePlugin = (signalize: Signalize) => void
 
 export class Signalize {
-	config: Partial<SignalizeConfig> = {
-		root: document,
-		attributeSeparator: '-',
-		attributePrefix: '',
-		customEventListeners: {}
-	}
-
+	root!: Element | Document;
+	attributeSeparator!: string;
+	attributePrefix!: string;
 	globals: SignalizeGlobals = {};
 
-	constructor (options?: Partial<SignalizeOptions>) {
+	constructor (options: Partial<SignalizeOptions> = {}) {
 		this.#init(options);
 	}
 
-	readonly #init = (options?: Partial<SignalizeOptions>): void => {
-		const readyListeners: CallableFunction = [];
+	use = (plugin: SignalizePlugin): void => {
+		plugin(this)
+	}
 
-		this.config.customEventListeners['signalize:ready'] = (target: HTMLElement | string, listener: CallableFunction, options: AddEventListenerOptions) => {
-			readyListeners.push(listener);
-		}
+	readonly #init = (options: Partial<SignalizeOptions>): void => {
+		this.root = options?.root ?? document;
+		this.attributePrefix = options?.attributePrefix ?? '';
+		this.attributeSeparator = options?.attributeSeparator ?? '';
 
-		MergePlugin(this);
-		TaskPlugin(this);
-		HeightPlugin(this);
-		WidthPlugin(this);
-		SelectPlugin(this);
-		DispatchPlugin(this);
-		OffsetPlugin(this);
-		IsVisiblePlugin(this);
-		IsInViewportPlugin(this);
-		OnPlugin(this);
-		DomReadyPlugin(this);
-		OffPlugin(this);
-		SignalPlugin(this);
-		IntersectionObserverPlugin(this);
-		ScopePlugin(this);
-		BindPlugin(this);
-		MutationsObserverPlugin(this);
+		merge(this);
+
+		this.globals = this.merge(this.globals, options?.globals ?? {});
+
+		task(this);
+		height(this);
+		width(this);
+		select(this);
+		dispatch(this);
+		offset(this);
+		isVisible(this);
+		isInViewport(this);
+		on(this);
+		domReady(this);
+		off(this);
+		signal(this);
+		intersectionObserver(this);
+		scope(this);
+		bind(this);
+		mutationsObserver(this);
 
 		for (const plugin of options?.plugins ?? []) {
 			plugin(this);
 		}
 
-		this.globals = this.merge(this.globals, options?.globals ?? {});
-		this.config = this.merge(this.config, options?.config ?? {}) as SignalizeConfig;
-
-		while(readyListeners.length) {
-			readyListeners.shift()(this)
-		}
-
 		this.on('dom:ready', () => {
-			this.observeMutations(this.config.root);
+			this.observeMutations(this.root);
 		});
 	}
 }
