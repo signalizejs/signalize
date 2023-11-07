@@ -41,7 +41,7 @@ export interface SignalizeOptions {
 	attributeSeparator: string
 	attributePrefix: string
 	globals?: SignalizeGlobals
-	plugins?: SignalizePlugin
+	plugins?: SignalizePlugin[]
 }
 
 export type SignalizePlugin = (signalize: Signalize) => void

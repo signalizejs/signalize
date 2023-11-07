@@ -53,7 +53,7 @@ export default ($: Signalize): void => {
 			let attributeInited = false;
 			let previousSettedValue: any;
 
-			const setOption = async (attribute, value) => {
+			const setAttribute = async (attribute, value): Promise<void> => {
 				value = value instanceof Promise ? await value : value;
 				attribute = attributesAliases[attribute] ?? attribute;
 
@@ -82,15 +82,18 @@ export default ($: Signalize): void => {
 			}
 
 			if (['string', 'number'].includes(attributeBinderType)) {
-				setOption(attr, attributeBinder);
+				setAttribute(attr, attributeBinder);
 				continue;
 			}
 
-			/* if (attributeBinderIsSignal === true) {
+			if (attributeBinderIsSignal) {
 				signalsToWatch.push(attributeBinder);
-			} */
+			}
 
-			if (attributeBinderIsSignal === true || signalsToWatch.length === 1) {
+			if (attributeBinderIsSignal) {
+				getListener = () => attributeBinder();
+				setListener = (value) => attributeBinder.set(value);
+			} else if (signalsToWatch.length === 1) {
 				getListener = () => attributeBinder();
 				setListener = (value) => signalsToWatch[0].set(value);
 			} else if (typeof attributeBinder === 'function') {
@@ -101,31 +104,23 @@ export default ($: Signalize): void => {
 			}
 
 			if (attributeBinderIsFunction === true) {
-				setOption(attr, attributeBinder());
+				setAttribute(attr, attributeBinder());
 			}
 
 			for (const signalToWatch of signalsToWatch) {
 				unwatchSignalCallbacks.push(
 					signalToWatch.watch(async () => {
-						setOption(attr, getListener());
+						setAttribute(attr, getListener());
 					})
 				);
 			}
 
 			if (typeof setListener === 'function' && reactiveInputAttributes.includes(attr)) {
-				const inputListener = async (): void => {
+				const inputListener = (): void => {
 					setListener(isNumericInput ? Number(element[attr] as string) : element[attr] as string);
 				};
 
-				on('input', element, () => {
-					inputListener()
-				}, { passive: true });
-
-				if (elementScope instanceof Scope) {
-					elementScope.cleanup(() => {
-						off('input', element, inputListener);
-					})
-				}
+				on('input', element, inputListener, { passive: true });
 			}
 		}
 

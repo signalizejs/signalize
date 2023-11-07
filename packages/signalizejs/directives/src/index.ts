@@ -36,6 +36,7 @@ interface RegisteredDirective extends Directive {
 interface ProcessDirectiveOptions {
 	root?: Element
 	directiveName?: string
+	reinit?: boolean
 }
 
 interface CreateFunctionOptions {
@@ -52,7 +53,7 @@ interface PluginOptions {
 export default (options?: PluginOptions): SignalizePlugin => {
 
 	return ($: Signalize) => {
-		const { bind, on, Signal, scope, signal, globals, attributePrefix, attributeSeparator } = $;
+		const { bind, on, scope, signal, globals, attributePrefix, attributeSeparator } = $;
 		const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
 		const directives: Record<string, RegisteredDirective> = {};
 		const directivesAttribute = `${attributePrefix}directives`;
@@ -62,7 +63,11 @@ export default (options?: PluginOptions): SignalizePlugin => {
 		const renderedTemplateEndComment = options?.renderedBlockEnd ?? '/template';
 		let inited = false;
 
-		const processElement = async (element: Element, directivesToProcess?: string[]): Promise<Element> => {
+		const processElement = async (options?: ProcessElementOptions): Promise<Element> => {
+			const element: Element = options.element;
+			const directivesToProcess = options.directives ?? [];
+			const reinit = options.reinit ?? false;
+
 			const elementClosestScope = element.closest(`[${$.scopeAttribute}]`);
 			let scopeInitPromise = null;
 
@@ -80,6 +85,14 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				await scopeInitPromise;
 			}
 
+			const elementScope = scope(element, (elementScope) => {
+				if (!('directives' in elementScope)) {
+					elementScope.directives = new Map();
+				}
+			});
+
+			const compiledDirectives = elementScope.directives;
+
 			let directivesQueue = [...directivesToProcess ?? Object.keys(directives)];
 			const customDirectivesOrder = element.getAttribute(orderAttribute) ?? '';
 
@@ -90,15 +103,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				])]
 			}
 
-			if (directivesQueue.length > 0) {
-				let countdown = element.attributes.length;
-				const processDirectiveFromQueue = async (directiveName: string): Promise<void> => {
-					if (directiveName === undefined) {
-						return;
-					}
+			directivesQueue = directivesQueue.filter((item) => !compiledDirectives.has(item));
 
+			if (directivesQueue.length > 0) {
+				while (directivesQueue.length) {
+					const directiveName = directivesQueue.shift();
 					const matcher = directives[directiveName]?.matcher
-					let directivesPromises = [];
+
 					for (const attribute of element.attributes) {
 						const matcherReturn = matcher({ element, attribute });
 
@@ -112,46 +123,54 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						}
 
 						const directive = directives[directiveName];
-						const elementScope = scope(element, (elementScope) => {
-							if (!('directives' in elementScope)) {
-								elementScope.directives = new Set();
-							}
-
-							elementScope.directives.add(directiveName);
+						scope(element, (elementScope) => {
+							elementScope.directives.set(
+								directiveName,
+								[
+									...elementScope.directives.get(directiveName) ?? [],
+									(elementScope) => {
+										return directive.callback({
+											...elementScope,
+											data: elementScope.data,
+											matches,
+											attribute
+										})
+									}
+								]
+							);
 						});
-
-						countdown--;
-						directivesPromises.push(
-							directive.callback({
-								...elementScope,
-								data: elementScope.data,
-								matches,
-								attribute
-							})
-						)
 					}
+				}
+			}
 
-					if (directivesPromises.length > 0) {
-						await Promise.all(directivesPromises);
-					}
+			const directivesToRun = [...elementScope.directives.keys()]
 
-					if (countdown === 0) {
-						return;
-					}
+			const runDirective = async (name: string): Promise<void> => {
+				const promises = [];
 
-					return processDirectiveFromQueue(directivesQueue.shift());
+				for (const directiveFunction of elementScope.directives.get(name)) {
+					promises.push(directiveFunction(elementScope));
 				}
 
-				await processDirectiveFromQueue(directivesQueue.shift());
+				await Promise.all(promises);
 
-				element.removeAttribute($.cloakAttribute);
+				if (directivesToRun.length > 0) {
+					await runDirective(directivesToRun.shift());
+				}
 			}
+
+			if (directivesToRun.length > 0) {
+				await runDirective(directivesToRun.shift());
+			}
+
+			element.removeAttribute($.cloakAttribute);
 
 			return element;
 		};
 
 		const processDirectives = async (options: ProcessDirectiveOptions = { root: $.root }): Promise<Element | Document | DocumentFragment> => {
-			let { root, directiveName } = options;
+			// TODO reinit
+			let { root, directiveName, reinit = false } = options;
 			const directivesToProcess = directiveName === undefined ? Object.keys(directives) : [directiveName];
 
 			const processElements = async (root): Promise<void> => {
@@ -162,7 +181,10 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				}
 
 				if (rootIsElement) {
-					await processElement(root, directivesToProcess);
+					await processElement({
+						element: root,
+						directives: directivesToprocess
+					});
 				}
 
 				const elementsProcessingPromises = []
@@ -292,7 +314,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 									data[key] = value;
 								}
 							});
-							directivesProcessingPromises.push(processElement(child));
+							directivesProcessingPromises.push(processElement({ element: child }));
 						}
 					}
 
@@ -327,11 +349,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 							iterator: {
 								count: counter,
 								first: counter === 0,
-								last: counter === totalCount,
+								last: counter === totalCount - 1,
 								odd: counter % 2 !== 0,
 								even: counter % 2 === 0
 							}
 						});
+
+						counter++;
 					}
 
 					if (argumentsMatch[2] === 'in') {
@@ -346,7 +370,6 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 					const currentState = [];
 					let nextElementSibling = element.nextElementSibling;
-
 					while (nextElementSibling !== null) {
 						if (scope(nextElementSibling)?.template !== element) {
 							break;
@@ -362,23 +385,25 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					const fragments = await Promise.all(directivesProcessingPromises);
 
 					const reinitDirectives = (element) => {
-						const elementScope = scope(element);
+						processDirectives({
+							root: element,
+							reinit: true
+						})
+						/* const elementScope = scope(element);
 						if (elementScope !== undefined && elementScope?.directives !== undefined) {
 							elementScope.cleanup();
-							const directivesQueue = elementScope.directives;
-							elementScope.directives.clear();
-							processElement(element, directivesQueue);
+							processElement(element);
 						}
 
 						for (const child of element.children) {
 							reinitDirectives(child);
-						}
+						} */
 					}
 
 					const fragmentsLength = fragments.length;
 					while (fragments.length > 0) {
 						const root = fragments.shift();
-						scope(root, (rootScope) => {
+						const rootScope = scope(root, (rootScope) => {
 							rootScope.template = element;
 						});
 						const rootKey = root.getAttribute('key')
@@ -407,13 +432,21 @@ export default (options?: PluginOptions): SignalizePlugin => {
 										currentState[i] = existingItem
 										currentState[existingItemIndex] = tmp;
 									}
+								} else {
+									const existingItemScope = scope(existingItem);
+
+									for (const [key, value] of Object.entries(rootScope.data)) {
+										existingItemScope.data[key] = value;
+									}
+
+									reinitDirectives(existingItem);
 								}
 							} else if (i >= currentState.length) {
 								lastInsertPoint.after(root);
 								lastInsertPoint = root;
 								for (const child of root.children) {
 									scope(child, ({ data }) => {
-										data = scope(root).data
+										data = rootScope.data
 									});
 
 									processDirectives({ root: child });
@@ -425,7 +458,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						} else if (currentState.length > 0 && i < currentState.length) {
 							const fragmentScope = scope(currentState[i]);
 
-							for (const [key, value] of Object.entries(scope(root).data)) {
+							for (const [key, value] of Object.entries(rootScope.data)) {
 								fragmentScope.data[key] = value;
 							}
 
@@ -437,7 +470,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 							lastInsertPoint = root;
 							for (const child of root.children) {
 								scope(child, ({ data }) => {
-									data = scope(root).data
+									data = rootScope.data
 								});
 
 								processDirectives({ root: child });
@@ -466,7 +499,6 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				}
 
 				await process();
-
 				unwatchSignalCallbacks = [];
 				for (const signalToWatch of signalsToWatch) {
 					unwatchSignalCallbacks.push(signalToWatch.watch(process))

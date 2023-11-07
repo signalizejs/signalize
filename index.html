@@ -7,15 +7,31 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
 	<title snippet="title">Index page</title>
-	<!-- <script type="module" src="http://localhost:5173/@vite/client"></script> -->
-	<script type="module">
+	<!-- <script type="module">
 		import Signalize from 'signalizejs';
 		import directives from 'signalizejs/directives';
 
-		const $ = new Signalize({
-			plugins: [ directives ]
+		const { bind, select, signal } = new Signalize({
+			plugins: [ ]
 		});
-	</script>
+
+		const smallerNumber = signal(0);
+		const largerNumber = signal(0);
+
+		smallerNumber.watch(({ newValue, oldValue }) => {
+			return {
+				value: newValue >= largerNumber() ? largerNumber() - 1 : newValue,
+			}
+		}, { execution: 'beforeSet' });
+
+		smallerNumber.watch(({ newValue, oldValue }) => {
+			console.log(newValue, oldValue);
+		});
+
+		bind(select('#smaller'), { value: smallerNumber });
+		bind(select('#larger'), { value: largerNumber });
+		bind(select('#sum'), { text: [smallerNumber, largerNumber, () => largerNumber + smallerNumber]})
+	</script> -->
 </head>
 
 <body>
@@ -25,8 +41,36 @@
 		}
 	</style>
 
+	<form $items="[]" $value="" @submit="() => {
+		$event.preventDefault();
+		items.set([...new Set([...items(), value()])]);
+		value.set('');
+	}">
+		<!-- Shortcuts for attribute binding -->
+		<input {value} placeholder="Type something" required>
+		<button>Add</button>
+		<br>
+		<!-- Native for of/in loops -->
+		<template :for="item of items">
+			<!-- Iterator feature: count, first, last, odd, even -->
+			<div :text="item + (iterator.last ? '' : ', ')" :style="iterator.odd ? 'color:red': 'color:blue'"></div>
+		</template>
+	</form>
+	<script type="module">
+		import Signalize from 'signalizejs';
+		import directives from 'signalizejs/directives';
+
+		// Use the directives plugin
+		new Signalize({ plugins: [directives()] })
+	</script>
+
+	<!-- <input id="smaller" type="number">
+	<input id="larger" type="number">
+
+	<div id="sum"></div>
+ -->
 	<!-- Conditional loop for large amount of elements -->
- 	<!-- <div $text="'Hello World!'" $count="10">
+	<div $text="'Hello World!'" $count="10">
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -42,7 +86,7 @@
 				</li>
 			</template>
 		</ul>
-	</div> -->
+	</div>
 
 	<!-- <div $text="">
 		<input :value="text">
@@ -104,7 +148,7 @@
 	<!-- <template :for="i in 1100">
 		<div :text="i"></div>
 	</template> -->
-<!-- 	<button $count="0" @click="count.set(count() + 1)">Count <span :text="count"></span></button>
+	<!-- 	<button $count="0" @click="count.set(count() + 1)">Count <span :text="count"></span></button>
  -->
 	<!-- <div $text="'Longer'">
 		<template :if="text().length < 2">

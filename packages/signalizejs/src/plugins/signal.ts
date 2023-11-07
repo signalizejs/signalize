@@ -76,17 +76,15 @@ export default ($: Signalize): void => {
 			this.#setTimeout = setTimeout(() => {
 				const oldValue = this.value;
 
-				if (['string', 'number'].includes(typeof newValue) && newValue === oldValue) {
-					return;
-				}
-
 				let settable = true;
+
 				for (const watcher of this.watchers.beforeSet) {
 					const watcherData = watcher({ newValue, oldValue });
 					if (typeof watcherData !== 'undefined') {
 						settable = watcherData.settable ?? settable;
-						newValue = watcherData.value;
+						newValue = watcherData.value ?? newValue;
 					}
+
 					if (!settable) {
 						break;
 					}
@@ -97,6 +95,7 @@ export default ($: Signalize): void => {
 				}
 
 				this.value = newValue;
+
 				for (const watcher of this.watchers.afterSet) {
 					watcher({ newValue, oldValue })
 				}
