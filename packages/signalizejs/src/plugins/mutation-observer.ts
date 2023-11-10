@@ -21,7 +21,7 @@ interface ObserverOptions {
 }
 
 export default ($: Signalize): void => {
-	$.observeMutations = (root = document, options?) => {
+	$.observeMutations = (root = $.root, options?) => {
 		const domMutationEvent = 'dom:mutation';
 		const domMutationNodeAddedEvent = 'dom:mutation:node:added';
 		const domMutationNodeRemovedEvent = 'dom:mutation:node:removed';

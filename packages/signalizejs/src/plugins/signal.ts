@@ -4,6 +4,7 @@ declare module '..' {
 	interface Signalize {
 		Signal: Signal<any>
 		signal: <T>(defaultValue: T) => Signal<T>
+		observeSignals: <T>(data: Record<string, any> | Signal<any>[]) => UnobserveSignals
 	}
 }
 
@@ -42,6 +43,8 @@ export interface Signal<T> {
 
 }
 
+type UnobserveSignals = () => Signal<any>[];
+
 export default ($: Signalize): void => {
 	class SignalStructure<T = any> extends Function implements Signal<T> {
 		value: T;
@@ -51,16 +54,17 @@ export default ($: Signalize): void => {
 			onGet: new Set()
 		};
 
-		#setTimeout!: number;
+		#setWatchersTimeout!: number;
 
 		constructor (defaultValue: T) {
 			super()
-			this.value = defaultValue;
+			this.value = defaultValue ?? undefined;
+
 			return new Proxy(this, {
 				apply: () => {
 					return this.get()
 				}
-			})
+			});
 		}
 
 		get = (): T => {
@@ -72,33 +76,35 @@ export default ($: Signalize): void => {
 		}
 
 		set = (newValue: T): void => {
-			clearTimeout(this.#setTimeout);
-			this.#setTimeout = setTimeout(() => {
-				const oldValue = this.value;
+			const oldValue = this.value;
 
-				let settable = true;
+			let settable = true;
 
-				for (const watcher of this.watchers.beforeSet) {
-					const watcherData = watcher({ newValue, oldValue });
-					if (typeof watcherData !== 'undefined') {
-						settable = watcherData.settable ?? settable;
-						newValue = watcherData.value ?? newValue;
-					}
-
-					if (!settable) {
-						break;
-					}
+			for (const watcher of this.watchers.beforeSet) {
+				const watcherData = watcher({ newValue, oldValue });
+				if (typeof watcherData !== 'undefined') {
+					settable = watcherData.settable ?? settable;
+					newValue = watcherData.value ?? newValue;
 				}
 
 				if (!settable) {
-					return;
+					break;
 				}
+			}
 
-				this.value = newValue;
+			if (!settable) {
+				return;
+			}
 
-				for (const watcher of this.watchers.afterSet) {
-					watcher({ newValue, oldValue })
-				}
+			this.value = newValue;
+
+			clearTimeout(this.#setWatchersTimeout);
+			this.#setWatchersTimeout = setTimeout(() => {
+				requestAnimationFrame(() => {
+					for (const watcher of this.watchers.afterSet) {
+						watcher({ newValue, oldValue });
+					}
+				})
 			});
 		}
 
@@ -133,6 +139,38 @@ export default ($: Signalize): void => {
 		}
 	}
 
+	const observeSignals = (data: Record<string, any> | Signal<any>[]): UnobserveSignals => {
+		let keepTracking = true;
+		const signalsToWatch: Signal = [];
+		const detectedSignals = [];
+
+		for (const signalDataItem of Array.isArray(data) ? data : Object.values(data)) {
+			if (!(signalDataItem instanceof SignalStructure)) {
+				continue;
+			}
+
+			const unwatch = signalDataItem.watch(({ newValue, oldValue }) => {
+				if (!keepTracking) {
+					return;
+				}
+				signalsToWatch.push(signalDataItem);
+				unwatch();
+			}, { execution: 'onGet' });
+			detectedSignals.push(unwatch);
+		}
+
+		return () => {
+			keepTracking = false;
+
+			while (detectedSignals.length) {
+				detectedSignals.shift()()
+			}
+
+			return signalsToWatch;
+		}
+	}
+
 	$.Signal = SignalStructure;
 	$.signal = <T>(defaultValue: T): Signal<T> => new SignalStructure(defaultValue);
+	$.observeSignals = observeSignals
 }

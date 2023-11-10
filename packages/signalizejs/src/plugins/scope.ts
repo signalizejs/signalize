@@ -35,11 +35,11 @@ export default ($: Signalize): void => {
 
 	class ElementScope implements Scope {
 		readonly #cleanups = new Set<CallableFunction>();
-		readonly #localData = {};
+		#localData = {};
 
 		element: Element | Document | DocumentFragment;
 
-		constructor ({
+		constructor({
 			element
 		}: {
 			element: Element | Document | DocumentFragment
@@ -79,43 +79,43 @@ export default ($: Signalize): void => {
 					setParentData(element.parentNode, key, value);
 				}
 			}
+			this.#localData = {...getScopedData(this.element.parentNode), ...this.#localData};
 
-			return new Proxy(getScopedData(this.element.parentNode, this.#localData), {
+			return new Proxy(this.#localData, {
 				set: (target, key: string, newValue: any) => {
-					this.#localData[key] = newValue;
+					target[key] = newValue;
 					return true;
 				},
 				get: (target, key) => {
-					return this.#localData[key] ?? getParentData(this.element.parentNode, key)
+					return target[key];
 				}
 			})
 		}
 
 		cleanup = (callback: CallableFunction): void => {
-			if (callback === undefined) {
-				const cleanChildren = (element) => {
-					for (const child of [...element.childNodes]) {
-						setTimeout(() => {
-							scope(child)?.cleanup();
-							if (child instanceof Element && child.childNodes.length) {
-								cleanChildren(child);
-							}
-						}, 0)
-					}
-				}
-
-				for (const cleanup of this.#cleanups) {
-					setTimeout(() => {
-						cleanup();
-					}, 0);
-				}
-
-				this.#cleanups.clear();
-				cleanChildren(this.element);
-				return;
+			if (callback !== undefined) {
+				this.#cleanups.add(callback);
+				return
 			}
 
-			this.#cleanups.add(callback);
+			const cleanChildren = (element) => {
+				for (const child of [...element.childNodes]) {
+					const childScope = scope(child);
+					if (childScope !== undefined) {
+						childScope?.cleanup();
+					} else if (child instanceof Element && child.childNodes.length) {
+						cleanChildren(child);
+					}
+				}
+			}
+
+			for (const cleanup of this.#cleanups) {
+				cleanup();
+			}
+
+			this.#cleanups.clear();
+
+			cleanChildren(this.element);
 		}
 
 		ref = <T extends Element>(id: string): T | null => {
@@ -166,6 +166,10 @@ export default ($: Signalize): void => {
 	});
 
 	on('dom:mutation:node:removed', (event) => {
+		if ($.root instanceof Document ? $.root.contains(event.detail) : $.root.ownerDocument.contains(event.detail)) {
+			return;
+		}
+
 		scope(event.detail)?.cleanup();
 	});
 

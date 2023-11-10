@@ -24,6 +24,11 @@ type DirectiveMatcherReturn = RegExp | undefined
 
 type DirectiveMatcher = (params: DirectiveMatcherParameters) => DirectiveMatcherReturn
 
+interface ProcessElementOptions {
+	element: Element
+	mode: 'init' | 'reinit'
+}
+
 interface Directive {
 	matcher?: RegExp | DirectiveMatcher
 	callback: DirectiveCallback
@@ -36,7 +41,7 @@ interface RegisteredDirective extends Directive {
 interface ProcessDirectiveOptions {
 	root?: Element
 	directiveName?: string
-	reinit?: boolean
+	mode?: 'init' | 'reinit'
 }
 
 interface CreateFunctionOptions {
@@ -53,7 +58,7 @@ interface PluginOptions {
 export default (options?: PluginOptions): SignalizePlugin => {
 
 	return ($: Signalize) => {
-		const { bind, on, scope, signal, globals, attributePrefix, attributeSeparator } = $;
+		const { bind, on, scope, signal, globals, attributePrefix, observeSignals, attributeSeparator } = $;
 		const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
 		const directives: Record<string, RegisteredDirective> = {};
 		const directivesAttribute = `${attributePrefix}directives`;
@@ -65,8 +70,9 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 		const processElement = async (options?: ProcessElementOptions): Promise<Element> => {
 			const element: Element = options.element;
-			const directivesToProcess = options.directives ?? [];
-			const reinit = options.reinit ?? false;
+			const mode = options.mode ?? false;
+			const canExecute = ['reinit', 'init'].includes(mode);
+			const canCompile = mode === 'init';
 
 			const elementClosestScope = element.closest(`[${$.scopeAttribute}]`);
 			let scopeInitPromise = null;
@@ -91,9 +97,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				}
 			});
 
+			if (mode === 'reinit') {
+				elementScope.cleanup();
+			}
+
 			const compiledDirectives = elementScope.directives;
 
-			let directivesQueue = [...directivesToProcess ?? Object.keys(directives)];
+			let directivesQueue = [...options.directives ?? Object.keys(directives)];
 			const customDirectivesOrder = element.getAttribute(orderAttribute) ?? '';
 
 			if (customDirectivesOrder.length > 0) {
@@ -103,14 +113,19 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				])]
 			}
 
-			directivesQueue = directivesQueue.filter((item) => !compiledDirectives.has(item));
+			directivesQueue = directivesQueue.filter((item) => !compiledDirectives.has(item) );
+			let countdown = element.attributes.length;
+			const processedAttributes = [];
 
-			if (directivesQueue.length > 0) {
-				while (directivesQueue.length) {
+			if (canCompile) {
+				while (directivesQueue.length && countdown) {
 					const directiveName = directivesQueue.shift();
 					const matcher = directives[directiveName]?.matcher
 
 					for (const attribute of element.attributes) {
+						if (attribute.name in processedAttributes) {
+							continue;
+						}
 						const matcherReturn = matcher({ element, attribute });
 
 						if (matcherReturn === undefined) {
@@ -122,6 +137,8 @@ export default (options?: PluginOptions): SignalizePlugin => {
 							continue;
 						}
 
+						countdown--;
+						processedAttributes.push(attribute.name);
 						const directive = directives[directiveName];
 						scope(element, (elementScope) => {
 							elementScope.directives.set(
@@ -153,24 +170,22 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				}
 
 				await Promise.all(promises);
-
-				if (directivesToRun.length > 0) {
-					await runDirective(directivesToRun.shift());
-				}
 			}
 
-			if (directivesToRun.length > 0) {
-				await runDirective(directivesToRun.shift());
+			/* const directivePromises = []; */
+			while (canExecute && directivesToRun.length > 0) {
+				await runDirective(directivesToRun.shift())
 			}
+
+			/* await Promise.all(directivePromises); */
 
 			element.removeAttribute($.cloakAttribute);
 
 			return element;
 		};
 
-		const processDirectives = async (options: ProcessDirectiveOptions = { root: $.root }): Promise<Element | Document | DocumentFragment> => {
-			// TODO reinit
-			let { root, directiveName, reinit = false } = options;
+		const processDirectives = async (options?: ProcessDirectiveOptions = {}): Promise<Element | Document | DocumentFragment> => {
+			let { root = $.root, directiveName, mode = 'init' } = options;
 			const directivesToProcess = directiveName === undefined ? Object.keys(directives) : [directiveName];
 
 			const processElements = async (root): Promise<void> => {
@@ -183,17 +198,18 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				if (rootIsElement) {
 					await processElement({
 						element: root,
-						directives: directivesToprocess
+						mode,
+						directives: directivesToProcess
 					});
 				}
 
-				const elementsProcessingPromises = []
+				//const elementsProcessingPromises = [];
 
 				for (const child of [...root.children]) {
-					elementsProcessingPromises.push(processElements(child));
+					await processElements(child);
 				}
 
-				await Promise.all(elementsProcessingPromises);
+				//await Promise.all(elementsProcessingPromises);
 			}
 
 			await processElements(root);
@@ -222,7 +238,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			const { functionString, context = {} } = options;
 			const cacheKey = `${options.functionString.replace(/\s*/g, '_')}-${Object.keys(options.context).join('-')}`;
 			if (!(cacheKey in createFunctionCache)) {
-				const functionDataKeys = Object.keys({ ...globals, ...context });
+				const functionDataKeys = Object.keys({ $signalize: $, ...globals, ...context });
 				createFunctionCache[cacheKey] = async (data: Record<string, any>) => {
 					let functionData = { $signalize: $, ...globals, ...data }
 					try {
@@ -230,6 +246,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 							'use strict';
 							try {
 								let { ${functionDataKeys.join(',')} } = _context;
+
 								${functionString}
 							} catch(e) {
 								console.error($element ?? '', e);
@@ -248,17 +265,45 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			matcher: new RegExp(`(?:\\$|${attributePrefix}signal${attributeSeparator})(\\S+)`),
 			callback: async ({ matches, element, data, attribute }): Promise<void> => {
 				const fn = createFunction({
-					functionString: `return ${attribute.value.length ? attribute.value : "''"}`,
+					functionString: `
+						const result = ${attribute.value.length ? attribute.value : "''"};
+						return result instanceof $signalize.Signal ? result() : result;
+					`,
 					context: data,
 					element
 				});
-				let result = await fn(data);
 
-				if (typeof result === 'string' && result.length > 0 && !isNaN(result)) {
-					result = parseFloat(result);
+				const newSignal = signal();
+
+				const setSignal = async () => {
+					let result = await fn(data);
+
+					if (typeof result === 'string' && result.length > 0 && !isNaN(result)) {
+						result = parseFloat(result);
+					}
+
+					newSignal.set(result);
 				}
 
-				scope(element).data[matches[1]] = signal(result);
+				let unwatchSignalCallbacks = [];
+				const getSignalsToWatch = observeSignals(data);
+
+				await setSignal();
+
+				unwatchSignalCallbacks = [];
+
+				for (const signalToWatch of getSignalsToWatch()) {
+					unwatchSignalCallbacks.push(signalToWatch.watch(setSignal))
+				}
+
+				scope(element, ({ data, cleanup }) => {
+					data[matches[1]] = newSignal;
+					cleanup(() => {
+						while (unwatchSignalCallbacks.length > 0) {
+							unwatchSignalCallbacks.shift()()
+						}
+					})
+				})
 			}
 		});
 
@@ -284,92 +329,26 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 				const newContextVariables: string[] = argumentsMatch[1].replace(/[[({})\]\s]/g, '').split(',');
 
-				let unwatchSignalCallbacks = [];
-				const signalsToWatch = [];
-
-				for (const signal of Object.values(data)) {
-					if (typeof signal !== 'function') {
-						continue;
-					}
-
-					const unwatch = signal.watch(() => {
-						signalsToWatch.push(signal);
-						unwatch();
-					}, { execution: 'onGet' })
-				}
-
 				const stackFn = createFunction({
 					functionString: `return typeof ${argumentsMatch[3]} === 'function' ? ${argumentsMatch[3]}() : ${argumentsMatch[3]};`,
 					context: data,
 					element
 				});
 
+				let signalsToWatch = [];
+				let inited = false;
+				let getUsedSignals;
+
 				const process = async (): Promise<void> => {
-					const directivesProcessingPromises = [];
-					const processScope = async (scopeToProcess) => {
-						const templateFragment = element.cloneNode(true).content;
-						for (const child of templateFragment.children) {
-							scope(child, ({ data }) => {
-								for (const [key, value] of Object.entries({ ...scopeToProcess, ...data })) {
-									data[key] = value;
-								}
-							});
-							directivesProcessingPromises.push(processElement({ element: child }));
-						}
+					if (!inited) {
+						getUsedSignals = observeSignals(data);
 					}
 
-					let stack = await stackFn(data);
-
-					if (typeof stack === 'number') {
-						stack = [...Array(stack).keys()];
-					}
-
-					let totalCount = stack.length;
-					let counter = 0;
-					const isArrayDestruct = argumentsMatch[0].trim().startsWith('[');
-					const iterate = (data: any): void => {
-						let destruct = {};
-
-						if (newContextVariables.length > 1) {
-							if (isArrayDestruct) {
-								for (const key of Object.keys(data)) {
-									destruct[newContextVariables[key]] = data[key];
-								}
-							} else {
-								for (const key of newContextVariables) {
-									destruct[key] = data[key];
-								}
-							}
-						} else {
-							destruct[newContextVariables] = data;
-						}
-
-						void processScope({
-							...destruct,
-							iterator: {
-								count: counter,
-								first: counter === 0,
-								last: counter === totalCount - 1,
-								odd: counter % 2 !== 0,
-								even: counter % 2 === 0
-							}
-						});
-
-						counter++;
-					}
-
-					if (argumentsMatch[2] === 'in') {
-						for (let data in stack) {
-							iterate(data)
-						}
-					} else {
-						for (let data of stack) {
-							iterate(data)
-						}
-					}
+					const stackCall = stackFn(data);
 
 					const currentState = [];
 					let nextElementSibling = element.nextElementSibling;
+
 					while (nextElementSibling !== null) {
 						if (scope(nextElementSibling)?.template !== element) {
 							break;
@@ -378,106 +357,137 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						currentState.push(nextElementSibling);
 						nextElementSibling = nextElementSibling.nextElementSibling;
 					}
+					const currentStateLength = currentState.length
 
-					let lastInsertPoint = currentState[currentState.length - 1] ?? element;
-					let i = 0;
+					let stack = await stackCall;
 
-					const fragments = await Promise.all(directivesProcessingPromises);
-
-					const reinitDirectives = (element) => {
-						processDirectives({
-							root: element,
-							reinit: true
-						})
-						/* const elementScope = scope(element);
-						if (elementScope !== undefined && elementScope?.directives !== undefined) {
-							elementScope.cleanup();
-							processElement(element);
-						}
-
-						for (const child of element.children) {
-							reinitDirectives(child);
-						} */
+					if (!inited) {
+						signalsToWatch = getUsedSignals();
 					}
 
-					const fragmentsLength = fragments.length;
-					while (fragments.length > 0) {
-						const root = fragments.shift();
-						const rootScope = scope(root, (rootScope) => {
-							rootScope.template = element;
+					inited = true;
+
+					if (typeof stack === 'number') {
+						stack = [...Array(stack).keys()];
+					}
+
+					const totalCount = stack.length ?? stack.size;
+					let counter = 0;
+					let lastInsertPoint = currentState[currentStateLength - 1] ?? element;
+
+					const isArrayDestruct = argumentsMatch[0].trim().startsWith('[');
+					const parentScopeData = data;
+					const iterate = async (data: any, counter: number): Promise<void> => {
+						const iterator = signal({
+							count: counter,
+							first: counter === 0,
+							last: counter === totalCount - 1,
+							odd: counter % 2 !== 0,
+							even: counter % 2 === 0
 						});
-						const rootKey = root.getAttribute('key')
-						let existingItem = null;
-						let existingItemIndex = null;
+						let destruct = {};
 
-						if (rootKey) {
-							existingItem = currentState.find((currentStateItem, index) => {
-								const keyMatches = currentStateItem.getAttribute('key') === rootKey;
-								if (keyMatches) {
-									existingItemIndex = index;
-								}
-								return keyMatches;
-							});
-
-							if (existingItem) {
-								if (existingItemIndex > i && currentState[i] !== undefined) {
-									if (i === 0) {
-										const tmp = currentState[i];
-										currentState[i].before(existingItem);
-										currentState[i] = existingItem;
-										currentState[existingItemIndex] = tmp;
-									} else {
-										const tmp = currentState[i];
-										currentState[i - 1].after(existingItem);
-										currentState[i] = existingItem
-										currentState[existingItemIndex] = tmp;
-									}
-								} else {
-									const existingItemScope = scope(existingItem);
-
-									for (const [key, value] of Object.entries(rootScope.data)) {
-										existingItemScope.data[key] = value;
-									}
-
-									reinitDirectives(existingItem);
-								}
-							} else if (i >= currentState.length) {
-								lastInsertPoint.after(root);
-								lastInsertPoint = root;
-								for (const child of root.children) {
-									scope(child, ({ data }) => {
-										data = rootScope.data
-									});
-
-									processDirectives({ root: child });
+						if (newContextVariables.length > 1) {
+							if (isArrayDestruct) {
+								for (const key of Object.keys(data)) {
+									destruct[newContextVariables[key]] = signal(data[key]);
 								}
 							} else {
-								currentState[i].before(root);
-								processDirectives({ root: root });
+								for (const key of newContextVariables) {
+									destruct[key] = signal(data[key]);
+								}
 							}
-						} else if (currentState.length > 0 && i < currentState.length) {
-							const fragmentScope = scope(currentState[i]);
+						} else {
+							destruct[newContextVariables] = signal(data);
+						}
 
-							for (const [key, value] of Object.entries(rootScope.data)) {
-								fragmentScope.data[key] = value;
-							}
+						const templateFragment = [...element.cloneNode(true).content.children];
 
-							reinitDirectives(currentState[i]);
+						const processChild = async (fragment: Node): Promise<void> => {
+							scope(fragment, (fragmentScope) => {
+								for (const [key, value] of Object.entries({
+									...destruct,
+									...parentScopeData,
+									iterator
+								})) {
+									fragmentScope.data[key] = value;
+								}
+								fragmentScope.template = element;
+							});
 
-							lastInsertPoint = currentState[i];
-						} else if (currentState.length === 0 || i >= currentState.length) {
-							lastInsertPoint.after(root);
-							lastInsertPoint = root;
-							for (const child of root.children) {
-								scope(child, ({ data }) => {
-									data = rootScope.data
+							await processElement({ element: fragment, mode: 'init' });
+
+							const fragmentKey = fragment.getAttribute('key');
+
+							if (fragmentKey) {
+								let existingItemIndex = null;
+								let existingItem = currentState.find((currentStateItem, index) => {
+									const keyMatches = currentStateItem.getAttribute('key') === fragmentKey;
+									if (keyMatches) {
+										existingItemIndex = index;
+									}
+									return keyMatches;
 								});
 
-								processDirectives({ root: child });
+								if (existingItem) {
+									if (existingItemIndex > counter && currentState[counter] !== undefined) {
+										const tmp = currentState[counter];
+										if (counter === 0) {
+											currentState[counter].before(existingItem);
+										} else {
+											currentState[counter - 1].after(existingItem);
+										}
+										currentState[counter] = existingItem;
+										currentState[existingItemIndex] = tmp;
+										lastInsertPoint = currentState[currentState.length - 1]
+									}
+								} else if (counter >= currentState.length) {
+									lastInsertPoint.after(fragment);
+									lastInsertPoint = fragment;
+									for (const child of fragment.children) {
+										processDirectives({ root: child });
+									}
+								} else {
+									currentState[counter].before(fragment);
+									void processDirectives({ root: fragment });
+								}
+							} else if (currentState.length > 0 && counter < currentState.length) {
+								scope(currentState[counter], ({ data }) => {
+									for (const [key, value] of Object.entries({ ...destruct, iterator })) {
+										data[key].set(value());
+									}
+								});
+
+							} else if (currentState.length === 0 || counter >= currentState.length) {
+								lastInsertPoint.after(fragment);
+								lastInsertPoint = fragment;
+
+								for (const child of fragment.children) {
+									await processDirectives({ root: child });
+								}
 							}
 						}
-						i++;
+
+						const childPromises = [];
+						while (templateFragment.length > 0) {
+							childPromises.push(processChild(templateFragment.shift()));
+						}
+
+						await Promise.all(childPromises);
 					}
+
+					const iterationPromises = [];
+					if (argumentsMatch[2] === 'in') {
+						for (let data in stack) {
+							iterationPromises.push(iterate(data, counter++))
+						}
+					} else {
+						for (let data of stack) {
+							iterationPromises.push(iterate(data, counter++))
+						}
+					}
+
+					await Promise.all(iterationPromises);
 
 					nextElementSibling = element.nextElementSibling;
 					let removeId = 0;
@@ -486,10 +496,9 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						if (scope(nextElementSibling)?.template !== element) {
 							break;
 						}
-
 						const nextElementToRemove = nextElementSibling.nextElementSibling;
 
-						if (removeId >= fragmentsLength) {
+						if (removeId >= counter) {
 							nextElementSibling.remove();
 						}
 
@@ -499,14 +508,15 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				}
 
 				await process();
-				unwatchSignalCallbacks = [];
+
+				const unwatchSignalCallbacks = [];
 				for (const signalToWatch of signalsToWatch) {
 					unwatchSignalCallbacks.push(signalToWatch.watch(process))
 				}
 
 				scope(element).cleanup(() => {
-					for (const unwatch of unwatchSignalCallbacks) {
-						unwatch();
+					while (unwatchSignalCallbacks.length > 0) {
+						unwatchSignalCallbacks.shift()()
 					}
 				})
 			}
@@ -529,18 +539,6 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					context: data,
 					element
 				});
-				const signalsToWatch = [];
-
-				for (const signal of Object.values(data)) {
-					if (!(signal instanceof $.Signal)) {
-						continue;
-					}
-
-					const unwatch = signal.watch(() => {
-						signalsToWatch.push(signal);
-						unwatch();
-					}, { execution: 'onGet' })
-				}
 
 				let nextSibling = element.nextSibling;
 				const nextSiblingScope = scope(nextSibling);
@@ -584,9 +582,19 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						renderedElements.pop().remove()
 					}
 				}
+				let inited = false;
+				let signalsToWatch;
+				let getSignalsToWatch = null;
 
 				const render = async (): Promise<void> => {
+					if (!inited) {
+						getSignalsToWatch = observeSignals(data);
+					}
 					const conditionResult = await fn(data);
+					if (!inited) {
+						signalsToWatch = getSignalsToWatch();
+						inited = true;
+					}
 					let lastInsertPoint = element;
 
 					if (conditionResult === true && rendered === true) {
@@ -620,16 +628,17 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					rendered = true;
 				}
 
+				const detectedSignals = [];
+
 				await render();
 
 				const unwatchSignalCallbacks = [];
 
 				while (signalsToWatch.length) {
-					unwatchSignalCallbacks.push(signalsToWatch.pop().watch(render));
+					unwatchSignalCallbacks.push(signalsToWatch.shift().watch(render));
 				}
 
 				scope(element).cleanup(() => {
-					cleanElements();
 					for (const unwatch of unwatchSignalCallbacks) {
 						unwatch();
 					}
@@ -659,23 +668,12 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					element
 				});
 
-				let signalsToWatch = [];
+				const getSignalsToWatch = observeSignals(data);
 
-				for (const signal of Object.values(data)) {
-					if (!(signal instanceof $.Signal)) {
-						continue;
-					}
-
-					const unwatch = signal.watch(() => {
-						signalsToWatch.push(signal);
-						unwatch();
-					}, { execution: 'onGet' })
-				}
-
-				fn(data);
+				await fn(data);
 
 				bind(element, {
-					[attributeName]: [...signalsToWatch, () => fn(data)]
+					[attributeName]: [...getSignalsToWatch(), () => fn(data)]
 				});
 			}
 		});
