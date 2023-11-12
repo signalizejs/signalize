@@ -6,7 +6,7 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
-	<title snippet="title">First page</title>
+	<title snippet="title">Second page</title>
 	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
@@ -23,12 +23,12 @@
 
 	<script type="module">
 		import Signalize from 'signalizejs';
-		import ajax from 'signalizejs/ajax';
+		import fetch from 'signalizejs/fetch';
 		import snippets from 'signalizejs/snippets';
 		import spa from 'signalizejs/spa';
 
 		new Signalize({
-			plugins: [ ajax, snippets, spa ]
+			plugins: [ fetch(), snippets(), spa() ]
 		});
 	</script>
 

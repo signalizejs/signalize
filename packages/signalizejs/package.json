@@ -34,10 +34,10 @@
 		},
 		"./dist/*": "./dist/*",
 
-		"./ajax": {
-			"import": "./ajax/dist/ajax.js",
-			"require": "./ajax/dist/ajax.cjs",
-			"types": "./ajax/dist/index.d.ts"
+		"./fetch": {
+			"import": "./fetch/dist/fetch.js",
+			"require": "./fetch/dist/fetch.cjs",
+			"types": "./fetch/dist/index.d.ts"
 		},
 		"./core": {
 			"import": "./core/dist/core.js",

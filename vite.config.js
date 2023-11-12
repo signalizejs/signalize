@@ -8,7 +8,7 @@ export default defineConfig({
 	resolve: {
 		conditions: ['development', 'browser'],
 		alias: {
-			'signalizejs/ajax': `${packagesDir}/ajax/src/index.ts`,
+			'signalizejs/fetch': `${packagesDir}/fetch/src/index.ts`,
 			'signalizejs/asset-loader': `${packagesDir}/asset-loader/src/index.ts`,
 			'signalizejs/dialog': `${packagesDir}/dialog/src/index.ts`,
 			'signalizejs/directives': `${packagesDir}/directives/src/index.ts`,

@@ -1,10 +1,7 @@
 import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
-import type { AjaxOptions, AjaxReturn } from 'signalizejs/ajax';
+import type { FetchReturn } from 'signalizejs/fetch';
 
 declare module '..' {
-	interface Signalize {
-		sendToServer: (options: AjaxOptions) => Promise<AjaxReturn>
-	}
 
 	interface CustomEventListeners {
 		'logger:log': CustomEventListener
@@ -22,7 +19,7 @@ interface Log {
 }
 
 interface CompleteLogData extends Log {
-	message: string
+	body: Log
 	url: string
 }
 
@@ -34,7 +31,7 @@ export interface PluginOptions {
 
 export default (options: PluginOptions): SignalizePlugin => {
 	return ($: Signalize) => {
-		const { ajax, dispatch } = $;
+		const { fetch, dispatch } = $;
 		let enabledLevels: Levels[] = ['error'];
 
 		const originalConsoleError = console.error;
@@ -43,19 +40,17 @@ export default (options: PluginOptions): SignalizePlugin => {
 		const originalConsoleWarn = console.warn;
 		const originalWindowOnError = window.onerror;
 
-		const sendToServer = async (url: string, data: CompleteLogData): Promise<AjaxReturn> => {
-			return ajax({ url, data });
-		}
-
 		const handler = (log: Log): void => {
 			const data: CompleteLogData = {
-				...log,
+				body: log,
 				url: window.location.href
 			}
 
 			dispatch(`logger:${log.type}`, {
 				data,
-				sendToServer: async (url: string, customData = data): Promise<AjaxReturn> => await sendToServer(url, customData)
+				sendToServer: async (url = window.location.href, options = { body: data }): Promise<FetchReturn> => fetch(
+					url, options
+				)
 			});
 		}
 
@@ -131,7 +126,5 @@ export default (options: PluginOptions): SignalizePlugin => {
 				handler({});
 			}
 		});
-
-		$.sendToServer = sendToServer;
 	}
 }

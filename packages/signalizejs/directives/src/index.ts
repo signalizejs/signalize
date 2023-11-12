@@ -385,6 +385,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 							odd: counter % 2 !== 0,
 							even: counter % 2 === 0
 						});
+						console.log(counter, iterator)
 						let destruct = {};
 
 						if (newContextVariables.length > 1) {

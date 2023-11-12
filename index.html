@@ -41,27 +41,12 @@
 		}
 	</style>
 
-	<form $items="[]" $value="" @submit="() => {
-		$event.preventDefault();
-		items.set([...new Set([...items(), value()])]);
-		value.set('');
-	}">
-		<!-- Shortcuts for attribute binding -->
-		<input {value} placeholder="Type something" required>
-		<button>Add</button>
-		<br>
-		<!-- Native for of/in loops -->
-		<template :for="item of items">
-			<!-- Iterator feature: count, first, last, odd, even -->
-			<div :text="item + (iterator.last ? '' : ', ')" :style="iterator.odd ? 'color:red': 'color:blue'"></div>
-		</template>
-	</form>
 	<script type="module">
 		import Signalize from 'signalizejs';
 		import directives from 'signalizejs/directives';
 
 		// Use the directives plugin
-		new Signalize({ plugins: [directives()] })
+		const $ = new Signalize({ plugins: [directives()] });
 	</script>
 
 	<!-- <input id="smaller" type="number">
@@ -70,13 +55,18 @@
 	<div id="sum"></div>
  -->
 	<!-- Conditional loop for large amount of elements -->
-	<div $text="'Hello World!'" $count="10">
+	<!-- <div $text="'fu'" $count="1">
+		<template :for="i of count()">
+			<span>-</span>
+		</template>
+	</div> -->
+	<!-- <div id="root" $text="'Hello World!'" $count="1000">
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
 		<ul>
 			<template :for="i of count()">
-				<li :key="i">
+				<li>
 					<template :if="i % 2 !== 0">
 						<span :text="'Odd' + i + ' - ' + text"></span>
 					</template>
@@ -86,11 +76,6 @@
 				</li>
 			</template>
 		</ul>
-	</div>
-
-	<!-- <div $text="">
-		<input :value="text">
-		<div :text="text"></div>
 	</div> -->
 
 	<!-- <form $items="{}" $text="" @submit="
@@ -101,12 +86,12 @@
 		<input :value="text">
 		<ul>
 			<template :for="item of Object.keys(items()).sort()">
-				<li :key="item.replace(/s/g, '')">
+				<li :key="item">
 					<a
 						role="button"
 						@click="() => {
 							const newItems = items();
-							delete newItems[item];
+							delete newItems[item()];
 							items.set(newItems);
 						}
 						"
@@ -136,7 +121,7 @@
 		</template>
 	</div> -->
 
-	<!-- <div $items="[]">
+	 <!-- <div $items="[]">
 		<button @click="items.set([items().length, ...items()])" :text="'+' + items().length"></button>
 		<button @click="items.set(items().slice(1))" :text="'-' + items().length"></button>
 
@@ -162,27 +147,6 @@
 	<!-- <div $meh="2">
 		<div scope="counter" $count="0">
 			<button @click="count.set(count() + 1)">Count <span :text="count"></span></button>
-		</div>
-	</div> -->
-
-	<!-- <div $number="0">
-		<button @click="number.set(number() + 1)">+</button>
-		<button @click="number.set(number() - 1)">-</button>
-		<template :if="number() > 0">
-			<div>Yupí! <span :html="number"></span></div>
-		</template>
-	</div> -->
-	<!-- <div id="cart-form"></div>
-
-	<div $count="1">
-		<button @click="count.set(count() + 1)">+</button>
-		<button @click="count.set(count() - 1)">-</button>
-		<template id="loop" singleroot :if="count > 0">
-			<div></div>
-
-		</template>
-		<div template="loop">
-			<div></div>
 		</div>
 	</div> -->
 

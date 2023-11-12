@@ -52,25 +52,25 @@ const packages = [
 		]
 	},
 
-	// signalizejs/ajax
+	// signalizejs/fetch
 	{
 		plugins: [
 			typescript({
 				declaration: true,
-				rootDir: `${signalizeDir}/ajax/src`,
-				declarationDir: `${signalizeDir}/ajax/dist`
+				rootDir: `${signalizeDir}/fetch/src`,
+				declarationDir: `${signalizeDir}/fetch/dist`
 			})
 		],
-		input: `${signalizeDir}/ajax/src/index.ts`,
+		input: `${signalizeDir}/fetch/src/index.ts`,
 		treeshake: false,
 		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/ajax/dist/ajax.js`,
+				file: `${signalizeDir}/fetch/dist/fetch.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/ajax/dist/ajax.cjs`,
+				file: `${signalizeDir}/fetch/dist/fetch.cjs`,
 				format: 'cjs'
 			}
 		]

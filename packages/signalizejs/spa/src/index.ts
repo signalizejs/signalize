@@ -42,7 +42,7 @@ export interface PluginOptions {
 
 export default (options?: PluginOptions): SignalizePlugin => {
 	return ($: Signalize): void => {
-		const { dispatch, ajax, redraw, select, on } = $;
+		const { dispatch, fetch, redrawSnippet, select, on } = $;
 
 		const spaAttribute = `${$.attributePrefix}spa`;
 		const spaUrlAttribute = `${spaAttribute}${$.attributeSeparator}url`;
@@ -98,7 +98,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			} else {
 				dispatch('spa:request:start', { ...dispatchEventData });
 
-				request = await ajax({ url: urlString });
+				request = await fetch(urlString);
 				const requestIsWithoutErroor = request.error === null;
 
 				if (requestIsWithoutErroor) {
@@ -131,7 +131,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				}
 
 				if (!isJson(responseData)) {
-					redraw(responseData);
+					redrawSnippet(responseData);
 				}
 
 				if (stateAction === 'replace') {
@@ -283,6 +283,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			window.addEventListener('popstate', onPopState);
 		});
 
+		console.log($);
 		$.visit = visit;
 	}
 }

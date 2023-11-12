@@ -6,7 +6,7 @@
 		"rootDir": ".",
 		"strict": true,
 		"paths": {
-			"signalizejs/ajax": ["./packages/signalize/ajax"],
+			"signalizejs/fetch": ["./packages/signalize/fetch"],
 			"signalizejs/component": ["./packages/signalize/component"],
 			"signalizejs/dialog": ["./packages/signalize/dialog"],
 			"signalizejs/h": ["./packages/signalize/h"],
