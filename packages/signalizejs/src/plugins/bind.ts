@@ -7,7 +7,7 @@ declare module '..' {
 }
 
 export default ($: Signalize): void => {
-	const { scope, on, off, Signal, Scope } = $;
+	const { scope, on, Signal, Scope } = $;
 
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
@@ -117,7 +117,7 @@ export default ($: Signalize): void => {
 
 			if (typeof setListener === 'function' && reactiveInputAttributes.includes(attr)) {
 				const inputListener = (): void => {
-					setListener(isNumericInput ? Number(element[attr] as string) : element[attr] as string);
+					setListener(isNumericInput ? Number(element[attr].replace(',', '.') as string) : element[attr] as string);
 				};
 
 				on('input', element, inputListener, { passive: true });

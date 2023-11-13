@@ -7,124 +7,68 @@ declare module '..' {
 		'logger:log': CustomEventListener
 		'logger:warn': CustomEventListener
 		'logger:error': CustomEventListener
+		'logger:info': CustomEventListener
 	}
 }
 
 interface Log {
-	type: 'log' | 'warn' | 'error'
+	type: Levels
+	message: string
 	file?: string | null
 	lineNumber?: number
 	columnNumber?: number
 	stack?: string | null
 }
 
-interface CompleteLogData extends Log {
-	body: Log
+type Levels = 'log' | 'info' | 'warn' | 'error';
+
+export interface PluginOptions {
+	levels?: Levels[]
 	url: string
 }
 
-type Levels = 'log' | 'error' | 'warn';
-
-export interface PluginOptions {
-	enabledLevels: Levels[]
-}
-
-export default (options: PluginOptions): SignalizePlugin => {
+export default (pluginOptions: PluginOptions): SignalizePlugin => {
 	return ($: Signalize) => {
-		const { fetch, dispatch } = $;
-		let enabledLevels: Levels[] = ['error'];
-
-		const originalConsoleError = console.error;
-		const originalConsoleInfo = console.info;
-		const originalConsoleLog = console.log;
-		const originalConsoleWarn = console.warn;
-		const originalWindowOnError = window.onerror;
+		const enabledLevels: Levels[] = pluginOptions?.levels ?? ['error'];
 
 		const handler = (log: Log): void => {
-			const data: CompleteLogData = {
-				body: log,
-				url: window.location.href
+			const body = { log, url: window.location.href };
+			const logStopped = $.dispatch(`logger:${log.type}`, body) === false
+			if (!logStopped) {
+				void $.fetch(pluginOptions.url, { body });
 			}
-
-			dispatch(`logger:${log.type}`, {
-				data,
-				sendToServer: async (url = window.location.href, options = { body: data }): Promise<FetchReturn> => fetch(
-					url, options
-				)
-			});
 		}
 
-		console.error = (...args: any[]): void => {
-			if ('error' in enabledLevels) {
-				handler({
-					type: 'error',
-					message: args
-				})
+		for (const level of enabledLevels) {
+			const originalCall = console[level];
+			console[level] = (...args: any[]): void => {
+				handler({ type: 'error', message: args.join(',') })
+				originalCall(...args);
 			}
-
-			originalConsoleError(...args);
 		}
 
-		console.log = (...args: any[]): void => {
-			if ('log' in enabledLevels) {
-				handler({
-					type: 'log',
-					message: args
-				})
-			}
+		if ('error' in enabledLevels) {
+			window.onerror = (message: Event | string, file?: string, lineNumber?: number, columnNumber?: number, error?: Error) => {
+				if (message === 'Script error.') {
+					// https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
+					return;
+				}
 
-			originalConsoleLog(...args);
-		}
-
-		console.info = (...args: any[]): void => {
-			if ('log' in enabledLevels) {
-				handler({
-					type: 'log',
-					message: args
-				})
-			}
-
-			originalConsoleInfo(...args);
-		}
-
-		console.warn = (...args: any[]): void => {
-			if ('warn' in enabledLevels) {
-				handler({
-					type: 'warn',
-					message: args
-				})
-			}
-
-			originalConsoleWarn(...args);
-		}
-
-		window.onerror = (message: Event | string, file?: string, lineNumber?: number, columnNumber?: number, error?: Error) => {
-			if (message === 'Script error.') {
-				// https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror
-				return;
-			}
-
-			if ('error' in enabledLevels) {
 				handler({
 					type: 'error',
 					message: message instanceof Event ? message.type : message,
 					file: file ?? null,
 					lineNumber: lineNumber ?? 0,
 					columnNumber: columnNumber ?? 0,
-					stack: error?.stack ? error.stack : null
+					stack: error?.stack === undefined ? null : error.stack
 				})
+
+				console.error(message, file, lineNumber, columnNumber, error);
 			}
 
-			originalWindowOnError(message, file, lineNumber, columnNumber, error);
+			window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+				handler({ type: 'error', message: event.reason });
+			});
 		}
-
-		enabledLevels = options?.enabledLevels ?? enabledLevels;
-
-		window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-			// TODO test
-			if ('error' in enabledLevels) {
-				handler({});
-			}
-		});
 	}
 }
