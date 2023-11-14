@@ -1,4 +1,5 @@
 import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
+import type { FetchReturn } from 'signalizejs/fetch';
 
 declare module 'signalizejs' {
 	interface Signalize {
@@ -14,7 +15,7 @@ declare module 'signalizejs' {
 		'spa:transition:end': CustomEventListener
 		'spa:visit:end': CustomEventListener
 		'spa:popstate': CustomEventListener
-		'spa:clicked': CustomEventListener
+		'spa:click': CustomEventListener
 	}
 }
 
@@ -34,6 +35,8 @@ interface SpaHistoryState extends Partial<VisitData> {
 interface SpaDispatchEventData extends VisitData {
 	success?: boolean
 }
+
+type ResponseCache = Record<string, string>;
 
 export interface PluginOptions {
 	cacheHeader?: string
@@ -55,7 +58,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 		let currentLocation = new URL(window.location.href);
 		const spaVersion = null;
 		const host = window.location.host;
-		const responseCache: Record<string, string> = {};
+		const responseCache: ResponseCache = {};
 
 		const createUrl = (urlString: string): URL | null => {
 			try {
@@ -88,8 +91,8 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 			const urlString = url instanceof URL ? url.toString() : url;
 
-			let request;
-			let responseData = null;
+			let request: Promise<FetchReturn>;
+			let responseData: string | null = null;
 
 			const urlIsCached = urlString in responseCache;
 
@@ -265,7 +268,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 			event.preventDefault();
 
-			const clickCanceled = dispatch('spa:clicked', { element }) === false;
+			const clickCanceled = dispatch('spa:click', { element }) === false;
 
 			if (clickCanceled) {
 				return;
@@ -283,7 +286,6 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			window.addEventListener('popstate', onPopState);
 		});
 
-		console.log($);
 		$.visit = visit;
 	}
 }
