@@ -1,8 +1,0 @@
-{
-	"name": "signalizejs/dialog",
-	"main": "./dist/dialog.cjs",
-	"module": "./dist/dialog.js",
-	"types": "./dist/index.d.ts",
-	"type": "module",
-	"sideEffects": false
-  }

@@ -7,31 +7,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
 	<title snippet="title">Index page</title>
-	<!-- <script type="module">
-		import Signalize from 'signalizejs';
-		import directives from 'signalizejs/directives';
-
-		const { bind, select, signal } = new Signalize({
-			plugins: [ ]
-		});
-
-		const smallerNumber = signal(0);
-		const largerNumber = signal(0);
-
-		smallerNumber.watch(({ newValue, oldValue }) => {
-			return {
-				value: newValue >= largerNumber() ? largerNumber() - 1 : newValue,
-			}
-		}, { execution: 'beforeSet' });
-
-		smallerNumber.watch(({ newValue, oldValue }) => {
-			console.log(newValue, oldValue);
-		});
-
-		bind(select('#smaller'), { value: smallerNumber });
-		bind(select('#larger'), { value: largerNumber });
-		bind(select('#sum'), { text: [smallerNumber, largerNumber, () => largerNumber + smallerNumber]})
-	</script> -->
 </head>
 
 <body>
@@ -46,8 +21,13 @@
 		import directives from 'signalizejs/directives';
 
 		// Use the directives plugin
-		const $ = new Signalize({ plugins: [directives()] });
+		const { scope, on } = new Signalize({ plugins: [directives()] });
 	</script>
+<!-- 	<div id="test" $code="'Hello World'">
+		<div $fu="" scope="code">
+		</div>
+		<div :text="code"></div>
+	</div> -->
 
 	<!-- <input id="smaller" type="number">
 	<input id="larger" type="number">
@@ -55,12 +35,8 @@
 	<div id="sum"></div>
  -->
 	<!-- Conditional loop for large amount of elements -->
-	<!-- <div $text="'fu'" $count="1">
-		<template :for="i of count()">
-			<span>-</span>
-		</template>
-	</div> -->
-	<!-- <div id="root" $text="'Hello World!'" $count="1000">
+
+	<!-- <div id="root" $text="'Hello World!'" $count="1">
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -76,8 +52,8 @@
 				</li>
 			</template>
 		</ul>
-	</div> -->
-
+	</div>
+ -->
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();
 		items.set({...items(), [text()]: text()})

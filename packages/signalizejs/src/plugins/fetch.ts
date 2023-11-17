@@ -1,6 +1,7 @@
-import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
+import type { Signalize, SignalizePlugin } from '..';
+import type { CustomEventListener } from './on';
 
-declare module 'signalizejs' {
+declare module '..' {
 	interface Signalize {
 		fetch: <T>(rresource: RequestInfo | URL, options?: RequestInit | undefined) => Promise<FetchReturn<T>>
 	}

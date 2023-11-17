@@ -25,7 +25,7 @@ export default ($: Signalize): void => {
 		return documentElement.readyState !== 'loading'
 	};
 
-	$.customEventListener('dom:ready', (target: Element | string, listener: CallableFunction, options: AddEventListenerOptions) => {
+	$.customEventListener('dom:ready', ({ listener }) => {
 		if (isDomReady()) {
 			listener()
 		} else {

@@ -45,5 +45,8 @@
 		"tslib": "^2.6",
 		"typescript": "^5.2",
 		"vite": "^4.3"
-	}
+	},
+	"workspaces": [
+		"packages/signalizejs"
+	]
 }

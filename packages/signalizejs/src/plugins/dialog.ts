@@ -1,6 +1,6 @@
-import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
+import type { Signalize, SignalizePlugin, CustomEventListener } from '..';
 
-declare module 'signalizejs' {
+declare module '..' {
 
 	interface Signalize {
 		dialog: (dialogOrId: string | HTMLDialogElement) => HTMLDialogElement | null

@@ -33,46 +33,40 @@
 			"types": "./dist/index.d.ts"
 		},
 		"./dist/*": "./dist/*",
-
 		"./fetch": {
-			"import": "./fetch/dist/fetch.js",
-			"require": "./fetch/dist/fetch.cjs",
-			"types": "./fetch/dist/index.d.ts"
-		},
-		"./core": {
-			"import": "./core/dist/core.js",
-			"require": "./core/dist/core.cjs",
-			"types": "./core/dist/index.d.ts"
+			"import": "./dist/plugins/fetch.js",
+			"require": "./dist/plugins/fetch.cjs",
+			"types": "./fetch/dist/fetch.d.ts"
 		},
 		"./dialog": {
-			"import": "./dialog/dist/dialog.js",
-			"require": "./dialog/dist/dialog.cjs",
-			"types": "./dialog/dist/index.d.ts"
+			"import": "./dist/plugins/dialog.js",
+			"require": "./dist/plugins/dialog.cjs",
+			"types": "./dist/plugins/dialog.d.ts"
 		},
 		"./directives": {
-			"import": "./directives/dist/directives.js",
-			"require": "./directives/dist/directivs.cjs",
-			"types": "./directives/dist/index.d.ts"
+			"import": "./dist/plugins/directives.js",
+			"require": "./dist/plugins/directives.cjs",
+			"types": "./dist/plugins/directives.d.ts"
 		},
 		"./h": {
-			"import": "./h/dist/h.js",
-			"require": "./h/dist/h.cjs",
-			"types": "./h/dist/index.d.ts"
+			"import": "./dist/plugins/h.js",
+			"require": "./dist/plugins/h.cjs",
+			"types": "./dist/plugins/h.d.ts"
 		},
 		"./asset-loader": {
-			"import": "./asset-loader/dist/asset-loader.js",
-			"require": "./asset-loader/dist/asset-loader.cjs",
-			"types": "./asset-loader/dist/index.d.ts"
+			"import": "./dist/plugins/asset-loader.js",
+			"require": "./dist/plugins/asset-loader.cjs",
+			"types": "./dist/plugins/asset-loader.d.ts"
 		},
 		"./snippets": {
-			"import": "./snippets/dist/snippets.js",
-			"require": "./snippets/dist/snippets.cjs",
-			"types": "./snippets/dist/index.d.ts"
+			"import": "./dist/plugins/snippets.js",
+			"require": "./dist/plugins/snippets.cjs",
+			"types": "./dist/plugins/snippets.d.ts"
 		},
 		"./spa": {
-			"import": "./spa/dist/spa.js",
-			"require": "./spa/dist/spa.cjs",
-			"types": "./spa/dist/index.d.ts"
+			"import": "./dist/plugins/spa.js",
+			"require": "./dist/plugins/spa.cjs",
+			"types": "./dist/plugins/spa.d.ts"
 		},
 		"./package.json": "./package.json"
 	},

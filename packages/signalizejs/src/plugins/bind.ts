@@ -74,11 +74,10 @@ export default ($: Signalize): void => {
 						element.classList.add(value);
 						previousSettedValue = valueToSet;
 					}
-
-					attributeInited = true;
 				} else {
 					element.setAttribute(attribute, value);
 				}
+				attributeInited = true;
 			}
 
 			if (['string', 'number'].includes(attributeBinderType)) {

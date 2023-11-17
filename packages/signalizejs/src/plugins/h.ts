@@ -1,4 +1,5 @@
-import type { Signalize, SignalizePlugin, Signal } from 'signalizejs';
+import type { Signalize, SignalizePlugin } from '..';
+import type { Signal } from './signal';
 
 declare module 'signalizejs' {
 	interface Signalize {

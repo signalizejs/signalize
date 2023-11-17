@@ -1,6 +1,6 @@
-import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
+import type { Signalize, SignalizePlugin } from '..';
 
-declare module 'signalizejs' {
+declare module '..' {
 	interface Signalize {
 		loadAssets: (assets: Array<HTMLLinkElement | HTMLScriptElement>) => Promise<void>
 	}

@@ -1,8 +1,0 @@
-{
-	"name": "signalizejs/spa",
-	"main": "./dist/spa.cjs",
-	"module": "./dist/spa.s",
-	"types": "./dist/index.d.ts",
-	"type": "module",
-	"sideEffects": false
-  }

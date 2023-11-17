@@ -1,5 +1,5 @@
-import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
-import type { FetchReturn } from 'signalizejs/fetch';
+import type { Signalize, SignalizePlugin } from '..';
+import type { CustomEventListener } from './on';
 
 declare module '..' {
 
@@ -33,7 +33,7 @@ export default (pluginOptions: PluginOptions): SignalizePlugin => {
 
 		const handler = (log: Log): void => {
 			const body = { log, url: window.location.href };
-			const logStopped = $.dispatch(`logger:${log.type}`, body) === false
+			const logStopped = !$.dispatch(`logger:${log.type}`, body);
 			if (!logStopped) {
 				void $.fetch(pluginOptions.url, { body });
 			}

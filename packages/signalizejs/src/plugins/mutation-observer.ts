@@ -9,6 +9,7 @@ declare module '..' {
 	interface CustomEventListeners {
 		'dom:mutation': CustomEventListener
 		'dom:mutation:node:added': CustomEventListener
+		'dom:mutation:node:moved': CustomEventListener
 		'dom:mutation:node:removed': CustomEventListener
 	}
 }
@@ -22,23 +23,41 @@ interface ObserverOptions {
 
 export default ($: Signalize): void => {
 	$.observeMutations = (root = $.root, options?) => {
-		const domMutationEvent = 'dom:mutation';
-		const domMutationNodeAddedEvent = 'dom:mutation:node:added';
-		const domMutationNodeRemovedEvent = 'dom:mutation:node:removed';
+		const event = 'dom:mutation';
+		const nodeEvent = `${event}:node`;
+		const nodeAddedEvent = `${nodeEvent}:added`;
+		const nodeRemovedEvent = `${nodeEvent}:removed`;
+		const nodeMovedEvent = `${nodeEvent}:moved`;
 		let callback = options?.callback ?? undefined;
 
 		if (callback === undefined) {
 			callback = (mutationRecords: MutationRecord[]) => {
+				let removedNodes: Node[] = [];
 				for (const mutation of mutationRecords) {
-					$.dispatch(domMutationEvent, mutation);
+					queueMicrotask(() => {
+						$.dispatch(event, mutation);
 
-					for (const node of mutation.addedNodes) {
-						$.dispatch(domMutationNodeAddedEvent, node)
-					}
+						for (const node of mutation.addedNodes) {
+							if (removedNodes.includes(node)) {
+								continue;
+							}
+							$.dispatch(nodeAddedEvent, node)
+						}
 
-					for (const node of mutation.removedNodes) {
-						$.dispatch(domMutationNodeRemovedEvent, node)
-					}
+						if (mutation.removedNodes.length) {
+							removedNodes = [...mutation.removedNodes];
+						}
+
+						for (const node of mutation.removedNodes) {
+							$.dispatch(
+								($.root instanceof Document ? $.root.contains(node) : $.root.ownerDocument.contains(node))
+									? nodeMovedEvent
+									: nodeRemovedEvent
+								,
+								node
+							)
+						}
+					});
 				}
 			}
 		}

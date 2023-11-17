@@ -11,7 +11,7 @@ declare module '..' {
 	}
 
 	interface CustomEventListeners {
-		'scope:inited': CustomEventListener
+		'scope:init': CustomEventListener
 		'scope:defined': CustomEventListener
 	}
 }
@@ -33,19 +33,28 @@ export default ($: Signalize): void => {
 	$.scopeAttribute = `${$.attributePrefix}scope`;
 	$.scopeKey = '__signalizeScope';
 
+	const scopeInitListeners = [];
+	$.customEventListener('scope:init', ({ listener }) => {
+		scopeInitListeners.push(listener);
+	})
+
 	class ElementScope implements Scope {
 		readonly #cleanups = new Set<CallableFunction>();
 		#localData = {};
 
 		element: Element | Document | DocumentFragment;
+		initPromise: Promise<void> | void;
 
 		constructor({
-			element
+			element,
+			initializer
 		}: {
-			element: Element | Document | DocumentFragment
+			element: Element | Document | DocumentFragment,
+			initializer: ScopeInitFunction
 		}) {
 			this.element = element;
 			this.element[$.scopeKey] = this;
+			this.initPromise = initializer(this);
 		}
 
 		set data (newValue) {
@@ -142,33 +151,69 @@ export default ($: Signalize): void => {
 				throw new Error(`Scope "${nameOrElement}" is already defined.`);
 			}
 			definedScopes[nameOrElement] = init;
-			$.dispatch('scope:defined', { name: nameOrElement })
+			$.dispatch('scope:defined', { name: nameOrElement });
 		} else if (typeof init === 'function') {
 			if (nameOrElement[$.scopeKey] === undefined) {
-				nameOrElement[$.scopeKey] = new ElementScope({ element: nameOrElement })
+				nameOrElement[$.scopeKey] = new ElementScope({
+					element: nameOrElement,
+					initializer: init
+				})
+			} else {
+				init(nameOrElement[$.scopeKey]);
 			}
-
-			init(nameOrElement[$.scopeKey]);
 		}
 
 		return nameOrElement[$.scopeKey];
 	};
 
-	on('dom:ready scope:defined', (event) => {
-		let selector = `[${$.scopeAttribute}]`
-		if (event !== undefined && event.detail?.name === undefined) {
-			selector += `="${event.detail.name}"`
-		}
+	const traverseDomTree = async (root: Element): Promise<void> => {
+		await $.traverseDom({
+			root,
+			nodeTypes: [1],
+			callback: async (node: Element): Promise<void> => {
+				let rootScope;
+				let nodeScopeName = node.getAttribute($.scopeAttribute)
+				if (node instanceof HTMLElement && nodeScopeName && nodeScopeName in definedScopes) {
+					rootScope = scope(node, definedScopes[nodeScopeName]);
+					await rootScope.initPromise;
+				}
 
-		for (const element of $.selectAll(selector)) {
-			scope(element, definedScopes[element.getAttribute($.scopeAttribute)]);
-		}
+				const listenerPromises = [];
+				for (const scopeInitListener of scopeInitListeners) {
+					listenerPromises.push(scopeInitListener({element: node, scope: rootScope }));
+				}
+
+				await Promise.all(listenerPromises);
+			}
+		})
+	}
+
+	on('signalize:ready', () => {
+		on('dom:ready', async (event) => {
+			await traverseDomTree($.root);
+
+			on('scope:defined', () => {
+				let selector = `${$.scopeAttribute}`
+				if (event !== undefined && event.detail?.name === undefined) {
+					selector += `="${event.detail.name}"`;
+				}
+				selector = `[${selector}]`;
+
+				for (const element of $.selectAll(selector)) {
+					if (element.parentNode.closest(selecto)) {
+						continue;
+					}
+
+					traverseDomTree(element);
+				}
+			});
+		});
 	});
 
 	on('dom:mutation:node:removed', (event) => {
-		if ($.root instanceof Document ? $.root.contains(event.detail) : $.root.ownerDocument.contains(event.detail)) {
+		/* if () {
 			return;
-		}
+		} */
 
 		scope(event.detail)?.cleanup();
 	});
@@ -177,8 +222,7 @@ export default ($: Signalize): void => {
 		if (!(detail instanceof Element) || scope(detail) !== undefined) {
 			return;
 		}
-
-		scope(detail, detail.getAttribute($.scopeAttribute));
+		void traverseDomTree(detail);
 	});
 
 	$.Scope = ElementScope;

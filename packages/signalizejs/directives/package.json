@@ -1,8 +1,0 @@
-{
-	"name": "signalizejs/directives",
-	"main": "./dist/directives.cjs",
-	"module": "./dist/directives.js",
-	"types": "./dist/index.d.ts",
-	"type": "module",
-	"sideEffects": false
-  }

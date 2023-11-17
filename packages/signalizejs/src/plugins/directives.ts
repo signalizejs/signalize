@@ -1,4 +1,4 @@
-import type { Signalize, SignalizePlugin, Scope } from 'signalizejs'
+import type { Signalize, SignalizePlugin, Scope } from '..'
 
 declare module '..' {
 	interface Signalize {
@@ -55,8 +55,7 @@ interface PluginOptions {
 	renderedBlockEnd?: string
 }
 
-export default (options?: PluginOptions): SignalizePlugin => {
-
+export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 	return ($: Signalize) => {
 		const { bind, on, scope, signal, globals, attributePrefix, observeSignals, attributeSeparator } = $;
 		const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
@@ -64,13 +63,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 		const directivesAttribute = `${attributePrefix}directives`;
 		const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
 		const orderAttribute = `${directivesAttribute}${attributeSeparator}order`
-		const renderedTemplateStartComment = options?.renderedBlockStart ?? 'template';
-		const renderedTemplateEndComment = options?.renderedBlockEnd ?? '/template';
+		const renderedTemplateStartComment = pluginOptions?.renderedBlockStart ?? 'prerendered';
+		const renderedTemplateEndComment = pluginOptions?.renderedBlockEnd ?? '/prerendered';
 		let inited = false;
 
 		const processElement = async (options?: ProcessElementOptions): Promise<Element> => {
 			const element: Element = options.element;
-			const mode = options.mode ?? false;
+			const mode = options.mode ?? 'init';
 			const canExecute = ['reinit', 'init'].includes(mode);
 			const canCompile = mode === 'init';
 
@@ -91,17 +90,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				await scopeInitPromise;
 			}
 
-			const elementScope = scope(element, (elementScope) => {
-				if (!('directives' in elementScope)) {
-					elementScope.directives = new Map();
-				}
-			});
+			let elementScope;
 
-			if (mode === 'reinit') {
+			/* if (mode === 'reinit') {
 				elementScope.cleanup();
-			}
+			} */
 
-			const compiledDirectives = elementScope.directives;
+			const compiledDirectives = elementScope?.directives ?? new Map();
 
 			let directivesQueue = [...options.directives ?? Object.keys(directives)];
 			const customDirectivesOrder = element.getAttribute(orderAttribute) ?? '';
@@ -137,30 +132,38 @@ export default (options?: PluginOptions): SignalizePlugin => {
 							continue;
 						}
 
+						scope(element, (newScope) => {
+							if (newScope.directives === undefined) {
+								newScope.directives = new Map();
+							}
+
+							if (elementScope === undefined) {
+								elementScope = newScope;
+							}
+						});
 						countdown--;
+
 						processedAttributes.push(attribute.name);
 						const directive = directives[directiveName];
-						scope(element, (elementScope) => {
-							elementScope.directives.set(
-								directiveName,
-								[
-									...elementScope.directives.get(directiveName) ?? [],
-									(elementScope) => {
-										return directive.callback({
-											...elementScope,
-											data: elementScope.data,
-											matches,
-											attribute
-										})
-									}
-								]
-							);
-						});
+						elementScope.directives.set(
+							directiveName,
+							[
+								...elementScope.directives.get(directiveName) ?? [],
+								(elementScope) => {
+									return directive.callback({
+										...elementScope,
+										data: elementScope.data,
+										matches,
+										attribute
+									})
+								}
+							]
+						);
 					}
 				}
 			}
 
-			const directivesToRun = [...elementScope.directives.keys()]
+			const directivesToRun = [...elementScope?.directives?.keys() ?? []]
 
 			const runDirective = async (name: string): Promise<void> => {
 				const promises = [];
@@ -172,12 +175,9 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				await Promise.all(promises);
 			}
 
-			/* const directivePromises = []; */
 			while (canExecute && directivesToRun.length > 0) {
 				await runDirective(directivesToRun.shift())
 			}
-
-			/* await Promise.all(directivePromises); */
 
 			element.removeAttribute($.cloakAttribute);
 
@@ -188,31 +188,21 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			let { root = $.root, directiveName, mode = 'init' } = options;
 			const directivesToProcess = directiveName === undefined ? Object.keys(directives) : [directiveName];
 
-			const processElements = async (root): Promise<void> => {
-				const rootIsElement = root instanceof Element;
+			await $.traverseDom({
+				root,
+				nodeTypes: [1],
+				callback: async (node) => {
+					if (node?.closest(`[${ignoreAttribute}]`)) {
+						return;
+					}
 
-				if (rootIsElement && root?.closest(`[${ignoreAttribute}]`)) {
-					return;
-				}
-
-				if (rootIsElement) {
 					await processElement({
-						element: root,
+						element: node,
 						mode,
 						directives: directivesToProcess
 					});
 				}
-
-				//const elementsProcessingPromises = [];
-
-				for (const child of [...root.children]) {
-					await processElements(child);
-				}
-
-				//await Promise.all(elementsProcessingPromises);
-			}
-
-			await processElements(root);
+			})
 
 			return root;
 		}
@@ -261,6 +251,40 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			return createFunctionCache[cacheKey];
 		}
 
+		const getPrerenderedNodes = (template: HTMLTemplateElement) => {
+			const renderedNodes = [];
+			let renderedTemplateSibling = template.nextSibling;
+			let renderedTemplateOpenned = false;
+
+			while (renderedTemplateSibling) {
+				if (!renderedTemplateOpenned && renderedTemplateSibling.nodeType === Node.TEXT_NODE && renderedTemplateSibling.textContent.trim().length > 0) {
+					break;
+				}
+
+				if (renderedTemplateSibling.nodeType === Node.COMMENT_NODE) {
+					const content = renderedTemplateSibling.textContent?.trim();
+					if (content === renderedTemplateStartComment) {
+						renderedNodes.push(renderedTemplateSibling);
+						renderedTemplateOpenned = true;
+						renderedTemplateSibling = renderedTemplateSibling.nextSibling;
+						continue;
+					} else if (content === renderedTemplateEndComment) {
+						renderedNodes.push(renderedTemplateSibling);
+						renderedTemplateOpenned = false;
+						break;
+					}
+				}
+
+				if (renderedTemplateOpenned) {
+					renderedNodes.push(renderedTemplateSibling);
+				}
+
+				renderedTemplateSibling = renderedTemplateSibling.nextSibling;
+			}
+
+			return renderedNodes;
+		}
+
 		directive('signal', {
 			matcher: new RegExp(`(?:\\$|${attributePrefix}signal${attributeSeparator})(\\S+)`),
 			callback: async ({ matches, element, data, attribute }): Promise<void> => {
@@ -282,7 +306,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						result = parseFloat(result);
 					}
 
-					newSignal.set(result);
+					newSignal.value = result;
 				}
 
 				let unwatchSignalCallbacks = [];
@@ -338,15 +362,29 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				let signalsToWatch = [];
 				let inited = false;
 				let getUsedSignals;
+				let prerenderedNodes = getPrerenderedNodes(element);
 
 				const process = async (): Promise<void> => {
 					if (!inited) {
 						getUsedSignals = observeSignals(data);
 					}
 
-					const stackCall = stackFn(data);
+					let stack = await stackFn(data);
+
+					if (!inited) {
+						signalsToWatch = getUsedSignals();
+						inited = true;
+						if (prerenderedNodes.length) {
+							return;
+						}
+					}
 
 					const currentState = [];
+
+					while(prerenderedNodes.length > 0) {
+						prerenderedNodes.pop()?.remove();
+					}
+
 					let nextElementSibling = element.nextElementSibling;
 
 					while (nextElementSibling !== null) {
@@ -357,13 +395,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						currentState.push(nextElementSibling);
 						nextElementSibling = nextElementSibling.nextElementSibling;
 					}
-					const currentStateLength = currentState.length
-
-					let stack = await stackCall;
-
-					if (!inited) {
-						signalsToWatch = getUsedSignals();
-					}
+					const currentStateLength = currentState.length;
 
 					inited = true;
 
@@ -385,7 +417,6 @@ export default (options?: PluginOptions): SignalizePlugin => {
 							odd: counter % 2 !== 0,
 							even: counter % 2 === 0
 						});
-						console.log(counter, iterator)
 						let destruct = {};
 
 						if (newContextVariables.length > 1) {
@@ -457,8 +488,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 									for (const [key, value] of Object.entries({ ...destruct, iterator })) {
 										data[key].set(value());
 									}
-								});
-
+								})
 							} else if (currentState.length === 0 || counter >= currentState.length) {
 								lastInsertPoint.after(fragment);
 								lastInsertPoint = fragment;
@@ -544,43 +574,14 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				let nextSibling = element.nextSibling;
 				const nextSiblingScope = scope(nextSibling);
 				let rendered = nextSiblingScope?.template === element;
-				const renderedElements = [];
+				let prerendered = true;
+				let renderedNodes = [];
 
 				if (rendered === false) {
-					let renderedTemplateSibling = element.nextSibling;
-					let renderedTemplateOpenned = false;
-
-					while (renderedTemplateSibling) {
-						if (!renderedTemplateOpenned && renderedTemplateSibling.nodeType === Node.TEXT_NODE && renderedTemplateSibling.textContent.trim().length > 0) {
-							break;
-						}
-
-						if (renderedTemplateSibling.nodeType === Node.COMMENT_NODE) {
-							const content = renderedTemplateSibling.textContent?.trim();
-							if (content === renderedTemplateStartComment) {
-								rendered = true;
-								renderedElements.push(renderedTemplateSibling);
-								renderedTemplateOpenned = true;
-								renderedTemplateSibling = renderedTemplateSibling.nextSibling;
-								continue;
-							} else if (content === renderedTemplateEndComment) {
-								renderedElements.push(renderedTemplateSibling);
-								renderedTemplateOpenned = false;
-								break;
-							}
-						}
-
-						if (renderedTemplateOpenned) {
-							renderedElements.push(renderedTemplateSibling);
-						}
-
-						renderedTemplateSibling = renderedTemplateSibling.nextSibling;
-					}
-				}
-
-				const cleanElements = () => {
-					while (renderedElements.length) {
-						renderedElements.pop().remove()
+					renderedNodes = getPrerenderedNodes(element);
+					if (renderedNodes.length) {
+						rendered = true;
+						prerendered = true;
 					}
 				}
 				let inited = false;
@@ -592,18 +593,23 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						getSignalsToWatch = observeSignals(data);
 					}
 					const conditionResult = await fn(data);
+
 					if (!inited) {
 						signalsToWatch = getSignalsToWatch();
 						inited = true;
-					}
-					let lastInsertPoint = element;
 
-					if (conditionResult === true && rendered === true) {
-						return;
+						if (rendered) {
+							return;
+						}
+					}
+
+					if (conditionResult !== true || prerendered) {
+						while (renderedNodes.length > 0) {
+							renderedNodes.pop().remove()
+						}
 					}
 
 					if (conditionResult !== true) {
-						cleanElements();
 						rendered = false;
 						return;
 					}
@@ -617,19 +623,10 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					});
 
 					fragment = await processDirectives({ root: fragment });
-					const children = [...fragment.childNodes];
-
-					while (children.length > 0) {
-						const root = children.shift();
-						renderedElements.push(root);
-						lastInsertPoint.after(root);
-						lastInsertPoint = root;
-					}
-
+					renderedNodes = [...fragment.childNodes];
+					element.after(fragment);
 					rendered = true;
 				}
-
-				const detectedSignals = [];
 
 				await render();
 
@@ -706,25 +703,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					}
 				});
 			}
-		})
+		});
 
-		on('dom:ready', async () => {
-			await processDirectives();
-
-			inited = true;
-
-			on('dom:mutation:node:added', (event) => {
-				const node = event.detail;
-				if (!(node instanceof Element) || scope(node)?.directives !== undefined) {
-					return;
-				}
-
-				void processDirectives({ root: event.detail });
-			});
-		})
+		on('scope:init', (data) => processElement({ element: data.element }));
 
 		$.AsyncFunction = AsyncFunction;
 		$.createDirectiveFunction = createFunction;
+		$.getPrerenderedNodes = getPrerenderedNodes;
 		$.directive = directive;
 	}
 }

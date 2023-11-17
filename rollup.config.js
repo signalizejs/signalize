@@ -34,115 +34,53 @@ const packages = [
 			}
 		]
 	},
+
+	// signalizejs/dialog
 	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/src`,
-				declarationDir: `${signalizeDir}/dist`
-			})
-		],
-		input: `${signalizeDir}/src/index.global.ts`,
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/dialog.ts`,
 		treeshake: false,
 		output: [
 			{
-				file: `${signalizeDir}/dist/signalize.global.js`,
-				format: 'iife'
+				file: `${signalizeDir}/dist/plugins/dialog.js`,
+				format: 'esm'
+			},
+			{
+				file: `${signalizeDir}/dist/plugins/dialog.cjs`,
+				format: 'cjs'
+			}
+		]
+	},
+
+	// signalizejs/directives
+	{
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/directives.ts`,
+		treeshake: false,
+		output: [
+			{
+				file: `${signalizeDir}/dist/plugins/directives.js`,
+				format: 'esm'
+			},
+			{
+				file: `${signalizeDir}/dist/plugins/directives.cjs`,
+				format: 'cjs'
 			}
 		]
 	},
 
 	// signalizejs/fetch
 	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/fetch/src`,
-				declarationDir: `${signalizeDir}/fetch/dist`
-			})
-		],
-		input: `${signalizeDir}/fetch/src/index.ts`,
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/fetch.ts`,
 		treeshake: false,
-		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/fetch/dist/fetch.js`,
+				file: `${signalizeDir}/dist/plugins/fetch.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/fetch/dist/fetch.cjs`,
-				format: 'cjs'
-			}
-		]
-	},
-
-	// signalizejs/dialog
-	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/asset-loader/src`,
-				declarationDir: `${signalizeDir}/asset-loader/dist`
-			})
-		],
-		input: `${signalizeDir}/asset-loader/src/index.ts`,
-		treeshake: false,
-		external: ['signalizejs'],
-		output: [
-			{
-				file: `${signalizeDir}/asset-loader/dist/asset-loader.js`,
-				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/asset-loader/dist/asset-loader.cjs`,
-				format: 'cjs'
-			}
-		]
-	},
-
-	// signalizejs/dialog
-	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/directives/src`,
-				declarationDir: `${signalizeDir}/directives/dist`
-			})
-		],
-		input: `${signalizeDir}/directives/src/index.ts`,
-		treeshake: false,
-		external: ['signalizejs'],
-		output: [
-			{
-				file: `${signalizeDir}/directives/dist/directives.js`,
-				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/directives/dist/directives.cjs`,
-				format: 'cjs'
-			}
-		]
-	},
-
-	// signalizejs/dialog
-	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/dialog/src`,
-				declarationDir: `${signalizeDir}/dialog/dist`
-			})
-		],
-		input: `${signalizeDir}/dialog/src/index.ts`,
-		treeshake: false,
-		external: ['signalizejs'],
-		output: [
-			{
-				file: `${signalizeDir}/dialog/dist/dialog.js`,
-				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dialog/dist/dialog.cjs`,
+				file: `${signalizeDir}/dist/plugins/fetch.cjs`,
 				format: 'cjs'
 			}
 		]
@@ -150,95 +88,67 @@ const packages = [
 
 	// signalizejs/h
 	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/h/src`,
-				declarationDir: `${signalizeDir}/h/dist`
-			})
-		],
-		input: `${signalizeDir}/h/src/index.ts`,
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/h.ts`,
 		treeshake: false,
-		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/h/dist/h.js`,
+				file: `${signalizeDir}/dist/plugins/h.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/h/dist/h.cjs`,
+				file: `${signalizeDir}/dist/plugins/h.cjs`,
 				format: 'cjs'
 			}
 		]
 	},
 
-	// signalizejs/logger
+	// signalizejs/h
 	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/logger/src`,
-				declarationDir: `${signalizeDir}/logger/dist`
-			})
-		],
-		input: `${signalizeDir}/logger/src/index.ts`,
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/logger.ts`,
 		treeshake: false,
-		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/logger/dist/logger.js`,
+				file: `${signalizeDir}/dist/plugins/logger.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/logger/dist/logger.cjs`,
+				file: `${signalizeDir}/dist/plugins/logger.cjs`,
 				format: 'cjs'
 			}
 		]
 	},
 
-	// signalizejs/snippets
+	// signalizejs/h
 	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/snippets/src`,
-				declarationDir: `${signalizeDir}/snippets/dist`
-			})
-		],
-		input: `${signalizeDir}/snippets/src/index.ts`,
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/snippets.ts`,
 		treeshake: false,
-		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/snippets/dist/snippets.js`,
+				file: `${signalizeDir}/dist/plugins/snippets.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/snippets/dist/snippets.cjs`,
+				file: `${signalizeDir}/dist/plugins/snippets.cjs`,
 				format: 'cjs'
 			}
 		]
 	},
 
-	// signalizejs/spa
+	// signalizejs/h
 	{
-		plugins: [
-			typescript({
-				declaration: true,
-				rootDir: `${signalizeDir}/spa/src`,
-				declarationDir: `${signalizeDir}/spa/dist`
-			})
-		],
-		input: `${signalizeDir}/spa/src/index.ts`,
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/spa.ts`,
 		treeshake: false,
-		external: ['signalizejs'],
 		output: [
 			{
-				file: `${signalizeDir}/spa/dist/spa.js`,
+				file: `${signalizeDir}/dist/plugins/spa.js`,
 				format: 'esm'
 			},
 			{
-				file: `${signalizeDir}/spa/dist/spa.cjs`,
+				file: `${signalizeDir}/dist/plugins/spa.cjs`,
 				format: 'cjs'
 			}
 		]

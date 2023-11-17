@@ -12,7 +12,7 @@ declare module '..' {
 		customEventListener: (name: string, listener: CustomEventListener) => void
 	}
 
-	interface CustomEventListeners {
+	interface CustomEventListeners extends HTMLElementEventMap {
 		remove: CustomEventListener
 		clickOutside: CustomEventListener
 	}
@@ -20,7 +20,14 @@ declare module '..' {
 
 export type EventTarget = string | NodeListOf<Element> | Element[] | Element | Window;
 
-export type CustomEventListener = (target: Element, callback: CallableFunction, options: AddEventListenerOptions) => void;
+export type CustomEventListener = (args: CustomEventListenerArgs) => void;
+
+export interface CustomEventListenerArgs {
+	target: Element,
+	listener: CallableFunction,
+	options: AddEventListenerOptions
+	event: string
+}
 
 export interface CustomEventListeners extends ElementEventMap {
 	clickOutside: CustomEventListener
@@ -33,7 +40,7 @@ export interface PluginOptions {
 
 export default ($: Signalize): void => {
 	const customEventListeners: Record<string, CustomEventListener> = {
-		clickOutside: (target: Element | string, listener: CallableFunction, options: AddEventListenerOptions) => {
+		clickOutside: ({ target, listener, options }) => {
 			document.addEventListener('click', (listenerEvent) => {
 				const eventTarget = listenerEvent.target as Element;
 
@@ -48,7 +55,7 @@ export default ($: Signalize): void => {
 				}
 			}, options);
 		},
-		remove: (target: Element | string, listener: CallableFunction, options: AddEventListenerOptions) => {
+		remove: ({ target, listener }) => {
 			on('dom:mutation:node:removed', (event: CustomEvent) => {
 				if (event.detail === target) {
 					listener();
@@ -65,43 +72,44 @@ export default ($: Signalize): void => {
 	): void => {
 		const events = event.split(' ').map((event) => event.trim());
 		let target: Selectable;
-		let callback: CallableFunction;
+		let listener: CallableFunction;
 		const root = $.root ?? document;
 		options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
 
 		if (typeof targetOrCallback === 'function') {
 			target = root;
-			callback = targetOrCallback;
+			listener = targetOrCallback;
 		} else {
 			target = targetOrCallback
-			callback = callbackOrOptions as CallableFunction;
+			listener = callbackOrOptions as CallableFunction;
 		}
 
 		const listenerType = typeof target === 'string' ? 'global' : 'direct';
-		const handlers = {
-			global: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {
+		const handlers: Record<string, CustomEventListener> = {
+			global: ({ target, listener, options }) => {
 				document.addEventListener(event, (listenerEvent) => {
 					const eventTarget = listenerEvent.target as Element;
 
 					if (eventTarget.matches(target as string) || (eventTarget.closest(target as string) != null)) {
-						callback(listenerEvent);
+						listener(listenerEvent);
 					}
 				}, options);
 			},
-			direct: (event: string, callback: CallableFunction, options: AddEventListenerOptions) => {
+			direct: ({ target, listener, options }) => {
 				for (const element of $.selectorToIterable(target)) {
-					element.addEventListener(event, callback, options)
+					element.addEventListener(event, listener, options)
 				}
 			}
 		}
 
 		for (const event of events) {
+			const listenerData: CustomEventListenerArgs = { event, target, listener, options };
 			if (event in customEventListeners) {
-				customEventListeners[event].call(this, target, callback, options);
+				customEventListeners[event].call(this, listenerData);
 				continue;
 			}
 
-			handlers[listenerType](event, callback, options);
+			handlers[listenerType](listenerData);
 		}
 	}
 

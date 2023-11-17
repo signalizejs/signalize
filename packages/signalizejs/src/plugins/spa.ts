@@ -1,7 +1,7 @@
-import type { Signalize, SignalizePlugin, CustomEventListener } from 'signalizejs';
-import type { FetchReturn } from 'signalizejs/fetch';
+import type { Signalize, SignalizePlugin, CustomEventListener } from '..';
+import type { FetchReturn } from './fetch';
 
-declare module 'signalizejs' {
+declare module '..' {
 	interface Signalize {
 		visit: (data: VisitData) => Promise<SpaDispatchEventData>
 	}

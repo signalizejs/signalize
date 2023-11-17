@@ -1,22 +1,30 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
-const packagesDir = resolve('./packages') + '/signalizejs';
+const signalizejsDir = resolve('./packages') + '/signalizejs';
+const signalizejsSourceDir = signalizejsDir + '/src';
+const pluginsDir = signalizejsSourceDir + '/plugins';
 
 export default defineConfig({
 	base: './',
 	resolve: {
 		conditions: ['development', 'browser'],
 		alias: {
-			'signalizejs/fetch': `${packagesDir}/fetch/src/index.ts`,
-			'signalizejs/asset-loader': `${packagesDir}/asset-loader/src/index.ts`,
-			'signalizejs/dialog': `${packagesDir}/dialog/src/index.ts`,
-			'signalizejs/directives': `${packagesDir}/directives/src/index.ts`,
-			'signalizejs/h': `${packagesDir}/h/src/index.ts`,
-			'signalizejs/logger': `${packagesDir}/logger/src/index.ts`,
-			'signalizejs/snippets': `${packagesDir}/snippets/src/index.ts`,
-			'signalizejs/spa': `${packagesDir}/spa/src/index.ts`,
-			signalizejs: `${packagesDir}/src/index.ts`
+			'signalizejs/asset-loader': `${pluginsDir}/asset-loader.ts`,
+			'signalizejs/dialog': `${pluginsDir}/dialog.ts`,
+			'signalizejs/directives': `${pluginsDir}/directives.ts`,
+			'signalizejs/fetch': `${pluginsDir}/fetch.ts`,
+			'signalizejs/h': `${pluginsDir}/h.ts`,
+			'signalizejs/intersection-observer': `${pluginsDir}/intersection-observer.ts`,
+			'signalizejs/is-in-viewport': `${pluginsDir}/is-in-viewport.ts`,
+			'signalizejs/is-visible': `${pluginsDir}/is-visible.ts`,
+			'signalizejs/logger': `${pluginsDir}/logger.ts`,
+			'signalizejs/offset': `${pluginsDir}/offset.ts`,
+			'signalizejs/snippets': `${pluginsDir}/snippets.ts`,
+			'signalizejs/spa': `${pluginsDir}/spa.ts`,
+			'signalizejs/width': `${pluginsDir}/width.ts`,
+			'signalizejs/height': `${pluginsDir}/height.ts`,
+			signalizejs: `${signalizejsSourceDir}/index.ts`
 		}
 	},
 	server: {
