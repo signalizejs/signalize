@@ -97,6 +97,7 @@ export default ($: Signalize): void => {
 			}
 
 			this.value = newValue;
+			console.trace(newValue);
 
 			clearTimeout(this.#setWatchersTimeout);
 			this.#setWatchersTimeout = setTimeout(() => {

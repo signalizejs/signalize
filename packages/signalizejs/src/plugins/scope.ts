@@ -192,37 +192,27 @@ export default ($: Signalize): void => {
 		on('dom:ready', async (event) => {
 			await traverseDomTree($.root);
 
-			on('scope:defined', () => {
-				let selector = `${$.scopeAttribute}`
-				if (event !== undefined && event.detail?.name === undefined) {
-					selector += `="${event.detail.name}"`;
-				}
-				selector = `[${selector}]`;
+			on('scope:defined', (event) => {
+                let selector = `[${$.scopeAttribute}="${event.detail.name}"]`;
+                for (const element of $.selectAll(selector)) {
+                    if (element.parentNode.closest(selector)) {
+                        continue;
+                    }
+                    traverseDomTree(element);
+                }
+            });
 
-				for (const element of $.selectAll(selector)) {
-					if (element.parentNode.closest(selecto)) {
-						continue;
-					}
+			on('dom:mutation:node:removed', (event) => {
+				scope(event.detail)?.cleanup();
+			});
 
-					traverseDomTree(element);
+			on('dom:mutation:node:added' as keyof CustomEventListener, $.root, ({ detail }: { detail: Node }): void => {
+				if (!(detail instanceof Element) || scope(detail) !== undefined) {
+					return;
 				}
+				void traverseDomTree(detail);
 			});
 		});
-	});
-
-	on('dom:mutation:node:removed', (event) => {
-		/* if () {
-			return;
-		} */
-
-		scope(event.detail)?.cleanup();
-	});
-
-	on('dom:mutation:node:added' as keyof CustomEventListener, $.root, ({ detail }: { detail: Node }): void => {
-		if (!(detail instanceof Element) || scope(detail) !== undefined) {
-			return;
-		}
-		void traverseDomTree(detail);
 	});
 
 	$.Scope = ElementScope;

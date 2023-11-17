@@ -74,27 +74,16 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			const canCompile = mode === 'init';
 
 			const elementClosestScope = element.closest(`[${$.scopeAttribute}]`);
-			let scopeInitPromise = null;
 
 			if (elementClosestScope && typeof elementClosestScope[$.scopeKey] === 'undefined') {
-				scopeInitPromise = new Promise((resolve) => {
-					on('scope:inited', ({ detail }) => {
-						if (detail.element === elementClosestScope) {
-							resolve(true);
-						}
-					})
-				})
+				return element;
 			}
 
-			if (scopeInitPromise instanceof Promise) {
-				await scopeInitPromise;
-			}
+			let elementScope = scope(element);
 
-			let elementScope;
-
-			/* if (mode === 'reinit') {
+			if (mode === 'reinit') {
 				elementScope.cleanup();
-			} */
+			}
 
 			const compiledDirectives = elementScope?.directives ?? new Map();
 
@@ -121,13 +110,14 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						if (attribute.name in processedAttributes) {
 							continue;
 						}
+
 						const matcherReturn = matcher({ element, attribute });
 
 						if (matcherReturn === undefined) {
 							continue;
 						}
 
-						const matches = matcherReturn.exec(attribute.name);
+						const matches = new RegExp(`^${matcherReturn.source}$`).exec(attribute.name);
 						if (matches === null) {
 							continue;
 						}
@@ -187,7 +177,6 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 		const processDirectives = async (options?: ProcessDirectiveOptions = {}): Promise<Element | Document | DocumentFragment> => {
 			let { root = $.root, directiveName, mode = 'init' } = options;
 			const directivesToProcess = directiveName === undefined ? Object.keys(directives) : [directiveName];
-
 			await $.traverseDom({
 				root,
 				nodeTypes: [1],

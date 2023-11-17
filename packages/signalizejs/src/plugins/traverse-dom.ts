@@ -17,14 +17,19 @@ export interface TraverseDomOptions {
 export default ($: Signalize): void => {
 	$.traverseDom = async <T>(options: TraverseDomOptions): Promise<T> => {
 		const { root, callback, nodeTypes = [] } = options
+		const canProcess = (node) => nodeTypes.includes(node.nodeType) || nodeTypes.length === 0;
 		const processNode = async (node: Node): Promise<void> => {
-			if (nodeTypes.includes(node.nodeType) || nodeTypes.length === 0) {
+			node = node instanceof Document ? node.documentElement : node;
+			if (canProcess(node)) {
 				await callback(node);
 			}
 
-			for (const child of [...node.childNodes]) {
+			const childPromises = [];
+			for (const child of node.childNodes) {
 				await processNode(child);
 			}
+
+			await Promise.all(childPromises);
 		}
 
 		await processNode(root);
