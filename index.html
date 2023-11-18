@@ -19,10 +19,18 @@
 	<script type="module">
 		import Signalize from 'signalizejs';
 		import directives from 'signalizejs/directives';
+		import dialog from 'signalizejs/dialog';
 
 		// Use the directives plugin
-		const { scope, on } = new Signalize({ plugins: [directives()] });
+		const { scope, on } = new Signalize({ plugins: [directives(), dialog()] });
 	</script>
+	<dialog dialog="hello-world">
+		Hello World!<br><br>
+		<button dialog-close="hello-world">Close</button>
+	</dialog>
+
+	<button dialog-open="hello-world">Open Dialog</button>
+
 <!-- 	<div id="test" $code="'Hello World'">
 		<div $fu="" scope="code">
 		</div>

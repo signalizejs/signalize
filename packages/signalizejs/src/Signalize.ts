@@ -1,6 +1,6 @@
 import bind from './plugins/bind';
 import dispatch from './plugins/dispatch'
-import domReady from './plugins/domReady';
+import domReady from './plugins/dom-ready';
 import merge from './plugins/merge';
 import mutationsObserver from './plugins/mutation-observer';
 import off from './plugins/off';
@@ -14,7 +14,7 @@ import traverseDom from './plugins/traverse-dom';
 
 export * from './plugins/bind';
 export * from './plugins/dispatch'
-export * from './plugins/domReady';
+export * from './plugins/dom-ready';
 export * from './plugins/merge';
 export * from './plugins/mutation-observer';
 export * from './plugins/off';
@@ -61,7 +61,7 @@ export class Signalize {
 	readonly #init = (options: Partial<SignalizeOptions>): void => {
 		this.root = options?.root ?? document;
 		this.attributePrefix = options?.attributePrefix ?? '';
-		this.attributeSeparator = options?.attributeSeparator ?? '';
+		this.attributeSeparator = options?.attributeSeparator ?? '-';
 
 		merge(this);
 
@@ -71,7 +71,7 @@ export class Signalize {
 		select(this);
 		dispatch(this);
 		on(this);
-		this.customEventListener('signalize:ready',  ({ listener }) => {
+		this.customEventListener('signalize:ready', ({ listener }) => {
 			readyListeners.push(listener);
 		});
 		domReady(this);
@@ -86,7 +86,7 @@ export class Signalize {
 			plugin(this);
 		}
 
-		while(readyListeners.length > 0) {
+		while (readyListeners.length > 0) {
 			readyListeners.shift()();
 		}
 
