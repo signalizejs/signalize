@@ -1,4 +1,4 @@
-import type Signalize from '..';
+import type { Signalize } from '..';
 
 declare module '..' {
 	interface Signalize {

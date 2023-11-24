@@ -1,4 +1,4 @@
-import type Signalize from '..';
+import type { Signalize } from '..';
 
 declare module '..' {
 	interface Signalize {
@@ -97,15 +97,12 @@ export default ($: Signalize): void => {
 			}
 
 			this.value = newValue;
-			console.trace(newValue);
 
 			clearTimeout(this.#setWatchersTimeout);
 			this.#setWatchersTimeout = setTimeout(() => {
-				requestAnimationFrame(() => {
-					for (const watcher of this.watchers.afterSet) {
-						watcher({ newValue, oldValue });
-					}
-				})
+				for (const watcher of this.watchers.afterSet) {
+					watcher({ newValue, oldValue });
+				}
 			});
 		}
 

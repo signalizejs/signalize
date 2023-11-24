@@ -27,9 +27,10 @@ export interface PluginOptions {
 
 export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 	return ($: Signalize) => {
-		const { dispatch, merge } = $;
+		const { dispatch } = $;
 
-		$.fetch = async (resource: RequestInfo | URL, options?: RequestInit | undefined): Promise<FetchReturn> => {
+		$.fetch = async (resource: RequestInfo | URL, options: RequestInit | undefined = {}): Promise<FetchReturn> => {
+			const customOptions = {...options };
 			let response: Response | null = null;
 			let error: Error | null = null
 			const isBodyDefined = options?.body !== undefined
@@ -41,6 +42,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			}
 
 			try {
+
 				if (isBodyDefined) {
 					requestOptions.method = 'POST';
 					if (options.body instanceof FormData) {
@@ -54,9 +56,14 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						requestOptions.body = JSON.stringify(options.body);
 						requestOptions.headers['Content-Type'] = 'application/json'
 					}
+
+					if (options?.headers !== undefined) {
+						requestOptions.headers = { ...requestOptions.headers, ...customOptions.headers }
+						delete customOptions.headers;
+					}
 				}
 
-				requestOptions = merge(requestOptions, options ?? {})
+				requestOptions = { ...requestOptions, ...customOptions };
 				const request = fetch(resource, requestOptions);
 
 				dispatch('fetch:request:start', { resource, options: requestOptions, request });

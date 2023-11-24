@@ -52,9 +52,14 @@ export default ($: Signalize): void => {
 			const attributeBinderIsSignal = attributeBinder instanceof Signal;
 			let attributeInited = false;
 			let previousSettedValue: any;
+			let previousValue;
 
 			const setAttribute = async (attribute, value): Promise<void> => {
 				value = value instanceof Promise ? await value : value;
+				if (attributeInited && previousValue === value) {
+					return;
+				}
+				previousValue = value;
 				attribute = attributesAliases[attribute] ?? attribute;
 
 				if (textContentAttributes.includes(attribute)) {

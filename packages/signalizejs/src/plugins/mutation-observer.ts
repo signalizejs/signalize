@@ -1,4 +1,4 @@
-import type Signalize from '..';
+import type { Signalize } from '..';
 import type { CustomEventListener } from './on';
 
 declare module '..' {
@@ -34,30 +34,28 @@ export default ($: Signalize): void => {
 			callback = (mutationRecords: MutationRecord[]) => {
 				let removedNodes: Node[] = [];
 				for (const mutation of mutationRecords) {
-					queueMicrotask(() => {
-						$.dispatch(event, mutation);
+					$.dispatch(event, mutation);
 
-						for (const node of mutation.addedNodes) {
-							if (removedNodes.includes(node)) {
-								continue;
-							}
-							$.dispatch(nodeAddedEvent, node)
+					for (const node of mutation.addedNodes) {
+						if (removedNodes.includes(node)) {
+							continue;
 						}
+						$.dispatch(nodeAddedEvent, node)
+					}
 
-						if (mutation.removedNodes.length) {
-							removedNodes = [...mutation.removedNodes];
-						}
+					if (mutation.removedNodes.length) {
+						removedNodes = [...mutation.removedNodes];
+					}
 
-						for (const node of mutation.removedNodes) {
-							$.dispatch(
-								($.root instanceof Document ? $.root.contains(node) : $.root.ownerDocument.contains(node))
-									? nodeMovedEvent
-									: nodeRemovedEvent
-								,
-								node
-							)
-						}
-					});
+					for (const node of mutation.removedNodes) {
+						$.dispatch(
+							($.root instanceof Document ? $.root.contains(node) : $.root.ownerDocument.contains(node))
+								? nodeMovedEvent
+								: nodeRemovedEvent
+							,
+							node
+						)
+					}
 				}
 			}
 		}

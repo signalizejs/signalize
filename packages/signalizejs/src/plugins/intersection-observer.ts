@@ -6,16 +6,18 @@ declare module '..' {
 	}
 }
 
-export default ($: Signalize): void => {
-	$.observeIntersection = (element, callback, options) => {
-		const observer = new IntersectionObserver(callback, {
-			root: element.closest(`[${$.attributePrefix}intersection-observer-root]`),
-			rootMargin: '0% 0%',
-			threshold: [0.0, 0.1],
-			...options ?? {}
-		});
+export default () => {
+	return ($: Signalize): void => {
+		$.observeIntersection = (element, callback, options) => {
+			const observer = new IntersectionObserver(callback, {
+				root: element.closest(`[${$.attributePrefix}intersection-observer-root]`),
+				rootMargin: '0% 0%',
+				threshold: [0.0, 0.1],
+				...options ?? {}
+			});
 
-		observer.observe(element);
-		return observer;
+			observer.observe(element);
+			return observer;
+		}
 	}
 }

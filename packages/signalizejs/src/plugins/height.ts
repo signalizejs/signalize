@@ -1,4 +1,4 @@
-import type Signalize from '..';
+import type { Signalize, SignalizePlugin } from '..';
 
 declare module '..' {
 	interface Signalize {
@@ -6,12 +6,14 @@ declare module '..' {
 	}
 }
 
-export default ($: Signalize): void => {
-	$.height = (element) => {
-		if (element === document) {
-			return window.innerHeight;
-		}
+export default (): SignalizePlugin => {
+	return ($: Signalize): void => {
+		$.height = (element) => {
+			if (element === document) {
+				return window.innerHeight;
+			}
 
-		return element instanceof Element ? parseFloat(window.getComputedStyle(element).height) : 0;
+			return element instanceof Element ? parseFloat(window.getComputedStyle(element).height) : 0;
+		}
 	}
 }

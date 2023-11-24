@@ -65,7 +65,6 @@ export default (): SignalizePlugin => {
 		}
 
 		on('dom:ready', () => {
-			console.log(dialogCloseButtonAttribute);
 			on('click', `[${dialogCloseButtonAttribute}]`, ({ target }) => {
 				const dialog = target.getAttribute[`${dialogCloseButtonAttribute}`] ?? target.closest(`[${dialogAttribute}]`);
 

@@ -1,7 +1,6 @@
 import bind from './plugins/bind';
 import dispatch from './plugins/dispatch'
 import domReady from './plugins/dom-ready';
-import merge from './plugins/merge';
 import mutationsObserver from './plugins/mutation-observer';
 import off from './plugins/off';
 import on from './plugins/on';
@@ -15,7 +14,6 @@ import traverseDom from './plugins/traverse-dom';
 export * from './plugins/bind';
 export * from './plugins/dispatch'
 export * from './plugins/dom-ready';
-export * from './plugins/merge';
 export * from './plugins/mutation-observer';
 export * from './plugins/off';
 export * from './plugins/on';
@@ -48,39 +46,37 @@ export class Signalize {
 	root!: Element | Document;
 	attributeSeparator!: string;
 	attributePrefix!: string;
-	globals: SignalizeGlobals = {};
+	globals!: SignalizeGlobals;
 
 	constructor (options: Partial<SignalizeOptions> = {}) {
 		this.#init(options);
 	}
 
 	use = (plugin: SignalizePlugin): void => {
-		plugin(this)
+		plugin(this);
 	}
 
 	readonly #init = (options: Partial<SignalizeOptions>): void => {
 		this.root = options?.root ?? document;
 		this.attributePrefix = options?.attributePrefix ?? '';
 		this.attributeSeparator = options?.attributeSeparator ?? '-';
-
-		merge(this);
-
-		this.globals = this.merge(this.globals, options?.globals ?? {});
+		this.globals = options?.globals ?? {};
 		const readyListeners: CallableFunction[] = [];
+
 		task(this);
-		select(this);
 		dispatch(this);
 		on(this);
 		this.customEventListener('signalize:ready', ({ listener }) => {
 			readyListeners.push(listener);
 		});
+		off(this);
 		domReady(this);
-		mutationsObserver(this);
+		select(this);
 		traverseDom(this);
 		scope(this);
 		signal(this);
-		off(this);
 		bind(this);
+		mutationsObserver(this);
 
 		for (const plugin of options?.plugins ?? []) {
 			plugin(this);

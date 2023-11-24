@@ -27,7 +27,7 @@ export interface Scope {
 }
 
 export default ($: Signalize): void => {
-	const { on, merge } = $;
+	const { on } = $;
 
 	$.cloakAttribute = 'cloak';
 	$.scopeAttribute = `${$.attributePrefix}scope`;
@@ -67,7 +67,7 @@ export default ($: Signalize): void => {
 					return data;
 				}
 
-				return merge(data, scope(element)?.data ?? getScopedData(element.parentNode, data))
+				return {...data, ...scope(element)?.data ?? getScopedData(element.parentNode, data)}
 			}
 			const getParentData = (element, key: string): any => {
 				if (element === null) {
@@ -173,6 +173,7 @@ export default ($: Signalize): void => {
 			callback: async (node: Element): Promise<void> => {
 				let rootScope;
 				let nodeScopeName = node.getAttribute($.scopeAttribute)
+
 				if (node instanceof HTMLElement && nodeScopeName && nodeScopeName in definedScopes) {
 					rootScope = scope(node, definedScopes[nodeScopeName]);
 					await rootScope.initPromise;

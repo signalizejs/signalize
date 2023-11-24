@@ -1,4 +1,4 @@
-import type Signalize from '..';
+import type { Signalize } from '..';
 
 declare module '..' {
 	interface Signalize {
@@ -6,12 +6,14 @@ declare module '..' {
 	}
 }
 
-export type TraverseDomCallback = <T>(node: Node) => Promise<void>
+export type TraverseDomCallback = (node: Node) => Promise<void>
+
+export type NodeType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export interface TraverseDomOptions {
-	root: Node,
-	callback: TraverseDomCallback,
-	nodeTypes?: number[]
+	root: Node
+	callback: TraverseDomCallback
+	nodeTypes?: NodeType[]
 }
 
 export default ($: Signalize): void => {
@@ -26,7 +28,7 @@ export default ($: Signalize): void => {
 
 			const childPromises = [];
 			for (const child of node.childNodes) {
-				await processNode(child);
+				childPromises.push(processNode(child));
 			}
 
 			await Promise.all(childPromises);

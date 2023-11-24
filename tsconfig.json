@@ -5,16 +5,6 @@
 		"moduleResolution": "node",
 		"rootDir": ".",
 		"strict": true,
-		"paths": {
-			"signalizejs/fetch": ["./packages/signalize/fetch"],
-			"signalizejs/component": ["./packages/signalize/component"],
-			"signalizejs/dialog": ["./packages/signalize/dialog"],
-			"signalizejs/h": ["./packages/signalize/h"],
-			"signalizejs/asset-loader": ["./packages/signalize/asset-loader"],
-			"signalizejs/snippets": ["./packages/signalize/snippets"],
-			"signalizejs/spa": ["./packages/signalize/spa"],
-			"signalizejs": ["./packages/signalize"],
-		}
 	},
 	"exclude": [
 		"node_modules"

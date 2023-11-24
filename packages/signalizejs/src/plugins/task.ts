@@ -1,7 +1,7 @@
 // https://nitropack.io/blog/post/improve-interaction-to-next-paint-inp
 // https://web.dev/optimize-long-tasks/
 
-import type Signalize from '..';
+import type { Signalize } from '..';
 
 declare global {
 	interface Navigator {

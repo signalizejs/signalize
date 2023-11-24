@@ -18,18 +18,32 @@
 
 	<script type="module">
 		import Signalize from 'signalizejs';
-		import directives from 'signalizejs/directives';
-		import dialog from 'signalizejs/dialog';
+		import directivesPlugin from 'signalizejs/directives';
+		import signalDirectivePlugin from 'signalizejs/directives/signal';
+		import forDirectivePlugin from 'signalizejs/directives/for';
+		import onDirectivePlugin from 'signalizejs/directives/on';
+		import bindDirectivePlugin from 'signalizejs/directives/bind';
+		import ifDirectivePlugin from 'signalizejs/directives/if';
 
 		// Use the directives plugin
-		const { scope, on } = new Signalize({ plugins: [directives(), dialog()] });
+		const { scope, on, signal, observeSignals } = new Signalize({
+			plugins: [
+				directivesPlugin(),
+				signalDirectivePlugin(),
+				bindDirectivePlugin(),
+				forDirectivePlugin(),
+				onDirectivePlugin(),
+				ifDirectivePlugin()
+			]
+		});
 	</script>
-	<dialog dialog="hello-world">
-		Hello World!<br><br>
-		<button dialog-close="hello-world">Close</button>
-	</dialog>
 
-	<button dialog-open="hello-world">Open Dialog</button>
+	<!-- <div $count="1">
+		<template :for="i of 1">
+			<span :text="i"></span>
+		</template>
+		<div :id="count"></div>
+	</div> -->
 
 <!-- 	<div id="test" $code="'Hello World'">
 		<div $fu="" scope="code">
@@ -44,7 +58,7 @@
  -->
 	<!-- Conditional loop for large amount of elements -->
 
-	<!-- <div id="root" $text="'Hello World!'" $count="1">
+	<div $text="'Hello World!'" $count="10">
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -61,7 +75,7 @@
 			</template>
 		</ul>
 	</div>
- -->
+
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();
 		items.set({...items(), [text()]: text()})
