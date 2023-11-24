@@ -23,13 +23,13 @@
 
 	<script type="module">
 		import Signalize from 'signalizejs';
-		import ajax from 'signalizejs/fetch';
+		import fetch from 'signalizejs/fetch';
 		import snippets from 'signalizejs/snippets';
 		import spa from 'signalizejs/spa';
 
 		new Signalize({
 			plugins: [
-				ajax(),
+				fetch(),
 				snippets(),
 				spa()
 			]
