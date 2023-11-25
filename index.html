@@ -16,7 +16,7 @@
 		}
 	</style>
 
-	<script type="module">
+	<!-- <script type="module">
 		import Signalize from 'signalizejs';
 		import directivesPlugin from 'signalizejs/directives';
 		import signalDirectivePlugin from 'signalizejs/directives/signal';
@@ -36,7 +36,51 @@
 				ifDirectivePlugin()
 			]
 		});
-	</script>
+	</script> -->
+
+	<input id="title-input" placeholder="Add Title">
+<input id="content-input" placeholder="Add Content">
+
+<div id="output"></div>
+
+<script type="module">
+import Signalize from 'signalizejs';
+
+const { Signal, bind } = new Signalize();
+
+// 1. Create article signal
+const article = new Signal({
+	title: 'Hello World!',
+	content: 'Lorem Ipsum'
+});
+
+// 2. Bind article signal to title input
+bind(document.querySelector('#title-input'), {
+	// 2.1 Watch article signal
+	value: [article, {
+		// 2.2 Setter for title proerty
+		set: (title) => article.set({ ...article(), title }),
+		// 2.3 Getter for title property
+		get: () => article().title
+	}]
+});
+
+// 3. Bind article signal to content input
+bind(document.querySelector('#content-input'), {
+	// 3.1 Watch article signal
+	value: [article, {
+		// 3.2 Setter for content property
+		set: (content) => article.set({ ...article(), content }),
+		// 3.3 Getter for content property
+		get: () => article().content
+	}]
+});
+
+// 4. Bind output
+bind(document.querySelector('#output'), {
+	html: [article, () => `Title: ${article().title}<br>Description: ${article().content}` ]
+});
+</script>
 
 	<!-- <div $count="1">
 		<template :for="i of 1">
@@ -58,7 +102,7 @@
  -->
 	<!-- Conditional loop for large amount of elements -->
 
-	<div $text="'Hello World!'" $count="10">
+	<!-- <div $text="'Hello World!'" $count="10">
 		<input :value="text">
 		<button @click="count.set(count() + 1)">Přidej<span :text="count"></span></button>
 		<button @click="count.set(count() - 1)">Odeber<span :text="count"></span></button><br>
@@ -74,7 +118,7 @@
 				</li>
 			</template>
 		</ul>
-	</div>
+	</div> -->
 
 	<!-- <form $items="{}" $text="" @submit="
 		event.preventDefault();

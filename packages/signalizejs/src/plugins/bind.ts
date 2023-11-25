@@ -41,14 +41,11 @@ export default ($: Signalize): void => {
 				attrOptions = attrOptions[0];
 			}
 
-			let getListener: CallableFunction | null = null;
-			let setListener: CallableFunction | null = null;
 			const attrOptionsAsArray = Array.isArray(attrOptions) ? attrOptions : [attrOptions];
 			const isNumericInput = numericInputAttributes.includes(element.getAttribute('type') ?? '');
 			const attributeBinder = attrOptionsAsArray.pop();
 			const signalsToWatch = attrOptionsAsArray;
 			const attributeBinderType = typeof attributeBinder;
-			const attributeBinderIsFunction = attributeBinderType === 'function';
 			const attributeBinderIsSignal = attributeBinder instanceof Signal;
 			let attributeInited = false;
 			let previousSettedValue: any;
@@ -94,28 +91,41 @@ export default ($: Signalize): void => {
 				signalsToWatch.push(attributeBinder);
 			}
 
+			let getListener: CallableFunction | null = null;
+			let setListener: CallableFunction | null = null;
+
 			if (attributeBinderIsSignal) {
 				getListener = () => attributeBinder();
 				setListener = (value) => attributeBinder.set(value);
-			} else if (signalsToWatch.length === 1) {
-				getListener = () => attributeBinder();
-				setListener = (value) => signalsToWatch[0].set(value);
-			} else if (typeof attributeBinder === 'function') {
-				getListener = () => attributeBinder();
 			} else {
-				getListener = typeof attributeBinder.get === 'function' ? () => attributeBinder.get() : null;
-				setListener = typeof attributeBinder.set === 'function' ? (value) => attributeBinder.set(value) : null
+				if (typeof attributeBinder?.get === 'function') {
+					getListener = () => attributeBinder.get();
+				}
+
+				if (typeof attributeBinder?.set === 'function') {
+					setListener = (value) => attributeBinder.set(value);
+				}
+
+				if (getListener === null) {
+					if (typeof attributeBinder === 'function') {
+						getListener = () => attributeBinder();
+					} else if (signalsToWatch.length === 1) {
+						getListener = () => signalsToWatch[0].get();
+					}
+				}
+
+				if (setListener === null && signalsToWatch.length === 1) {
+					setListener = (value) => signalsToWatch[0].set(value);
+				}
 			}
 
-			if (attributeBinderIsFunction === true) {
-				setAttribute(attr, attributeBinder());
+			if (getListener !== null) {
+				setAttribute(attr, getListener());
 			}
 
 			for (const signalToWatch of signalsToWatch) {
 				unwatchSignalCallbacks.push(
-					signalToWatch.watch(async () => {
-						setAttribute(attr, getListener());
-					})
+					signalToWatch.watch(() => setAttribute(attr, getListener()))
 				);
 			}
 

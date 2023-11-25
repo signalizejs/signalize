@@ -1,25 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
+<head snippet="head">
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
-	<title snippet="title">First page</title>
+	<meta name="spa-cache-control" content="cache">
+	<title>First page</title>
 	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
-<body>
+<body snippet="body">
 	<style>
 		[cloak] {
 			visibility: hidden;
 		}
 	</style>
 
-	<div snippet="content">
-		<a href="/second.html">Second</a>
-	</div>
+	<a href="/second.html">Second</a>
 
 	<script type="module">
 		import Signalize from 'signalizejs';

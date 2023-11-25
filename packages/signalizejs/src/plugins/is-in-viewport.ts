@@ -2,12 +2,8 @@ import type { Signalize, SignalizePlugin } from '..'
 
 declare module '..' {
 	interface Signalize {
-		isInViewport: (element: Element, options: IsInViewportOptions) => IsInViewportInfo
+		isInViewport: (element: Element) => IsInViewportInfo
 	}
-}
-
-interface IsInViewportOptions {
-	offset: number
 }
 
 interface IsInViewportInfo {
@@ -18,10 +14,10 @@ interface IsInViewportInfo {
 
 export default (): SignalizePlugin => {
 	return ($: Signalize): void => {
-		$.isInViewport = (element, options) => {
+		$.isInViewport = (element) => {
 			const windowTop = window.scrollY;
 			const windowBottom = windowTop + window.innerHeight;
-			const elementTop = $.offset(element).top + (options?.offset ?? 0)
+			const elementTop = $.offset(element).top;
 			const elementBottom = elementTop + $.height(element);
 
 			return {

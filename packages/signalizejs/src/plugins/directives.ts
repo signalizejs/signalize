@@ -189,10 +189,9 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				})
 			}
 
-			await $.traverseDom({
+			await $.traverseDom(
 				root,
-				nodeTypes: [1],
-				callback: async (node) => {
+				async (node) => {
 					if (node?.closest(`[${ignoreAttribute}]`)) {
 						return;
 					}
@@ -202,7 +201,8 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						mode,
 						directives: directivesToProcess
 					});
-				}
+				},
+				[1]
 			})
 
 			return root;

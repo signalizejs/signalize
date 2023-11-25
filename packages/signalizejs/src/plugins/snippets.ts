@@ -2,7 +2,7 @@ import type { Signalize, SignalizePlugin, CustomEventListener } from '..';
 
 declare module '..' {
 	interface Signalize {
-		redrawSnippet: (content: string | DocumentFragment | Element | Element) => void
+		redrawSnippet: (content: string) => void
 	}
 
 	interface CustomEventListeners {
@@ -21,7 +21,7 @@ export default (): SignalizePlugin => {
 		const parseHtml = (html: string, type: DOMParserSupportedType = 'text/html'): Document =>
 			(new DOMParser()).parseFromString(html, type);
 
-		$.redrawSnippet = (content: string | DocumentFragment | Element | Element): void => {
+		$.redrawSnippet = (content: string): void => {
 			const fragment = parseHtml(content);
 
 			while (true) {

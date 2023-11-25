@@ -30,17 +30,25 @@ export default ($: Signalize): void => {
 		const nodeMovedEvent = `${nodeEvent}:moved`;
 		let callback = options?.callback ?? undefined;
 
+		const dispatch = (event: string, data: Node): void => {
+			if (callback !== undefined) {
+				return;
+			}
+
+			$.dispatch(event, data);
+		}
+
 		if (callback === undefined) {
 			callback = (mutationRecords: MutationRecord[]) => {
 				let removedNodes: Node[] = [];
 				for (const mutation of mutationRecords) {
-					$.dispatch(event, mutation);
+					dispatch(event, mutation);
 
 					for (const node of mutation.addedNodes) {
 						if (removedNodes.includes(node)) {
 							continue;
 						}
-						$.dispatch(nodeAddedEvent, node)
+						dispatch(nodeAddedEvent, node)
 					}
 
 					if (mutation.removedNodes.length) {
@@ -48,7 +56,7 @@ export default ($: Signalize): void => {
 					}
 
 					for (const node of mutation.removedNodes) {
-						$.dispatch(
+						dispatch(
 							($.root instanceof Document ? $.root.contains(node) : $.root.ownerDocument.contains(node))
 								? nodeMovedEvent
 								: nodeRemovedEvent

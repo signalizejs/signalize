@@ -167,10 +167,9 @@ export default ($: Signalize): void => {
 	};
 
 	const traverseDomTree = async (root: Element): Promise<void> => {
-		await $.traverseDom({
+		await $.traverseDom(
 			root,
-			nodeTypes: [1],
-			callback: async (node: Element): Promise<void> => {
+			async (node: Element): Promise<void> => {
 				let rootScope;
 				let nodeScopeName = node.getAttribute($.scopeAttribute)
 
@@ -185,8 +184,9 @@ export default ($: Signalize): void => {
 				}
 
 				await Promise.all(listenerPromises);
-			}
-		})
+			},
+			[1]
+		);
 	}
 
 	on('signalize:ready', () => {

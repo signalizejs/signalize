@@ -47,17 +47,31 @@ export class Signalize {
 	attributeSeparator!: string;
 	attributePrefix!: string;
 	globals!: SignalizeGlobals;
+	#plugins = new Set();
 
 	constructor (options: Partial<SignalizeOptions> = {}) {
 		this.#init(options);
+		return this.root.__signalize;
 	}
 
 	use = (plugin: SignalizePlugin): void => {
+		const pluginString = plugin.toString().replace(/(\s|\n)*/g, '');
+
+		if (this.#plugins.has(pluginString)) {
+			return;
+		}
+
+		this.#plugins.add(pluginString);
 		plugin(this);
 	}
 
 	readonly #init = (options: Partial<SignalizeOptions>): void => {
 		this.root = options?.root ?? document;
+
+		if (this.root?.__signalize !== undefined) {
+			throw new Error('Signalize already initialized for the root');
+		}
+
 		this.attributePrefix = options?.attributePrefix ?? '';
 		this.attributeSeparator = options?.attributeSeparator ?? '-';
 		this.globals = options?.globals ?? {};
@@ -79,7 +93,7 @@ export class Signalize {
 		mutationsObserver(this);
 
 		for (const plugin of options?.plugins ?? []) {
-			plugin(this);
+			this.use(plugin);
 		}
 
 		while (readyListeners.length > 0) {
@@ -89,6 +103,8 @@ export class Signalize {
 		this.on('dom:ready', () => {
 			this.observeMutations(this.root);
 		});
+
+		this.root.__signalize = this;
 	}
 }
 

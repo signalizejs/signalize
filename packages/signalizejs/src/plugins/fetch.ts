@@ -28,7 +28,6 @@ export interface PluginOptions {
 export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 	return ($: Signalize) => {
 		const { dispatch } = $;
-
 		$.fetch = async (resource: RequestInfo | URL, options: RequestInit | undefined = {}): Promise<FetchReturn> => {
 			const customOptions = {...options };
 			let response: Response | null = null;

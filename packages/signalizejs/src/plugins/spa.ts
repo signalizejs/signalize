@@ -110,6 +110,8 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					} catch (error) {
 						console.error(error);
 					}
+				} else {
+					dispatch('spa:request:error', { request, ...dispatchEventData });
 				}
 
 				dispatch('spa:request:end', { request, ...dispatchEventData, success: responseData !== null });
@@ -165,17 +167,19 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			}
 
 			if (responseData !== null) {
-				if (typeof document.startViewTransition === 'undefined') {
-					updateDom();
-				} else {
-					dispatch('spa:transition:start', dispatchEventData);
-					const transition = document.startViewTransition(() => updateDom());
-					await transition.ready;
-					dispatch('spa:transition:end', dispatchEventData)
+				try {
+					if (typeof document.startViewTransition === 'undefined') {
+						updateDom();
+					} else {
+						dispatch('spa:transition:start', dispatchEventData);
+						const transition = document.startViewTransition(() => updateDom());
+						await transition.ready;
+						dispatch('spa:transition:end', dispatchEventData)
+					}
+				} catch (e) {
+					console.log(e);
 				}
-			}
 
-			if (responseData !== null) {
 				let urlHash = window.location.hash ?? null;
 
 				const visitScrollStopped = dispatch('spa:visit:beforeScroll') === false;
