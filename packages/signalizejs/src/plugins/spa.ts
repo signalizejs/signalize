@@ -233,6 +233,10 @@ export default (options?: PluginOptions): SignalizePlugin => {
 		}
 
 		const onClick = async (event: CustomEvent): Promise<void> => {
+			if (event.ctrlKey === true || event.metaKey === true) {
+				return;
+			}
+
 			const element = event.target.closest('a') as HTMLAnchorElement;
 			const targetAttribute = element.getAttribute('target');
 
@@ -254,9 +258,12 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			if (parsedOriginalUrl !== null && parsedOriginalUrl.host !== host) {
 				return;
 			}
+
 			const hrefUrl = createUrl(`${window.location.origin}${url}`);
 
-			if (hrefUrl === null || (hrefUrl.pathname === window.location.pathname && hrefUrl.hash !== currentLocation.hash)) {
+			event.preventDefault();
+
+			if (hrefUrl === null || (hrefUrl.pathname === currentLocation.pathname && (hrefUrl.hash.length === 0 || hrefUrl.hash !== currentLocation.hash))) {
 				return;
 			}
 
@@ -269,8 +276,6 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					window.location.href
 				);
 			}
-
-			event.preventDefault();
 
 			const clickCanceled = dispatch('spa:click', { element }) === false;
 

@@ -4,12 +4,12 @@ declare module '..' {
 	interface Signalize {
 		Signal: Signal<any>
 		signal: <T>(defaultValue: T) => Signal<T>
-		observeSignals: <T>(data: Record<string, any> | Signal<any>[]) => UnobserveSignals
+		observeSignals: (data: Record<string, any> | Signal<any>[]) => UnobserveSignals
 	}
 }
 
 type BeforeSetSignalWatcher<T> = (options: SignalWatcherArguments<T>) => { value: T, settable?: boolean } | undefined
-type AfterSetSignalWatcher<T> = (options: SignalWatcherArguments<T>) => void;
+type AfterSetSignalWatcher<T> = (options: SignalWatcherArguments<T>) => void | Promise<void>;
 
 type SignalWatcherExecutionOption = 'beforeSet' | 'afterSet' | 'onGet'
 

@@ -68,21 +68,7 @@ const packages = [
 			}
 		]
 	},
-	{
-		plugins: [typescript()],
-		input: `${signalizeDir}/src/plugins/directives/bind.ts`,
-		treeshake: false,
-		output: [
-			{
-				file: `${signalizeDir}/dist/plugins/directives/bind.js`,
-				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/directives/bind.cjs`,
-				format: 'cjs'
-			}
-		]
-	},
+
 	{
 		plugins: [typescript()],
 		input: `${signalizeDir}/src/plugins/directives/for.ts`,
@@ -109,36 +95,6 @@ const packages = [
 			},
 			{
 				file: `${signalizeDir}/dist/plugins/directives/if.cjs`,
-				format: 'cjs'
-			}
-		]
-	},
-	{
-		plugins: [typescript()],
-		input: `${signalizeDir}/src/plugins/directives/on.ts`,
-		treeshake: false,
-		output: [
-			{
-				file: `${signalizeDir}/dist/plugins/directives/on.js`,
-				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/directives/on.cjs`,
-				format: 'cjs'
-			}
-		]
-	},
-	{
-		plugins: [typescript()],
-		input: `${signalizeDir}/src/plugins/directives/signal.ts`,
-		treeshake: false,
-		output: [
-			{
-				file: `${signalizeDir}/dist/plugins/directives/signal.js`,
-				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/directives/signal.cjs`,
 				format: 'cjs'
 			}
 		]

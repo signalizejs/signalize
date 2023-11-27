@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head snippet="head">
+<head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,14 +10,16 @@
 	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
-<body snippet="body">
+<body>
 	<style>
 		[cloak] {
 			visibility: hidden;
 		}
 	</style>
 
-	<a href="/first.html">First</a>
+	<div snippet="body">
+		<a href="/first.html">First</a>
+	</div>
 
 	<script type="module">
 		import Signalize from 'signalizejs';
@@ -33,11 +35,11 @@
 			]
 		});
 
-		console.log(on);
 		on('dom:ready', () => {
-			alert('fu');
+			console.log('fu');
 		})
 	</script>
+
 
 </body>
 

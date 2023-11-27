@@ -5,7 +5,7 @@ declare module '..' {
 		directive: (name: string, data: Directive) => void
 		getPrerenderedNodes: (element: Element) => Node[]
 		directiveFunction: (options: CreateFunctionOptions) => () => Promise<any>
-		processDirectives: (options?: ProcessDirectiveOptions) => Promise<Element | Document | DocumentFragment>
+		processDirectives: (options?: ProcessDirectiveOptions) => Promise<void>
 		AsyncFunction: () => Promise<any>
 	}
 }
@@ -41,8 +41,8 @@ interface RegisteredDirective extends Directive {
 }
 
 interface ProcessDirectiveOptions {
-	root?: Element
-	directiveName?: string
+	root: Element
+	directives?: string[]
 	mode?: 'init' | 'reinit'
 	onlyRoot?: boolean
 }
@@ -54,8 +54,8 @@ interface CreateFunctionOptions {
 }
 
 interface PluginOptions {
-	renderedBlockStart?: string
-	renderedBlockEnd?: string
+	prerenderedBlockStart?: string
+	prerenderedBlockEnd?: string
 }
 
 export default (pluginOptions?: PluginOptions): SignalizePlugin => {
@@ -66,8 +66,8 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 		const directivesAttribute = `${attributePrefix}directives`;
 		const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
 		const orderAttribute = `${directivesAttribute}${attributeSeparator}order`
-		const renderedTemplateStartComment = pluginOptions?.renderedBlockStart ?? 'prerendered';
-		const renderedTemplateEndComment = pluginOptions?.renderedBlockEnd ?? '/prerendered';
+		const renderedTemplateStartComment = pluginOptions?.prerenderedBlockStart ?? 'prerendered';
+		const renderedTemplateEndComment = pluginOptions?.prerenderedBlockEnd ?? '/prerendered';
 		let inited = false;
 
 		const processElement = async (options?: ProcessElementOptions): Promise<Element> => {
@@ -177,16 +177,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			return element;
 		};
 
-		const processDirectives = async (options?: ProcessDirectiveOptions = {}): Promise<Element | Document | DocumentFragment> => {
-			let { root = $.root, directiveName, mode = 'init', onlyRoot } = options;
-			const directivesToProcess = directiveName === undefined ? Object.keys(directives) : [directiveName];
+		const processDirectives = async (options?: ProcessDirectiveOptions = {}): Promise<void> => {
+			let { root , directives, mode = 'init', onlyRoot } = options;
+			const directivesToProcess = directives ?? Object.keys(directives);
 
-			if (onlyRoot) {
-				return processElement({
-					element: root,
-					mode,
-					directives: directivesToProcess
-				})
+			if (onlyRoot === true) {
+				await processElement({ element: root, mode, directives })
+				return;
 			}
 
 			await $.traverseDom(
@@ -196,16 +193,10 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						return;
 					}
 
-					await processElement({
-						element: node,
-						mode,
-						directives: directivesToProcess
-					});
+					await processElement({ element: node, mode, directives });
 				},
 				[1]
-			})
-
-			return root;
+			);
 		}
 
 		const directive = (name: string, { matcher, callback }: Directive): void => {
@@ -219,7 +210,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			}
 
 			if (inited) {
-				void processDirectives({ directiveName: name })
+				void processDirectives({ root: $.root, directives: [name] })
 			}
 		}
 
@@ -286,6 +277,128 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			return renderedNodes;
 		}
 
+		directive('signal', {
+			matcher: new RegExp(`(?:\\$|${$.attributePrefix}signal${$.attributeSeparator})(\\S+)`),
+			callback: async ({ matches, element, data, attribute }): Promise<void> => {
+				const prepareValue = (value) => {
+					return typeof value === 'string' && value.length > 0 && !isNaN(value)
+						? parseFloat(value)
+						: value;
+				}
+
+				const { signalsToWatch, result } = await $.directiveFunction({
+					functionString: `
+						const __getSignalsToWatch = $.observeSignals($context);
+						const __attrValue = ${attribute.value.length ? attribute.value : "''"};
+						return {
+							result: __attrValue instanceof $.Signal ? __attrValue() : __attrValue,
+							signalsToWatch: __getSignalsToWatch()
+						}
+					`,
+					context: data,
+					element
+				})(data);
+
+				const newSignal = $.signal(prepareValue(result));
+
+				const unwatchSignalCallbacks = [];
+
+				for (const signalToWatch of signalsToWatch) {
+					unwatchSignalCallbacks.push(signalToWatch.watch(async () => {
+						const result = await $.directiveFunction({
+							functionString: `
+								const result = ${attribute.value.length ? attribute.value : "''"};
+								return result instanceof $.Signal ? result() : result;
+							`,
+							context: data,
+							element
+						})(data);
+
+						newSignal.set(prepareValue(result));
+					}))
+				}
+
+				$.scope(element, ({ data, cleanup }) => {
+					data[matches[1]] = newSignal;
+					cleanup(() => {
+						while (unwatchSignalCallbacks.length > 0) {
+							unwatchSignalCallbacks.shift()()
+						}
+					})
+				})
+			}
+		});
+
+		directive('bind', {
+			matcher: ({ element, attribute }) => {
+				if ([':for', ':if'].includes(attribute.name) && element.tagName.toLowerCase() === 'template') {
+					return;
+				}
+
+				return new RegExp(`(?::|${$.attributePrefix}bind${$.attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`)
+			},
+			callback: async ({ matches, element, data, attribute }) => {
+				const isShorthand = attribute.name.startsWith('{');
+				const attributeValue = isShorthand ? matches[3] : attribute.value;
+				const attributeName = isShorthand ? matches[3] : matches[1];
+
+				const signalsToWatch = await $.directiveFunction({
+					functionString: `
+						const __getSignalsToWatch = $.observeSignals($context);
+						const __attrValue = ${attributeValue};
+						typeof __attrValue === 'function' ? __attrValue() : __attrValue;
+						return __getSignalsToWatch();
+					`,
+					context: data,
+					element
+				})(data);
+
+				$.bind(element, {
+					[attributeName]: [
+						...signalsToWatch,
+						async () => await $.directiveFunction({
+							functionString: `
+								const __attrValue = ${attributeValue};
+								return typeof __attrValue === 'function' ? __attrValue() : __attrValue;
+							`,
+							context: data,
+							element
+						})(data)
+					]
+				});
+			}
+		});
+
+		directive('on', {
+			matcher: new RegExp(`(?:\\@|${$.attributePrefix}on${$.attributeSeparator})(\\S+)`),
+			callback: async (scope) => {
+				const { matches, element, data, attribute } = scope;
+
+				$.on(matches[1], element, async (event) => {
+					const context = {
+						$event: event,
+						$element: element,
+						...data
+					}
+
+					const fn = $.directiveFunction({
+						functionString: `
+							const result = ${attribute.value};
+							typeof result === 'function' ? result($event) : result;
+						`,
+						context,
+						element
+					});
+
+					const result = await fn(context);
+
+					if (typeof result === 'function') {
+						result(event);
+					}
+				});
+			}
+		});
+		new Function()
 		on('scope:init', (data) => processElement({ element: data.element }));
 
 		$.AsyncFunction = AsyncFunction;

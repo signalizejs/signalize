@@ -48,11 +48,6 @@
 			"require": "./dist/plugins/directives.cjs",
 			"types": "./dist/plugins/directives.d.ts"
 		},
-		"./directives/bind": {
-			"import": "./dist/plugins/directives/bind.js",
-			"require": "./dist/plugins/directives/bind.cjs",
-			"types": "./dist/plugins/directives/bind.d.ts"
-		},
 		"./directives/for": {
 			"import": "./dist/plugins/directives/for.js",
 			"require": "./dist/plugins/directives/for.cjs",
@@ -62,16 +57,6 @@
 			"import": "./dist/plugins/directives/if.js",
 			"require": "./dist/plugins/directives/if.cjs",
 			"types": "./dist/plugins/directives/if.d.ts"
-		},
-		"./directives/on": {
-			"import": "./dist/plugins/directives/on.js",
-			"require": "./dist/plugins/directives/on.cjs",
-			"types": "./dist/plugins/directives/on.d.ts"
-		},
-		"./directives/signal": {
-			"import": "./dist/plugins/directives/signal.js",
-			"require": "./dist/plugins/directives/signal.cjs",
-			"types": "./dist/plugins/directives/signal.d.ts"
 		},
 		"./h": {
 			"import": "./dist/plugins/h.js",

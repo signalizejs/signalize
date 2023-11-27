@@ -10,13 +10,9 @@ export default defineConfig({
 	resolve: {
 		conditions: ['development', 'browser'],
 		alias: {
-			'signalizejs/asset-loader': `${pluginsDir}/asset-loader.ts`,
 			'signalizejs/dialog': `${pluginsDir}/dialog.ts`,
-			'signalizejs/directives/bind': `${pluginsDir}/directives/bind.ts`,
 			'signalizejs/directives/for': `${pluginsDir}/directives/for.ts`,
 			'signalizejs/directives/if': `${pluginsDir}/directives/if.ts`,
-			'signalizejs/directives/on': `${pluginsDir}/directives/on.ts`,
-			'signalizejs/directives/signal': `${pluginsDir}/directives/signal.ts`,
 			'signalizejs/directives': `${pluginsDir}/directives.ts`,
 			'signalizejs/fetch': `${pluginsDir}/fetch.ts`,
 			'signalizejs/h': `${pluginsDir}/h.ts`,

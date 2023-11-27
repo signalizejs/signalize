@@ -93,7 +93,6 @@ export default ($: Signalize): void => {
 
 			let getListener: CallableFunction | null = null;
 			let setListener: CallableFunction | null = null;
-
 			if (attributeBinderIsSignal) {
 				getListener = () => attributeBinder();
 				setListener = (value) => attributeBinder.set(value);

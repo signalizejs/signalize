@@ -29,9 +29,10 @@ export default ($: Signalize): void => {
 		const nodeRemovedEvent = `${nodeEvent}:removed`;
 		const nodeMovedEvent = `${nodeEvent}:moved`;
 		let callback = options?.callback ?? undefined;
+		const callbackDefined = callback !== undefined;
 
 		const dispatch = (event: string, data: Node): void => {
-			if (callback !== undefined) {
+			if (callbackDefined) {
 				return;
 			}
 
@@ -54,7 +55,6 @@ export default ($: Signalize): void => {
 					if (mutation.removedNodes.length) {
 						removedNodes = [...mutation.removedNodes];
 					}
-
 					for (const node of mutation.removedNodes) {
 						dispatch(
 							($.root instanceof Document ? $.root.contains(node) : $.root.ownerDocument.contains(node))

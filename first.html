@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head snippet="head">
+<head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,29 +10,40 @@
 	<script type="module" src="http://localhost:5173/@vite/client"></script>
 </head>
 
-<body snippet="body">
+<body>
 	<style>
 		[cloak] {
 			visibility: hidden;
 		}
 	</style>
 
-	<a href="/second.html">Second</a>
-
 	<script type="module">
 		import Signalize from 'signalizejs';
 		import fetch from 'signalizejs/fetch';
 		import snippets from 'signalizejs/snippets';
+		import directives from 'signalizejs/directives';
 		import spa from 'signalizejs/spa';
 
-		new Signalize({
+		const { scope } = new Signalize({
 			plugins: [
 				fetch(),
 				snippets(),
-				spa()
+				spa(),
+				directives()
 			]
 		});
+
+		scope('test', ({ data }) => {
+			data.click = () => alert('meh');
+		});
 	</script>
+
+	<div snippet="body">
+		<a href="/second.html">Second</a>
+		<div scope="test">
+			<button @click="click()">Click</button>
+		</div>
+	</div>
 
 </body>
 

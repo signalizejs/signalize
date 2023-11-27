@@ -78,7 +78,7 @@ export default (): SignalizePlugin => {
 						}
 					});
 
-					fragment = await $.processDirectives({ root: fragment });
+					await $.processDirectives({ root: fragment });
 					renderedNodes = [...fragment.childNodes];
 					element.after(fragment);
 					rendered = true;

@@ -50,7 +50,58 @@ export class Signalize {
 	#plugins = new Set();
 
 	constructor (options: Partial<SignalizeOptions> = {}) {
-		this.#init(options);
+		this.root = options?.root ?? document;
+		const readyListeners: CallableFunction[] = [];
+		let inited = false;
+
+		const usePlugins = (signalizeInstance: Signalize, plugins: SignalizePlugin[]) => {
+			for (const plugin of plugins) {
+				signalizeInstance.use(plugin);
+			}
+		}
+
+		if (this.root?.__signalize === undefined) {
+			this.attributePrefix = options?.attributePrefix ?? '';
+			this.attributeSeparator = options?.attributeSeparator ?? '-';
+			this.globals = { ...this.globals, ...options?.globals ?? {} };
+			task(this);
+			dispatch(this);
+			on(this);
+			this.customEventListener('signalize:ready', ({ listener }) => {
+				if (inited) {
+					listener(this);
+					return;
+				}
+				readyListeners.push(listener);
+			});
+			off(this);
+			domReady(this);
+			select(this);
+			traverseDom(this);
+			scope(this);
+			signal(this);
+			bind(this);
+			mutationsObserver(this);
+
+			usePlugins(this, options?.plugins ?? []);
+
+			while (readyListeners.length > 0) {
+				readyListeners.shift()();
+			}
+
+			this.on('dom:ready', () => {
+				this.observeMutations(this.root);
+			});
+
+			this.root.__signalize = this;
+			inited = true;
+		}
+
+		const signalizeInstance = this.root.__signalize;
+		signalizeInstance.globals = { ...signalizeInstance.globals, ...options?.globals ?? {} };
+
+		usePlugins(signalizeInstance, options?.plugins ?? []);
+
 		return this.root.__signalize;
 	}
 
@@ -66,10 +117,10 @@ export class Signalize {
 	}
 
 	readonly #init = (options: Partial<SignalizeOptions>): void => {
-		this.root = options?.root ?? document;
+		/* this.root = options?.root ?? document;
 
 		if (this.root?.__signalize !== undefined) {
-			throw new Error('Signalize already initialized for the root');
+			return;
 		}
 
 		this.attributePrefix = options?.attributePrefix ?? '';
@@ -104,7 +155,7 @@ export class Signalize {
 			this.observeMutations(this.root);
 		});
 
-		this.root.__signalize = this;
+		this.root.__signalize = this; */
 	}
 }
 

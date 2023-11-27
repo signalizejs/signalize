@@ -38,49 +38,21 @@
 		});
 	</script> -->
 
-	<input id="title-input" placeholder="Add Title">
-<input id="content-input" placeholder="Add Content">
+	<script type="module">
+		import Signalize from 'signalizejs';
+		// Import directives core
+		import directives from 'signalizejs/directives';
+		// Import only those directives, you use
+		import forDirective from 'signalizejs/directives/for';
 
-<div id="output"></div>
-
-<script type="module">
-import Signalize from 'signalizejs';
-
-const { Signal, bind } = new Signalize();
-
-// 1. Create article signal
-const article = new Signal({
-	title: 'Hello World!',
-	content: 'Lorem Ipsum'
-});
-
-// 2. Bind article signal to title input
-bind(document.querySelector('#title-input'), {
-	// 2.1 Watch article signal
-	value: [article, {
-		// 2.2 Setter for title proerty
-		set: (title) => article.set({ ...article(), title }),
-		// 2.3 Getter for title property
-		get: () => article().title
-	}]
-});
-
-// 3. Bind article signal to content input
-bind(document.querySelector('#content-input'), {
-	// 3.1 Watch article signal
-	value: [article, {
-		// 3.2 Setter for content property
-		set: (content) => article.set({ ...article(), content }),
-		// 3.3 Getter for content property
-		get: () => article().content
-	}]
-});
-
-// 4. Bind output
-bind(document.querySelector('#output'), {
-	html: [article, () => `Title: ${article().title}<br>Description: ${article().content}` ]
-});
-</script>
+		// Use the directives plugin
+		new Signalize({
+			plugins: [
+				directives(),
+				forDirective()
+			]
+		})
+	</script>
 
 	<!-- <div $count="1">
 		<template :for="i of 1">
