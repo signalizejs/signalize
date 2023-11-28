@@ -62,7 +62,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 	return ($: Signalize) => {
 		const { on, scope, globals, attributePrefix, attributeSeparator } = $;
 		const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
-		const directives: Record<string, RegisteredDirective> = {};
+		const directivesRegister: Record<string, RegisteredDirective> = {};
 		const directivesAttribute = `${attributePrefix}directives`;
 		const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
 		const orderAttribute = `${directivesAttribute}${attributeSeparator}order`
@@ -78,7 +78,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 
 			const elementClosestScope = element.closest(`[${$.scopeAttribute}]`);
 
-			if (elementClosestScope && typeof elementClosestScope[$.scopeKey] === 'undefined') {
+			if (elementClosestScope && scope(elementClosestScope[$.scopeKey]) === undefined) {
 				return element;
 			}
 
@@ -90,7 +90,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 
 			const compiledDirectives = elementScope?.directives ?? new Map();
 
-			let directivesQueue = [...options.directives ?? Object.keys(directives)];
+			let directivesQueue = [...options.directives ?? Object.keys(directivesRegister)];
 			const customDirectivesOrder = element.getAttribute(orderAttribute) ?? '';
 
 			if (customDirectivesOrder.length > 0) {
@@ -107,7 +107,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			if (canCompile) {
 				while (directivesQueue.length && countdown) {
 					const directiveName = directivesQueue.shift();
-					const matcher = directives[directiveName]?.matcher
+					const matcher = directivesRegister[directiveName]?.matcher
 
 					for (const attribute of element.attributes) {
 						if (attribute.name in processedAttributes) {
@@ -137,7 +137,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						countdown--;
 
 						processedAttributes.push(attribute.name);
-						const directive = directives[directiveName];
+						const directive = directivesRegister[directiveName];
 						elementScope.directives.set(
 							directiveName,
 							[
@@ -172,14 +172,12 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				await runDirective(directivesToRun.shift())
 			}
 
-			element.removeAttribute($.cloakAttribute);
-
 			return element;
 		};
 
 		const processDirectives = async (options?: ProcessDirectiveOptions = {}): Promise<void> => {
-			let { root , directives, mode = 'init', onlyRoot } = options;
-			const directivesToProcess = directives ?? Object.keys(directives);
+			let { root, directives, mode = 'init', onlyRoot } = options;
+			directives = directives ?? Object.keys(directivesRegister);
 
 			if (onlyRoot === true) {
 				await processElement({ element: root, mode, directives })
@@ -192,7 +190,6 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 					if (node?.closest(`[${ignoreAttribute}]`)) {
 						return;
 					}
-
 					await processElement({ element: node, mode, directives });
 				},
 				[1]
@@ -200,11 +197,11 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 		}
 
 		const directive = (name: string, { matcher, callback }: Directive): void => {
-			if (name in directives) {
+			if (name in directivesRegister) {
 				throw new Error(`Directive "${name}" already defined.`);
 			}
 
-			directives[name] = {
+			directivesRegister[name] = {
 				callback,
 				matcher: typeof matcher === 'function' ? matcher : () => matcher
 			}
@@ -224,14 +221,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				createFunctionCache[cacheKey] = async (data: Record<string, any>) => {
 					let functionData = { $, ...globals, ...data }
 					try {
-						return new AsyncFunction('$context', '$element', `
+						return new AsyncFunction('$context', '$el', `
 							'use strict';
 							try {
 								let { ${functionDataKeys.join(',')} } = $context;
-
 								${functionString}
 							} catch(e) {
-								console.error($element ?? '', e);
+								console.error($el ?? '', e);
 							}
 						`)(functionData, options.element);
 					} catch (e) {
@@ -285,15 +281,15 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						? parseFloat(value)
 						: value;
 				}
-
+				const fnSharedPart = `
+					let __result = ${attribute.value.length ? attribute.value : "''"};
+					__result = __result instanceof $.Signal ? __result() : __result;
+				`;
 				const { signalsToWatch, result } = await $.directiveFunction({
 					functionString: `
 						const __getSignalsToWatch = $.observeSignals($context);
-						const __attrValue = ${attribute.value.length ? attribute.value : "''"};
-						return {
-							result: __attrValue instanceof $.Signal ? __attrValue() : __attrValue,
-							signalsToWatch: __getSignalsToWatch()
-						}
+						${fnSharedPart}
+						return { result: __result, signalsToWatch: __getSignalsToWatch() }
 					`,
 					context: data,
 					element
@@ -307,14 +303,14 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 					unwatchSignalCallbacks.push(signalToWatch.watch(async () => {
 						const result = await $.directiveFunction({
 							functionString: `
-								const result = ${attribute.value.length ? attribute.value : "''"};
-								return result instanceof $.Signal ? result() : result;
+								${fnSharedPart}
+								return __result;
 							`,
 							context: data,
 							element
 						})(data);
 
-						newSignal.set(prepareValue(result));
+						newSignal(prepareValue(result));
 					}))
 				}
 
@@ -341,12 +337,14 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				const isShorthand = attribute.name.startsWith('{');
 				const attributeValue = isShorthand ? matches[3] : attribute.value;
 				const attributeName = isShorthand ? matches[3] : matches[1];
-
+				const fnSharedPart = `
+					let __result = ${attributeValue};
+					__result = typeof __result === 'function' ? await __result() : __result;
+				`
 				const signalsToWatch = await $.directiveFunction({
 					functionString: `
 						const __getSignalsToWatch = $.observeSignals($context);
-						const __attrValue = ${attributeValue};
-						typeof __attrValue === 'function' ? __attrValue() : __attrValue;
+						${fnSharedPart}
 						return __getSignalsToWatch();
 					`,
 					context: data,
@@ -358,8 +356,8 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						...signalsToWatch,
 						async () => await $.directiveFunction({
 							functionString: `
-								const __attrValue = ${attributeValue};
-								return typeof __attrValue === 'function' ? __attrValue() : __attrValue;
+								${fnSharedPart}
+								return __result;
 							`,
 							context: data,
 							element
@@ -377,7 +375,6 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				$.on(matches[1], element, async (event) => {
 					const context = {
 						$event: event,
-						$element: element,
 						...data
 					}
 
@@ -398,7 +395,6 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				});
 			}
 		});
-		new Function()
 		on('scope:init', (data) => processElement({ element: data.element }));
 
 		$.AsyncFunction = AsyncFunction;

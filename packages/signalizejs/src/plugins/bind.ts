@@ -95,7 +95,7 @@ export default ($: Signalize): void => {
 			let setListener: CallableFunction | null = null;
 			if (attributeBinderIsSignal) {
 				getListener = () => attributeBinder();
-				setListener = (value) => attributeBinder.set(value);
+				setListener = (value) => attributeBinder(value);
 			} else {
 				if (typeof attributeBinder?.get === 'function') {
 					getListener = () => attributeBinder.get();
@@ -109,12 +109,12 @@ export default ($: Signalize): void => {
 					if (typeof attributeBinder === 'function') {
 						getListener = () => attributeBinder();
 					} else if (signalsToWatch.length === 1) {
-						getListener = () => signalsToWatch[0].get();
+						getListener = () => signalsToWatch[0]();
 					}
 				}
 
 				if (setListener === null && signalsToWatch.length === 1) {
-					setListener = (value) => signalsToWatch[0].set(value);
+					setListener = (value) => signalsToWatch[0](value);
 				}
 			}
 

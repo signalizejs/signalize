@@ -17,6 +17,7 @@ export default (): SignalizePlugin => {
 
 				const forLoopRe = /([\s\S]+)\s+(in|of)\s+([\s\S]+)/;
 				const argumentsMatch = attribute.value.match(forLoopRe);
+				const fnSharedPart = `const __result = typeof ${argumentsMatch[3]} === 'function' ? await ${argumentsMatch[3]}() : ${argumentsMatch[3]}`
 
 				if (argumentsMatch.length < 4) {
 					throw new Error(`Invalid for loop syntax "${attribute.value}".`);
@@ -24,15 +25,6 @@ export default (): SignalizePlugin => {
 
 				const newContextVariables: string[] = argumentsMatch[1].replace(/[[({})\]\s]/g, '').split(',');
 
-				const stackFn = $.directiveFunction({
-					functionString: `return typeof ${argumentsMatch[3]} === 'function' ? ${argumentsMatch[3]}() : ${argumentsMatch[3]};`,
-					context: data,
-					element
-				});
-
-				let signalsToWatch = [];
-				let inited = false;
-				let getUsedSignals;
 				let currentState = $.getPrerenderedNodes(element);
 				let prerendered = currentState.length > 0;
 				let nextElementSibling = element.nextElementSibling;
@@ -52,19 +44,39 @@ export default (): SignalizePlugin => {
 					}
 				}
 
+				let inited = false;
+				let loopSignalsToWatch = [];
+
 				const process = async (): Promise<void> => {
-					if (!inited) {
-						getUsedSignals = $.observeSignals(data);
-					}
-
-					let stack = await stackFn(data);
+					let stack;
 
 					if (!inited) {
-						signalsToWatch = getUsedSignals();
+						const { result, signalsToWatch } = await $.directiveFunction({
+							functionString: `
+								const __getSignalsToWatch = $.observeSignals($context);
+								${fnSharedPart}
+								return { result: __result, signalsToWatch: __getSignalsToWatch() }
+							`,
+							context: data,
+							element
+						})(data);
+
+						stack = result;
+						loopSignalsToWatch = signalsToWatch;
 						inited = true;
+
 						if (prerendered) {
 							return;
 						}
+					} else {
+						stack = await $.directiveFunction({
+							functionString: `
+								${fnSharedPart}
+								return __result;
+							`,
+							context: data,
+							element
+						})(data);
 					}
 
 					if (prerendered) {
@@ -160,14 +172,18 @@ export default (): SignalizePlugin => {
 							} else if (currentState.length > 0 && counter < currentState.length) {
 								$.scope(currentState[counter], ({ data }) => {
 									for (const [key, value] of Object.entries({ ...destruct, iterator })) {
-										data[key].set(value());
+										const valueToSet = value instanceof $.Signal ? value() : value;
+										if (data[key] instanceof $.Signal) {
+											data[key](valueToSet);
+										} else {
+											data[key] = valueToSet;
+										}
 									}
 								});
 							} else if (currentState.length === 0 || counter >= currentState.length) {
 								lastInsertPoint.after(fragment);
 								currentState.push(fragment);
 								lastInsertPoint = fragment;
-
 								for (const child of fragment.children) {
 									void $.processDirectives({ root: child });
 								}
@@ -202,7 +218,7 @@ export default (): SignalizePlugin => {
 
 				const unwatchSignalCallbacks = [];
 
-				for (const signalToWatch of signalsToWatch) {
+				for (const signalToWatch of loopSignalsToWatch) {
 					unwatchSignalCallbacks.push(signalToWatch.watch(process))
 				}
 

@@ -34,8 +34,6 @@ interface SignalWatchers extends Record<SignalWatcherExecutionOption, Set<Callab
 export interface Signal<T> {
 	value: T
 	watchers: SignalWatchers
-	get: () => T
-	set: (newValue: T) => void
 	watch: (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options?: SignalWatcherOptions) => SignalUnwatch
 	toString: () => string
 	valueOf: () => T
@@ -61,13 +59,17 @@ export default ($: Signalize): void => {
 			this.value = defaultValue ?? undefined;
 
 			return new Proxy(this, {
-				apply: () => {
-					return this.get()
+				apply: (target, thisArg, args) => {
+					if (args.length === 1) {
+						this.#set(args[0]);
+						return this.value;
+					}
+					return this.#get();
 				}
 			});
 		}
 
-		get = (): T => {
+		readonly #get = (): T => {
 			for (const watcher of this.watchers.onGet) {
 				watcher({ newValue: this.value, oldValue: this.value });
 			}
@@ -75,7 +77,7 @@ export default ($: Signalize): void => {
 			return this.value;
 		}
 
-		set = (newValue: T): void => {
+		readonly #set = (newValue: T): void => {
 			const oldValue = this.value;
 
 			let settable = true;
@@ -125,15 +127,15 @@ export default ($: Signalize): void => {
 		}
 
 		toString = (): string => {
-			return String(this.get())
+			return String(this.#get())
 		}
 
 		toJSON = (): T => {
-			return this.get();
+			return this.#get();
 		}
 
 		valueOf = (): T => {
-			return this.get();
+			return this.#get();
 		}
 	}
 

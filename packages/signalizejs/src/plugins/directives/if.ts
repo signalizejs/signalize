@@ -11,14 +11,10 @@ export default (): SignalizePlugin => {
 				return new RegExp(`(?::|${$.attributePrefix})if`);
 			},
 			callback: async ({ element, data, attribute }) => {
-				const fn = $.directiveFunction({
-					functionString: `
-						const result = ${attribute.value};
-						return typeof result === 'function' ? result() : result;
-					`,
-					context: data,
-					element
-				});
+				const fnSharedPart = `
+					let __result = ${attribute.value};
+					__result = typeof __result === 'function' ? await __result() : __result;
+				`
 
 				let nextSibling = element.nextSibling;
 				const nextSiblingScope = $.scope(nextSibling);
@@ -35,22 +31,36 @@ export default (): SignalizePlugin => {
 					}
 				}
 				let inited = false;
-				let signalsToWatch;
-				let getSignalsToWatch = null;
+				let ifSignalsToWatch = [];
 
 				const render = async (): Promise<void> => {
+					let conditionResult;
 					if (!inited) {
-						getSignalsToWatch = $.observeSignals(data);
-					}
-					const conditionResult = await fn(data);
-
-					if (!inited) {
-						signalsToWatch = getSignalsToWatch();
+						const { result, signalsToWatch } = await $.directiveFunction({
+							functionString: `
+								const __getSignalsToWatch = $.observeSignals($context);
+								${fnSharedPart}
+								return { result: __result, signalsToWatch: __getSignalsToWatch() }
+							`,
+							context: data,
+							element
+						})(data);
+						conditionResult = result;
+						ifSignalsToWatch = signalsToWatch;
 						inited = true;
 
 						if (rendered) {
 							return;
 						}
+					} else {
+						conditionResult = await $.directiveFunction({
+							functionString: `
+								${fnSharedPart}
+								return __result;
+							`,
+							context: data,
+							element
+						})(data);
 					}
 
 					if (conditionResult === previousResult) {
@@ -88,8 +98,8 @@ export default (): SignalizePlugin => {
 
 				const unwatchSignalCallbacks = [];
 
-				while (signalsToWatch.length) {
-					unwatchSignalCallbacks.push(signalsToWatch.shift().watch(render));
+				while (ifSignalsToWatch.length) {
+					unwatchSignalCallbacks.push(ifSignalsToWatch.shift().watch(render));
 				}
 
 				$.scope(element).cleanup(() => {

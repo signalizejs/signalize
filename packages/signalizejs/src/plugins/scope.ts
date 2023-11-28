@@ -29,9 +29,9 @@ export interface Scope {
 export default ($: Signalize): void => {
 	const { on } = $;
 
-	$.cloakAttribute = 'cloak';
+	const scopeKey = '__signalizeScope';
+	$.cloakAttribute = `${$.attributePrefix}cloak`;
 	$.scopeAttribute = `${$.attributePrefix}scope`;
-	$.scopeKey = '__signalizeScope';
 
 	const scopeInitListeners = [];
 	$.customEventListener('scope:init', ({ listener }) => {
@@ -53,7 +53,7 @@ export default ($: Signalize): void => {
 			initializer: ScopeInitFunction
 		}) {
 			this.element = element;
-			this.element[$.scopeKey] = this;
+			this.element[scopeKey] = this;
 			this.initPromise = initializer(this);
 		}
 
@@ -67,14 +67,14 @@ export default ($: Signalize): void => {
 					return data;
 				}
 
-				return {...data, ...scope(element)?.data ?? getScopedData(element.parentNode, data)}
+				return { ...data, ...scope(element)?.data ?? getScopedData(element.parentNode, data) }
 			}
 			const getParentData = (element, key: string): any => {
 				if (element === null) {
 					return;
 				}
 
-				return element[$.scopeKey] === undefined ? getParentData(element.parentNode, key) : scope(element).data[key];
+				return element[scopeKey] === undefined ? getParentData(element.parentNode, key) : scope(element).data[key];
 			}
 
 			const setParentData = (element, key: string, value: any) => {
@@ -82,7 +82,7 @@ export default ($: Signalize): void => {
 					return false;
 				}
 
-				if (element[$.scopeKey] !== undefined) {
+				if (element[scopeKey] !== undefined) {
 					scope(element).data[key] = value;
 				} else {
 					setParentData(element.parentNode, key, value);
@@ -153,37 +153,39 @@ export default ($: Signalize): void => {
 			definedScopes[nameOrElement] = init;
 			$.dispatch('scope:defined', { name: nameOrElement });
 		} else if (typeof init === 'function') {
-			if (nameOrElement[$.scopeKey] === undefined) {
-				nameOrElement[$.scopeKey] = new ElementScope({
+			if (nameOrElement[scopeKey] === undefined) {
+				nameOrElement[scopeKey] = new ElementScope({
 					element: nameOrElement,
 					initializer: init
 				})
 			} else {
-				init(nameOrElement[$.scopeKey]);
+				init(nameOrElement[scopeKey]);
 			}
 		}
 
-		return nameOrElement[$.scopeKey];
+		return nameOrElement[scopeKey];
 	};
 
 	const traverseDomTree = async (root: Element): Promise<void> => {
 		await $.traverseDom(
 			root,
-			async (node: Element): Promise<void> => {
+			async (element: Element): Promise<void> => {
 				let rootScope;
-				let nodeScopeName = node.getAttribute($.scopeAttribute)
+				let nodeScopeName = element.getAttribute($.scopeAttribute)
 
-				if (node instanceof HTMLElement && nodeScopeName && nodeScopeName in definedScopes) {
-					rootScope = scope(node, definedScopes[nodeScopeName]);
+				if (nodeScopeName && nodeScopeName in definedScopes) {
+					rootScope = scope(element, definedScopes[nodeScopeName]);
 					await rootScope.initPromise;
 				}
 
 				const listenerPromises = [];
 				for (const scopeInitListener of scopeInitListeners) {
-					listenerPromises.push(scopeInitListener({element: node, scope: rootScope }));
+					listenerPromises.push(scopeInitListener({ element, scope: rootScope }));
 				}
 
 				await Promise.all(listenerPromises);
+
+				element.removeAttribute($.cloakAttribute);
 			},
 			[1]
 		);
