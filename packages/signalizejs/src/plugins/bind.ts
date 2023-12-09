@@ -7,7 +7,7 @@ declare module '..' {
 }
 
 export default ($: Signalize): void => {
-	const { scope, on, Signal, Scope } = $;
+	const { vnode, on, Signal } = $;
 
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
@@ -136,13 +136,10 @@ export default ($: Signalize): void => {
 			}
 		}
 
-		const elementScope = scope(element);
-		if (elementScope instanceof Scope) {
-			elementScope.cleanup(() => {
-				for (const unwatch of unwatchSignalCallbacks) {
-					unwatch();
-				}
-			})
-		}
+		vnode(element).cleanup(() => {
+			for (const unwatch of unwatchSignalCallbacks) {
+				unwatch();
+			}
+		});
 	}
 }

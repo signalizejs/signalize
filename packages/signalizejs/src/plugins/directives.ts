@@ -60,8 +60,7 @@ interface PluginOptions {
 
 export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 	return ($: Signalize) => {
-		const { on, scope, globals, attributePrefix, attributeSeparator } = $;
-		const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
+		const { on, vnode, attributePrefix, attributeSeparator } = $;
 		const directivesRegister: Record<string, RegisteredDirective> = {};
 		const directivesAttribute = `${attributePrefix}directives`;
 		const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
@@ -75,13 +74,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			const mode = options.mode ?? 'init';
 			const canExecute = ['reinit', 'init'].includes(mode);
 			const canCompile = mode === 'init';
-			let elementScope = scope(element);
+			let elementVnode = vnode(element);
 
 			if (mode === 'reinit') {
-				elementScope.cleanup();
+				elementVnode.cleanup();
 			}
 
-			const compiledDirectives = elementScope?.directives ?? new Map();
+			const compiledDirectives = elementVnode?.directives ?? new Map();
 
 			let directivesQueue = [...options.directives ?? Object.keys(directivesRegister)];
 			const customDirectivesOrder = element.getAttribute(orderAttribute) ?? '';
@@ -118,27 +117,24 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 							continue;
 						}
 
-						scope(element, (newScope) => {
-							if (newScope.directives === undefined) {
-								newScope.directives = new Map();
-							}
+						elementVnode = vnode(element);
 
-							if (elementScope === undefined) {
-								elementScope = newScope;
-							}
-						});
+						if (elementVnode?.directives === undefined) {
+							elementVnode.directives = new Map();
+						}
+
 						countdown--;
 
 						processedAttributes.push(attribute.name);
 						const directive = directivesRegister[directiveName];
-						elementScope.directives.set(
+						elementVnode.directives.set(
 							directiveName,
 							[
-								...elementScope.directives.get(directiveName) ?? [],
-								(elementScope) => {
+								...elementVnode.directives.get(directiveName) ?? [],
+								(elementVnode) => {
 									return directive.callback({
-										...elementScope,
-										data: elementScope.data,
+										...elementVnode,
+										data: element.closest('[component]'),
 										matches,
 										attribute
 									})
@@ -149,13 +145,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				}
 			}
 
-			const directivesToRun = [...elementScope?.directives?.keys() ?? []]
+			const directivesToRun = [...elementVnode?.directives?.keys() ?? []]
 
 			const runDirective = async (name: string): Promise<void> => {
 				const promises = [];
 
-				for (const directiveFunction of elementScope.directives.get(name)) {
-					promises.push(directiveFunction(elementScope));
+				for (const directiveFunction of elementVnode.directives.get(name)) {
+					promises.push(directiveFunction(elementVnode));
 				}
 
 				await Promise.all(promises);
@@ -204,34 +200,6 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			}
 		}
 
-		const createFunctionCache = {};
-
-		const createFunction = (options: CreateFunctionOptions): typeof AsyncFunction => {
-			const { functionString, context = {} } = options;
-			const cacheKey = `${options.functionString.replace(/\s*/g, '_')}-${Object.keys(options.context).join('-')}`;
-			if (!(cacheKey in createFunctionCache)) {
-				const functionDataKeys = Object.keys({ $, ...globals, ...context });
-				createFunctionCache[cacheKey] = async (data: Record<string, any>) => {
-					let functionData = { $, ...globals, ...data }
-					try {
-						return new AsyncFunction('$context', '$el', `
-							'use strict';
-							try {
-								let { ${functionDataKeys.join(',')} } = $context;
-								${functionString}
-							} catch(e) {
-								console.error($el ?? '', e);
-							}
-						`)(functionData, options.element);
-					} catch (e) {
-						console.error(options.element ?? '', e);
-					}
-					return null
-				}
-			}
-			return createFunctionCache[cacheKey];
-		}
-
 		const getPrerenderedNodes = (element: Element): Node[] => {
 			const renderedNodes = [];
 			let renderedTemplateSibling = element.nextSibling;
@@ -266,58 +234,6 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			return renderedNodes;
 		}
 
-		directive('signal', {
-			matcher: new RegExp(`(?:\\$|${$.attributePrefix}signal${$.attributeSeparator})(\\S+)`),
-			callback: async ({ matches, element, data, attribute }): Promise<void> => {
-				const prepareValue = (value) => {
-					return typeof value === 'string' && value.length > 0 && !isNaN(value)
-						? parseFloat(value)
-						: value;
-				}
-				const fnSharedPart = `
-					let __result = ${attribute.value.length ? attribute.value : "''"};
-					__result = __result instanceof $.Signal ? __result() : __result;
-				`;
-				const { signalsToWatch, result } = await $.directiveFunction({
-					functionString: `
-						const __getSignalsToWatch = $.observeSignals($context);
-						${fnSharedPart}
-						return { result: __result, signalsToWatch: __getSignalsToWatch() }
-					`,
-					context: data,
-					element
-				})(data);
-
-				const newSignal = $.signal(prepareValue(result));
-
-				const unwatchSignalCallbacks = [];
-
-				for (const signalToWatch of signalsToWatch) {
-					unwatchSignalCallbacks.push(signalToWatch.watch(async () => {
-						const result = await $.directiveFunction({
-							functionString: `
-								${fnSharedPart}
-								return __result;
-							`,
-							context: data,
-							element
-						})(data);
-
-						newSignal(prepareValue(result));
-					}))
-				}
-
-				$.scope(element, ({ data, cleanup }) => {
-					data[matches[1]] = newSignal;
-					cleanup(() => {
-						while (unwatchSignalCallbacks.length > 0) {
-							unwatchSignalCallbacks.shift()()
-						}
-					})
-				})
-			}
-		});
-
 		directive('bind', {
 			matcher: ({ element, attribute }) => {
 				if ([':for', ':if'].includes(attribute.name) && element.tagName.toLowerCase() === 'template') {
@@ -326,35 +242,24 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 
 				return new RegExp(`(?::|${$.attributePrefix}bind${$.attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`)
 			},
-			callback: async ({ matches, element, data, attribute }) => {
+			callback: async ({ matches, node, data, attribute }) => {
 				const isShorthand = attribute.name.startsWith('{');
 				const attributeValue = isShorthand ? matches[3] : attribute.value;
 				const attributeName = isShorthand ? matches[3] : matches[1];
-				const fnSharedPart = `
-					let __result = ${attributeValue};
-					__result = typeof __result === 'function' ? await __result() : __result;
-				`
-				const signalsToWatch = await $.directiveFunction({
-					functionString: `
-						const __getSignalsToWatch = $.observeSignals($context);
-						${fnSharedPart}
-						return __getSignalsToWatch();
-					`,
-					context: data,
-					element
-				})(data);
+				const dataValue = data[attributeValue];
 
-				$.bind(element, {
+				const processDataValue = () => {
+					return typeof dataValue === 'function' ? dataValue() : dataValue;
+				}
+
+ 				const getSignalsToWatch = $.observeSignals(data);
+				processDataValue();
+				const signalsToWatch = getSignalsToWatch();
+
+				$.bind(node, {
 					[attributeName]: [
 						...signalsToWatch,
-						async () => await $.directiveFunction({
-							functionString: `
-								${fnSharedPart}
-								return __result;
-							`,
-							context: data,
-							element
-						})(data)
+						processDataValue
 					]
 				});
 			}
@@ -363,36 +268,19 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 		directive('on', {
 			matcher: new RegExp(`(?:\\@|${$.attributePrefix}on${$.attributeSeparator})(\\S+)`),
 			callback: async (scope) => {
-				const { matches, element, data, attribute } = scope;
+				console.log(scope);
+				const { matches, node, data, attribute } = scope;
 
-				$.on(matches[1], element, async (event) => {
-					const context = {
-						$event: event,
-						...data
-					}
-
-					const fn = $.directiveFunction({
-						functionString: `
-							const result = ${attribute.value};
-							typeof result === 'function' ? result($event) : result;
-						`,
-						context,
-						element
-					});
-
-					const result = await fn(context);
-
-					if (typeof result === 'function') {
-						result(event);
-					}
+				$.on(matches[1], node, async (event) => {
+					data[attribute.value](event);
 				});
 			}
 		});
 
-		on('scope:init', (data) => processElement({ element: data.element }));
+		on('component:constructed', (event) => {
+			processDirectives({ root: event.detail })
+		});
 
-		$.AsyncFunction = AsyncFunction;
-		$.directiveFunction = createFunction;
 		$.getPrerenderedNodes = getPrerenderedNodes;
 		$.processDirectives = processDirectives;
 		$.directive = directive;

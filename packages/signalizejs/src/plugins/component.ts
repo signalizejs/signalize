@@ -25,7 +25,7 @@ export interface ComponentOptions {
 }
 
 export default ($: Signalize): void => {
-	const { signal, select, selectAll, dashCase } = $;
+	const { signal, select, selectAll, dashCase, dispatch } = $;
 
 	const refAttribute = `${$.attributePrefix}ref`;
 	const componentAttribute = `${$.attributePrefix}component`;
@@ -64,7 +64,6 @@ export default ($: Signalize): void => {
 
 			constructor () {
 				super();
-
 				this.#constructPromise = this.#construct();
 			}
 
@@ -74,7 +73,7 @@ export default ($: Signalize): void => {
 				}
 
 				if (options?.construct !== undefined) {
-					const data = await options.construct.call(this);
+					const data = await options?.construct?.call(this);
 
 					for (const [key, value] of Object.entries(data ?? {})) {
 						this[key] = value;
@@ -119,13 +118,14 @@ export default ($: Signalize): void => {
 				this.setAttribute(componentAttribute, name);
 
 				await options?.constructed?.call(this);
+				dispatch('component:constructed', this);
 			}
 
 			static get observedAttributes (): string[] {
 				return observableAttributes;
 			}
 
-			attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+			attributeChangedCallback (name: string, oldValue: string, newValue: string) {
 				if (observableAttributes.includes(name)) {
 					const currentProperty = this[attributesPropertiesMap[name]];
 					currentProperty(
@@ -136,16 +136,16 @@ export default ($: Signalize): void => {
 
 			async connectedCallback (): void {
 				await this.#constructPromise;
-				await options?.connected.call(this);
+				await options?.connected?.call(this);
 				this.removeAttribute(cloakAttribute);
 			}
 
 			disconnectedCallback (): void {
-				options?.disconnected.call(this);
+				options?.disconnected?.call(this);
 			}
 
 			adoptedCallback (): void {
-				options?.adopted.call(this);
+				options?.adopted?.call(this);
 			}
 
 			$parent = (name?: string): Element | null => {
