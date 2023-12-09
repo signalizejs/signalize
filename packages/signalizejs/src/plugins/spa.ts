@@ -3,17 +3,20 @@ import type { FetchReturn } from './fetch';
 
 declare module '..' {
 	interface Signalize {
-		visit: (data: VisitData) => Promise<SpaDispatchEventData>
+		navigate: (data: NavigationData) => Promise<SpaDispatchEventData>
 	}
 
 	interface CustomEventListeners {
-		'spa:visit:start': CustomEventListener
+		'spa:navigation:start': CustomEventListener
 		'spa:request:start': CustomEventListener
 		'spa:request:end': CustomEventListener
 		'spa:app-version:changed': CustomEventListener
+		'spa:redraw:start': CustomEventListener
 		'spa:transition:start': CustomEventListener
 		'spa:transition:end': CustomEventListener
-		'spa:visit:end': CustomEventListener
+		'spa:redraw:end': CustomEventListener
+		'spa:navigation:end': CustomEventListener
+		'spa:page:ready': CustomEventListener
 		'spa:popstate': CustomEventListener
 		'spa:click': CustomEventListener
 	}
@@ -21,18 +24,18 @@ declare module '..' {
 
 type StateAction = 'push' | 'replace';
 
-interface VisitData {
+interface NavigationData {
 	url: string | URL
 	scrollX?: number
 	scrollY?: number
 	stateAction?: StateAction
 }
 
-interface SpaHistoryState extends Partial<VisitData> {
+interface SpaHistoryState extends Partial<NavigationData> {
 	spa?: true
 }
 
-interface SpaDispatchEventData extends VisitData {
+interface SpaDispatchEventData extends NavigationData {
 	success?: boolean
 }
 
@@ -56,6 +59,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 		const spaAppVersionHeader = options?.appVersionHeader ?? 'X-Spa-App-Version';
 
 		let currentLocation = new URL(window.location.href);
+		let abortNavigationController: AbortController;
 		const spaVersion = null;
 		const host = window.location.host;
 		const responseCache: ResponseCache = {};
@@ -79,13 +83,19 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			return true;
 		}
 
-		const visit = async (data: VisitData): Promise<SpaDispatchEventData> => {
+		const navigate = async (data: NavigationData): Promise<SpaDispatchEventData> => {
 			const dispatchEventData: SpaDispatchEventData = {
 				...data,
 				success: undefined
 			}
 
-			dispatch('spa:visit:start', { ...dispatchEventData });
+			if (abortNavigationController !== undefined) {
+				abortNavigationController.abort();
+			}
+
+			abortNavigationController = new AbortController();
+
+			dispatch('spa:navigation:start', { ...dispatchEventData });
 
 			const { url, stateAction } = data;
 
@@ -101,7 +111,9 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			} else {
 				dispatch('spa:request:start', { ...dispatchEventData });
 
-				request = await fetch(urlString);
+				request = await fetch(urlString, {
+					signal: abortNavigationController.signal
+				});
 				const requestIsWithoutErroor = request.error === null;
 
 				if (requestIsWithoutErroor) {
@@ -167,6 +179,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			}
 
 			if (responseData !== null) {
+				dispatch('spa:redraw:start', dispatchEventData);
 				try {
 					if (typeof document.startViewTransition === 'undefined') {
 						updateDom();
@@ -179,12 +192,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				} catch (e) {
 					console.log(e);
 				}
+				dispatch('spa:redraw:end', dispatchEventData);
 
 				let urlHash = window.location.hash ?? null;
 
-				const visitScrollStopped = dispatch('spa:visit:beforeScroll') === false;
+				const navigationScrollStopped = dispatch('spa:navigation:beforeScroll') === false;
 
-				if (!visitScrollStopped) {
+				if (!navigationScrollStopped) {
 					if (urlHash !== null && urlHash.trim().length > 2) {
 						urlHash = urlHash.slice(1);
 						const element = select(`#${urlHash}`);
@@ -202,10 +216,10 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				currentLocation = new URL(window.location.href);
 			}
 
-			const visitEndData = { ...dispatchEventData, success: responseData !== null };
-			dispatch('spa:visit:end', visitEndData);
-
-			return visitEndData;
+			const navigationEndData = { ...dispatchEventData, success: responseData !== null };
+			dispatch('spa:navigation:end', navigationEndData);
+			dispatch('spa:page:ready', navigationEndData);
+			return navigationEndData;
 		}
 
 		const onPopState = (): void => {
@@ -221,15 +235,15 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				return;
 			}
 
-			const visitConfig: VisitData = {
+			const navigationConfig: NavigationData = {
 				url: location,
 				scrollX: state.scrollX,
 				scrollY: state.scrollY
 			};
 
-			dispatch('spa:popstate', visitConfig);
+			dispatch('spa:popstate', navigationConfig);
 
-			void visit(visitConfig);
+			void navigate(navigationConfig);
 		}
 
 		const onClick = async (event: CustomEvent): Promise<void> => {
@@ -261,21 +275,11 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 			const hrefUrl = createUrl(`${window.location.origin}${url}`);
 
-			event.preventDefault();
-
-			if (hrefUrl === null || (hrefUrl.pathname === currentLocation.pathname && (hrefUrl.hash.length === 0 || hrefUrl.hash !== currentLocation.hash))) {
+			if (hrefUrl === null || hrefUrl.pathname === currentLocation.pathname) {
 				return;
 			}
 
-			if (window.history.state === null) {
-				window.history.replaceState(
-					{
-						spa: true, scrollX: window.scrollX, scrollY: window.scrollY
-					},
-					'',
-					window.location.href
-				);
-			}
+			event.preventDefault();
 
 			const clickCanceled = dispatch('spa:click', { element }) === false;
 
@@ -283,18 +287,30 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				return;
 			}
 
-			void visit({
+			void navigate({
 				url,
 				stateAction: (element.getAttribute(spaStateActionAttribute) ?? 'push') as StateAction
 			});
 		}
 
 		on('dom:ready', () => {
+			const currentState = {
+				spa: true,
+				scrollX: window.scrollX,
+				scrollY: window.scrollY
+			};
+
+			if (window.history.state === null) {
+				window.history.replaceState(currentState, '', window.location.href);
+			}
+
+			dispatch('spa:page:ready', { ...currentState, success: true });
+
 			on('click', `a[href], [${spaUrlAttribute}]`, onClick);
 
 			window.addEventListener('popstate', onPopState);
 		});
 
-		$.visit = visit;
+		$.navigate = navigate;
 	}
 }

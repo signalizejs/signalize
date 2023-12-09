@@ -1,4 +1,4 @@
-import type { Signalize, SignalizePlugin } from '..';
+import type { Signalize } from '..';
 import type { Selectable } from './select';
 
 declare module '..' {
@@ -23,8 +23,8 @@ export type EventTarget = string | NodeListOf<Element> | Element[] | Element | W
 export type CustomEventListener = (args: CustomEventListenerArgs) => void;
 
 export interface CustomEventListenerArgs {
-	target: Element,
-	listener: CallableFunction,
+	target: Element
+	listener: CallableFunction
 	options: AddEventListenerOptions
 	event: string
 }
@@ -56,11 +56,19 @@ export default ($: Signalize): void => {
 			}, options);
 		},
 		remove: ({ target, listener }) => {
-			on('dom:mutation:node:removed', (event: CustomEvent) => {
-				if (event.detail === target) {
-					listener();
+			const observer = $.observeMutations(
+				target,
+				(event, node): void => {
+					if (node === target && event === 'dom:mutation:node:removed') {
+						listener();
+						observer.disconnect();
+					}
+				},
+				{
+					attributes: false,
+					subtree: false
 				}
-			}, { once: true });
+			);
 		}
 	}
 

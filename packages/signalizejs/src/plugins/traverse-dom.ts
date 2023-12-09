@@ -14,7 +14,10 @@ export default ($: Signalize): void => {
 		const processNode = async (node: Node): Promise<void> => {
 			node = node instanceof Document ? node.documentElement : node;
 			if (canProcess(node)) {
-				await callback(node);
+				const result = await callback(node);
+				if (result !== undefined) {
+					return;
+				}
 			}
 
 			const childPromises = [];

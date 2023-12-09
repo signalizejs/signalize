@@ -34,7 +34,6 @@ export default ($: Signalize): void => {
 
 	$.bind = (element, attributes) => {
 		const unwatchSignalCallbacks: CallableFunction[] = [];
-		const elementScope = scope(element);
 
 		for (let [attr, attrOptions] of Object.entries(attributes)) {
 			if (attrOptions.length === 1) {
@@ -137,6 +136,7 @@ export default ($: Signalize): void => {
 			}
 		}
 
+		const elementScope = scope(element);
 		if (elementScope instanceof Scope) {
 			elementScope.cleanup(() => {
 				for (const unwatch of unwatchSignalCallbacks) {

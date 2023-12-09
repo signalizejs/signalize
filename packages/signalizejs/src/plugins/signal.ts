@@ -38,13 +38,12 @@ export interface Signal<T> {
 	toString: () => string
 	valueOf: () => T
 	toJSON: () => T
-
 }
 
 type UnobserveSignals = () => Signal<any>[];
 
 export default ($: Signalize): void => {
-	class SignalStructure<T = any> extends Function implements Signal<T> {
+	class Signal<T = any> extends Function implements Signal<T> {
 		value: T;
 		watchers: SignalWatchers = {
 			beforeSet: new Set(),
@@ -109,10 +108,9 @@ export default ($: Signalize): void => {
 		}
 
 		watch = (listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options: SignalWatcherOptions = {}): SignalUnwatch => {
-			const immediate = options.immediate ?? false;
 			const execution = options.execution ?? 'afterSet';
 
-			if (immediate) {
+			if (options.immediate ?? false) {
 				const watcherData = listener({ newValue: this.value });
 				if (typeof watcherData !== 'undefined' && execution === 'beforeSet' && (watcherData.settable ?? true)) {
 					this.value = watcherData.value;
@@ -145,7 +143,7 @@ export default ($: Signalize): void => {
 		const detectedSignals = [];
 
 		for (const signalDataItem of Array.isArray(data) ? data : Object.values(data)) {
-			if (!(signalDataItem instanceof SignalStructure)) {
+			if (!(signalDataItem instanceof Signal)) {
 				continue;
 			}
 
@@ -170,7 +168,7 @@ export default ($: Signalize): void => {
 		}
 	}
 
-	$.Signal = SignalStructure;
-	$.signal = <T>(defaultValue: T): Signal<T> => new SignalStructure(defaultValue);
+	$.Signal = Signal;
+	$.signal = <T>(defaultValue: T): Signal<T> => new Signal(defaultValue);
 	$.observeSignals = observeSignals
 }

@@ -34,7 +34,7 @@ export default (): SignalizePlugin => {
 				if (child instanceof Element || child instanceof Node) {
 					result.push(child);
 				} else if (child instanceof $.Signal) {
-					result.push(...normalizeChild(child.get()));
+					result.push(...normalizeChild(child()));
 					child.watch(({ newValue }) => {
 						const newNormalizedChildren = normalizeChild(newValue);
 						for (const newNormalizedChild of newNormalizedChildren) {

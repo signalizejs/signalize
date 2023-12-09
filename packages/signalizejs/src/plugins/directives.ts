@@ -75,13 +75,6 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			const mode = options.mode ?? 'init';
 			const canExecute = ['reinit', 'init'].includes(mode);
 			const canCompile = mode === 'init';
-
-			const elementClosestScope = element.closest(`[${$.scopeAttribute}]`);
-
-			if (elementClosestScope && scope(elementClosestScope[$.scopeKey]) === undefined) {
-				return element;
-			}
-
 			let elementScope = scope(element);
 
 			if (mode === 'reinit') {
@@ -395,6 +388,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				});
 			}
 		});
+
 		on('scope:init', (data) => processElement({ element: data.element }));
 
 		$.AsyncFunction = AsyncFunction;
