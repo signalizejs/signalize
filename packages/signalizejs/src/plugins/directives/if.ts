@@ -10,21 +10,16 @@ export default (): SignalizePlugin => {
 
 				return new RegExp(`(?::|${$.attributePrefix})if`);
 			},
-			callback: async ({ element, data, attribute }) => {
-				const fnSharedPart = `
-					let __result = ${attribute.value};
-					__result = typeof __result === 'function' ? await __result() : __result;
-				`
-
-				let nextSibling = element.nextSibling;
-				const nextSiblingScope = $.scope(nextSibling);
-				let rendered = nextSiblingScope?.template === element;
+			callback: async ({ node, context, attribute }) => {
+				let nextSibling = node.nextSibling;
+				const nextSiblingVnode = $.vnode(nextSibling);
+				let rendered = nextSiblingVnode?.template === node;
 				let previousResult = rendered;
 				let prerendered = true;
 				let renderedNodes = [];
 
 				if (rendered === false) {
-					renderedNodes = $.getPrerenderedNodes(element);
+					renderedNodes = $.getPrerenderedNodes(node);
 					if (renderedNodes.length) {
 						rendered = true;
 						prerendered = true;
@@ -33,34 +28,23 @@ export default (): SignalizePlugin => {
 				let inited = false;
 				let ifSignalsToWatch = [];
 
+				const processValue = async (value) => {
+					return typeof value === 'function' ? value.call(context) : value;
+				}
+
 				const render = async (): Promise<void> => {
 					let conditionResult;
 					if (!inited) {
-						const { result, signalsToWatch } = await $.directiveFunction({
-							functionString: `
-								const __getSignalsToWatch = $.observeSignals($context);
-								${fnSharedPart}
-								return { result: __result, signalsToWatch: __getSignalsToWatch() }
-							`,
-							context: data,
-							element
-						})(data);
-						conditionResult = result;
-						ifSignalsToWatch = signalsToWatch;
+						const getSignalsToWatch = $.observeSignals(context);
+						conditionResult = await processValue(context[attribute.value]);
+						ifSignalsToWatch = getSignalsToWatch();
 						inited = true;
 
 						if (rendered) {
 							return;
 						}
 					} else {
-						conditionResult = await $.directiveFunction({
-							functionString: `
-								${fnSharedPart}
-								return __result;
-							`,
-							context: data,
-							element
-						})(data);
+						conditionResult = await processValue(context[attribute.value]);
 					}
 
 					if (conditionResult === previousResult) {
@@ -80,17 +64,13 @@ export default (): SignalizePlugin => {
 						return;
 					}
 
-					let fragment = element.cloneNode(true).content;
-					const dataForFragment = data;
-					$.scope(fragment, ({ data }) => {
-						for (const [key, value] of Object.entries(dataForFragment)) {
-							data[key] = value;
-						}
+					let fragment = node.cloneNode(true).content;
+					$.vnode(fragment, (elVnode) => {
+						elVnode.context = context;
 					});
-
 					await $.processDirectives({ root: fragment });
 					renderedNodes = [...fragment.childNodes];
-					element.after(fragment);
+					node.after(fragment);
 					rendered = true;
 				}
 
@@ -102,14 +82,14 @@ export default (): SignalizePlugin => {
 					unwatchSignalCallbacks.push(ifSignalsToWatch.shift().watch(render));
 				}
 
-				$.scope(element).cleanup(() => {
+				$.vnode(node).cleanup(() => {
 					while (renderedNodes.length > 0) {
 						renderedNodes.pop().remove()
 					}
 					for (const unwatch of unwatchSignalCallbacks) {
 						unwatch();
 					}
-				})
+				});
 			}
 		});
 	}

@@ -10,27 +10,25 @@ export default (): SignalizePlugin => {
 
 				return new RegExp(`(?::|${$.attributePrefix})for`);
 			},
-			callback: async ({ element, data, attribute }) => {
-				if (element.tagName.toLowerCase() !== 'template') {
+			callback: async ({ node, context, attribute }) => {
+				if (node.tagName.toLowerCase() !== 'template') {
 					return;
 				}
 
 				const forLoopRe = /([\s\S]+)\s+(in|of)\s+([\s\S]+)/;
 				const argumentsMatch = attribute.value.match(forLoopRe);
-				const fnSharedPart = `const __result = typeof ${argumentsMatch[3]} === 'function' ? await ${argumentsMatch[3]}() : ${argumentsMatch[3]}`
 
 				if (argumentsMatch.length < 4) {
 					throw new Error(`Invalid for loop syntax "${attribute.value}".`);
 				}
 
-				const newContextVariables: string[] = argumentsMatch[1].replace(/[[({})\]\s]/g, '').split(',');
-
-				let currentState = $.getPrerenderedNodes(element);
+				const newContextVariables: string[] = argumentsMatch[1].replace(/[[({})\]\s]/g, '').split(',').map((key) => key.trim());
+				let currentState = $.getPrerenderedNodes(node);
 				let prerendered = currentState.length > 0;
-				let nextElementSibling = element.nextElementSibling;
+				let nextElementSibling = node.nextElementSibling;
 
 				while (nextElementSibling !== null) {
-					if ($.scope(nextElementSibling)?.template !== element) {
+					if ($.vnode(nextElementSibling)?.template !== node) {
 						break;
 					}
 
@@ -47,36 +45,25 @@ export default (): SignalizePlugin => {
 				let inited = false;
 				let loopSignalsToWatch = [];
 
+				const processValue = async () => {
+					const value = context[argumentsMatch[3]];
+					return typeof value === 'function' ? value() : value;
+				}
+
 				const process = async (): Promise<void> => {
 					let stack;
 
 					if (!inited) {
-						const { result, signalsToWatch } = await $.directiveFunction({
-							functionString: `
-								const __getSignalsToWatch = $.observeSignals($context);
-								${fnSharedPart}
-								return { result: __result, signalsToWatch: __getSignalsToWatch() }
-							`,
-							context: data,
-							element
-						})(data);
-
-						stack = result;
-						loopSignalsToWatch = signalsToWatch;
+						const getSignalsToWatch = $.observeSignals(context);
+						stack = await processValue();
+						loopSignalsToWatch = getSignalsToWatch();
 						inited = true;
 
 						if (prerendered) {
 							return;
 						}
 					} else {
-						stack = await $.directiveFunction({
-							functionString: `
-								${fnSharedPart}
-								return __result;
-							`,
-							context: data,
-							element
-						})(data);
+						stack = await processValue();
 					}
 
 					if (prerendered) {
@@ -92,11 +79,11 @@ export default (): SignalizePlugin => {
 
 					const totalCount = stack.length ?? stack.size;
 					let counter = 0;
-					let lastInsertPoint = currentState[currentState.length - 1] ?? element;
+					let lastInsertPoint = currentState[currentState.length - 1] ?? node;
 
 					const isArrayDestruct = argumentsMatch[0].trim().startsWith('[');
-					const parentScopeData = data;
-					const iterate = async (data: any, counter: number): Promise<void> => {
+					const parentContext = context;
+					const iterate = async (context: any, counter: number): Promise<void> => {
 						const iterator = $.signal({
 							count: counter,
 							first: counter === 0,
@@ -108,29 +95,27 @@ export default (): SignalizePlugin => {
 
 						if (newContextVariables.length > 1) {
 							if (isArrayDestruct) {
-								for (const key of Object.keys(data)) {
-									destruct[newContextVariables[key]] = $.signal(data[key]);
+								for (const key of Object.keys(context)) {
+									destruct[newContextVariables[key]] = $.signal(context[key]);
 								}
 							} else {
 								for (const key of newContextVariables) {
-									destruct[key] = $.signal(data[key]);
+									destruct[key] = $.signal(context[key]);
 								}
 							}
 						} else {
-							destruct[newContextVariables] = $.signal(data);
+							destruct[newContextVariables] = $.signal(context);
 						}
 
-						const templateFragment = [...element.cloneNode(true).content.children];
+						const templateFragment = [...node.cloneNode(true).content.children];
 						const processChild = async (fragment: Node): Promise<void> => {
-							$.scope(fragment, (fragmentScope) => {
-								for (const [key, value] of Object.entries({
+							$.vnode(fragment, (elVnode) => {
+								elVnode.context = {
 									...destruct,
-									...parentScopeData,
+									...parentContext,
 									iterator
-								})) {
-									fragmentScope.data[key] = value;
-								}
-								fragmentScope.template = element;
+								};
+								elVnode.template = node;
 							});
 
 							await $.processDirectives({ root: fragment, onlyRoot: true });
@@ -170,13 +155,13 @@ export default (): SignalizePlugin => {
 									void $.processDirectives({ root: fragment });
 								}
 							} else if (currentState.length > 0 && counter < currentState.length) {
-								$.scope(currentState[counter], ({ data }) => {
+								$.vnode(currentState[counter], ({ context }) => {
 									for (const [key, value] of Object.entries({ ...destruct, iterator })) {
 										const valueToSet = value instanceof $.Signal ? value() : value;
-										if (data[key] instanceof $.Signal) {
-											data[key](valueToSet);
+										if (context[key] instanceof $.Signal) {
+											context[key](valueToSet);
 										} else {
-											data[key] = valueToSet;
+											context[key] = valueToSet;
 										}
 									}
 								});
@@ -185,6 +170,9 @@ export default (): SignalizePlugin => {
 								currentState.push(fragment);
 								lastInsertPoint = fragment;
 								for (const child of fragment.children) {
+									$.vnode(child, (elVnode) => {
+										elVnode.context = $.vnode(fragment).context;
+									})
 									void $.processDirectives({ root: child });
 								}
 							}
@@ -200,12 +188,12 @@ export default (): SignalizePlugin => {
 
 					const iterationPromises = [];
 					if (argumentsMatch[2] === 'in') {
-						for (let data in stack) {
-							iterationPromises.push(iterate(data, counter++))
+						for (let stackItem in stack) {
+							iterationPromises.push(iterate(stackItem, counter++))
 						}
 					} else {
-						for (let data of stack) {
-							iterationPromises.push(iterate(data, counter++))
+						for (let stackItem of stack) {
+							iterationPromises.push(iterate(stackItem, counter++))
 						}
 					}
 
@@ -222,13 +210,14 @@ export default (): SignalizePlugin => {
 					unwatchSignalCallbacks.push(signalToWatch.watch(process))
 				}
 
-				$.scope(element).cleanup(() => {
-					reduceState(0);
-
-					while (unwatchSignalCallbacks.length > 0) {
-						unwatchSignalCallbacks.shift()()
-					}
-				})
+				$.vnode(node, (elVnode) => {
+					elVnode.cleanup(() => {
+						reduceState(0);
+						while (unwatchSignalCallbacks.length > 0) {
+							unwatchSignalCallbacks.shift()()
+						}
+					})
+				});
 			}
 		});
 	}

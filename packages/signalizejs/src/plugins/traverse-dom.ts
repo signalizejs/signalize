@@ -10,10 +10,9 @@ export type NodeType = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
 export default ($: Signalize): void => {
 	$.traverseDom = async (root, callback, nodeTypes = []): Promise<void> => {
-		const canProcess = (node) => nodeTypes.includes(node.nodeType) || nodeTypes.length === 0;
 		const processNode = async (node: Node): Promise<void> => {
 			node = node instanceof Document ? node.documentElement : node;
-			if (canProcess(node)) {
+			if (nodeTypes.includes(node.nodeType) || nodeTypes.length === 0) {
 				const result = await callback(node);
 				if (result !== undefined) {
 					return;

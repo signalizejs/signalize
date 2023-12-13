@@ -2,8 +2,7 @@ import type { Signalize } from '..';
 
 declare module '..' {
 	interface Signalize {
-		Vnode: Vnode
-		vnode: (node: Node) => VnodeInterface
+		vnode: (node: Node, init?: VnodeInitFunction) => VnodeInterface
 	}
 }
 
@@ -21,6 +20,7 @@ export default ($: Signalize): void => {
 
 		constructor ({ node }: { node: Node }) {
 			this.node = node;
+			node.__signalizeVnode = this;
 		}
 
 		cleanup = (callback?: CallableFunction): void => {
@@ -31,10 +31,9 @@ export default ($: Signalize): void => {
 
 			const cleanChildren = (node: Node): void => {
 				for (const child of [...node.childNodes]) {
-					const childVnode = vnode(child);
-					if (childVnode !== undefined) {
-						childVnode?.cleanup();
-					} else if (child instanceof Element && child.childNodes.length > 0) {
+					vnode(child)?.cleanup();
+
+					if (child instanceof Element && child.childNodes.length > 0) {
 						cleanChildren(child);
 					}
 				}
@@ -50,10 +49,17 @@ export default ($: Signalize): void => {
 		}
 	}
 
-	const vnode = (node: Node): Vnode => {
-		return node?.__signalizeVnode ?? new Vnode({ node });
+	const vnode = (node: Node, init?: VnodeInitFunction): Vnode | undefined => {
+		if (typeof init === 'function') {
+			init(node?.__signalizeVnode ?? new Vnode({ node }));
+		}
+
+		return node?.__signalizeVnode;
 	}
 
-	$.Vnode = Vnode;
+	$.on('dom:mutation:node:removed', (event) => {
+		vnode(event.detail)?.cleanup();
+	});
+
 	$.vnode = vnode;
 }

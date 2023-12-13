@@ -56,19 +56,13 @@ export default ($: Signalize): void => {
 			}, options);
 		},
 		remove: ({ target, listener }) => {
-			const observer = $.observeMutations(
-				target,
-				(event, node): void => {
-					if (node === target && event === 'dom:mutation:node:removed') {
-						listener();
-						observer.disconnect();
-					}
-				},
-				{
-					attributes: false,
-					subtree: false
+			const callback = (event) => {
+				if (event.detail === target) {
+					listener();
+					$.off('dom:mutation:node:removed', $.root, callback);
 				}
-			);
+			}
+			on('dom:mutation:node:removed', callback, { once: true, passive: true });
 		}
 	}
 

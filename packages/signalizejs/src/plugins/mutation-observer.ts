@@ -13,13 +13,10 @@ declare module '..' {
 type ObserverListener = (evetn: string, node: Node) => void;
 
 export default ($: Signalize): void => {
-	$.observeMutations = (root, listener: ObserverListener, options?: MutationObserverInit) => {
-		const event = 'dom:mutation';
-		const nodeEvent = `${event}:node`;
-		const nodeAddedEvent = `${nodeEvent}:added`;
-		const nodeRemovedEvent = `${nodeEvent}:removed`;
-		const nodeMovedEvent = `${nodeEvent}:moved`;
+	const event = 'dom:mutation';
+	const nodeEvent = `${event}:node`;
 
+	$.observeMutations = (root, listener: ObserverListener, options?: MutationObserverInit) => {
 		const observer = new MutationObserver((mutationRecords: MutationRecord[]) => {
 			let removedNodes: Node[] = [];
 
@@ -30,7 +27,7 @@ export default ($: Signalize): void => {
 					if (removedNodes.includes(node)) {
 						continue;
 					}
-					listener(nodeAddedEvent, node)
+					listener(`${nodeEvent}:added`, node)
 				}
 
 				if (mutation.removedNodes.length) {
@@ -40,8 +37,8 @@ export default ($: Signalize): void => {
 				for (const node of mutation.removedNodes) {
 					listener(
 						($.root instanceof Document ? $.root.contains(node) : $.root.ownerDocument.contains(node))
-							? nodeMovedEvent
-							: nodeRemovedEvent
+							? `${nodeEvent}:moved`
+							: `${nodeEvent}:removed`
 						,
 						node
 					)
@@ -52,7 +49,6 @@ export default ($: Signalize): void => {
 		observer.observe(root, {
 			childList: true,
 			subtree: true,
-			attributes: true,
 			...options ?? {}
 		});
 

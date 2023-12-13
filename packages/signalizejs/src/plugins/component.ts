@@ -1,6 +1,5 @@
 import type { Signalize } from '..';
 import type { CustomEventListener } from './on';
-import type { VnodeInterface } from './vnode';
 
 declare module '..' {
 	interface Signalize {
@@ -19,13 +18,13 @@ export interface ComponentOptions {
 	construct?: () => void | Promise<void>
 	constructed?: () => void | Promise<void>
 	connected?: () => void | Promise<void>
-	addopted?: () => void | Promise<void>
+	adopted?: () => void | Promise<void>
 	disconnected?: () => void | Promise<void>
 	shadow?: ShadowRootInit
 }
 
 export default ($: Signalize): void => {
-	const { signal, select, selectAll, dashCase, dispatch } = $;
+	const { signal, select, selectAll, dispatch } = $;
 
 	const refAttribute = `${$.attributePrefix}ref`;
 	const componentAttribute = `${$.attributePrefix}component`;
@@ -36,6 +35,10 @@ export default ($: Signalize): void => {
 
 		if (!componentName.includes('-')) {
 			componentName = `x-${componentName}`;
+		}
+
+		if (customElements.get(componentName) !== undefined) {
+			throw new Error(`Custom element "${componentName}" already defined.`);
 		}
 
 		const properties = {};
@@ -53,7 +56,7 @@ export default ($: Signalize): void => {
 		const attributesPropertiesMap = {}
 
 		for (const propertyName of Object.keys(properties)) {
-			attributesPropertiesMap[dashCase(propertyName)] = propertyName;
+			attributesPropertiesMap[$.dashCase(propertyName)] = propertyName;
 		}
 
 		const observableAttributes = Object.keys(attributesPropertiesMap);
@@ -92,17 +95,27 @@ export default ($: Signalize): void => {
 					}
 				}
 
+				const convertInnerHtmlToFragment = () => {
+					const template = document.createElement('template');
+					template.innerHTML = this.innerHTML.trim();
+					return template;
+				}
+
 				let root = this;
 
 				if (options?.shadow) {
 					root = this.attachShadow({
 						...options?.shadow
 					});
-				} else if (template !== undefined) {
-					const currentTemplate = document.createElement('template');
-					currentTemplate.innerHTML = this.innerHTML.trim();
 
-					for (const slot of selectAll('[slot]', currentTemplate.content)) {
+					if (template === undefined) {
+						template = convertInnerHtmlToFragment();
+						this.innerHTML = '';
+					}
+				} else if (template !== undefined) {
+					const fragment = convertInnerHtmlToFragment();
+
+					for (const slot of selectAll('[slot]', fragment)) {
 						const slotName = slot.getAttribute('slot');
 						slot.removeAttribute('slot');
 						select(`slot[name="${slotName}"]`, template.content)?.replaceWith(slot);
@@ -112,20 +125,24 @@ export default ($: Signalize): void => {
 				}
 
 				if (template !== undefined) {
-					root.innerHTML = template.innerHTML;
+					root.innerHTML = '';
+					$.vnode(root, (vnode) => {
+						vnode.context = this;
+					});
+					root.append(template.content);
 				}
 
 				this.setAttribute(componentAttribute, name);
 
 				await options?.constructed?.call(this);
-				dispatch('component:constructed', this);
+				dispatch('component:constructed', root);
 			}
 
 			static get observedAttributes (): string[] {
 				return observableAttributes;
 			}
 
-			attributeChangedCallback (name: string, oldValue: string, newValue: string) {
+			attributeChangedCallback (name: string, oldValue: string, newValue: string): void {
 				if (observableAttributes.includes(name)) {
 					const currentProperty = this[attributesPropertiesMap[name]];
 					currentProperty(
@@ -134,18 +151,18 @@ export default ($: Signalize): void => {
 				}
 			}
 
-			async connectedCallback (): void {
+			async connectedCallback (): Promise<void> {
 				await this.#constructPromise;
 				await options?.connected?.call(this);
 				this.removeAttribute(cloakAttribute);
 			}
 
 			disconnectedCallback (): void {
-				options?.disconnected?.call(this);
+				void options?.disconnected?.call(this);
 			}
 
 			adoptedCallback (): void {
-				options?.adopted?.call(this);
+				void options?.adopted?.call(this);
 			}
 
 			$parent = (name?: string): Element | null => {

@@ -4,7 +4,7 @@ declare module '..' {
 	interface Signalize {
 		Signal: Signal<any>
 		signal: <T>(defaultValue: T) => Signal<T>
-		observeSignals: (data: Record<string, any> | Signal<any>[]) => UnobserveSignals
+		observeSignals: (data: Record<string, any> | Array<Signal<any>>) => UnobserveSignals
 	}
 }
 
@@ -40,7 +40,7 @@ export interface Signal<T> {
 	toJSON: () => T
 }
 
-type UnobserveSignals = () => Signal<any>[];
+type UnobserveSignals = () => Array<Signal<any>>;
 
 export default ($: Signalize): void => {
 	class Signal<T = any> extends Function implements Signal<T> {
@@ -137,10 +137,10 @@ export default ($: Signalize): void => {
 		}
 	}
 
-	const observeSignals = (data: Record<string, any> | Signal<any>[]): UnobserveSignals => {
+	const observeSignals = (data: Record<string, any> | Signal[]): UnobserveSignals => {
 		let keepTracking = true;
-		const signalsToWatch: Signal = [];
-		const detectedSignals = [];
+		const signalsToWatch: Signal[] = [];
+		const detectedSignals: Signal[] = [];
 
 		for (const signalDataItem of Array.isArray(data) ? data : Object.values(data)) {
 			if (!(signalDataItem instanceof Signal)) {
@@ -160,7 +160,7 @@ export default ($: Signalize): void => {
 		return () => {
 			keepTracking = false;
 
-			while (detectedSignals.length) {
+			while (detectedSignals.length > 0) {
 				detectedSignals.shift()()
 			}
 

@@ -4,9 +4,7 @@ declare module '..' {
 	interface Signalize {
 		directive: (name: string, data: Directive) => void
 		getPrerenderedNodes: (element: Element) => Node[]
-		directiveFunction: (options: CreateFunctionOptions) => () => Promise<any>
 		processDirectives: (options?: ProcessDirectiveOptions) => Promise<void>
-		AsyncFunction: () => Promise<any>
 	}
 }
 
@@ -45,12 +43,6 @@ interface ProcessDirectiveOptions {
 	directives?: string[]
 	mode?: 'init' | 'reinit'
 	onlyRoot?: boolean
-}
-
-interface CreateFunctionOptions {
-	functionString: string
-	context: Record<string, any>
-	element?: Element | Document | DocumentFragment
 }
 
 interface PluginOptions {
@@ -117,7 +109,12 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 							continue;
 						}
 
-						elementVnode = vnode(element);
+						elementVnode = vnode(element, (elVnode) => {
+							elVnode.context = {
+								...elVnode.context,
+								...element.getRootNode() instanceof Document ? element.closest('[component]') : vnode(element.getRootNode())?.context
+							}
+						});
 
 						if (elementVnode?.directives === undefined) {
 							elementVnode.directives = new Map();
@@ -126,15 +123,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						countdown--;
 
 						processedAttributes.push(attribute.name);
-						const directive = directivesRegister[directiveName];
 						elementVnode.directives.set(
 							directiveName,
 							[
 								...elementVnode.directives.get(directiveName) ?? [],
 								(elementVnode) => {
-									return directive.callback({
+									return directivesRegister[directiveName].callback({
 										...elementVnode,
-										data: element.closest('[component]'),
 										matches,
 										attribute
 									})
@@ -242,20 +237,19 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 
 				return new RegExp(`(?::|${$.attributePrefix}bind${$.attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`)
 			},
-			callback: async ({ matches, node, data, attribute }) => {
+			callback: async ({ matches, node, context, attribute }) => {
 				const isShorthand = attribute.name.startsWith('{');
 				const attributeValue = isShorthand ? matches[3] : attribute.value;
 				const attributeName = isShorthand ? matches[3] : matches[1];
-				const dataValue = data[attributeValue];
+				const contextValue = context[attributeValue];
 
-				const processDataValue = () => {
-					return typeof dataValue === 'function' ? dataValue() : dataValue;
+				const processDataValue = (): any => {
+					return typeof contextValue === 'function' ? contextValue.call(context) : contextValue;
 				}
 
- 				const getSignalsToWatch = $.observeSignals(data);
-				processDataValue();
+				const getSignalsToWatch = $.observeSignals(context);
+				processDataValue()
 				const signalsToWatch = getSignalsToWatch();
-
 				$.bind(node, {
 					[attributeName]: [
 						...signalsToWatch,
@@ -267,12 +261,9 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 
 		directive('on', {
 			matcher: new RegExp(`(?:\\@|${$.attributePrefix}on${$.attributeSeparator})(\\S+)`),
-			callback: async (scope) => {
-				console.log(scope);
-				const { matches, node, data, attribute } = scope;
-
+			callback: async ({ matches, node, context, attribute }) => {
 				$.on(matches[1], node, async (event) => {
-					data[attribute.value](event);
+					context[attribute.value].call(context, event);
 				});
 			}
 		});

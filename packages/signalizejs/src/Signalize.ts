@@ -10,7 +10,6 @@ import dashCase from './plugins/dash-case';
 import select from './plugins/select';
 import signal from './plugins/signal';
 import task from './plugins/task';
-import traverseDom from './plugins/traverse-dom';
 import vnode from './plugins/vnode';
 
 export type SignalizeGlobals = Record<string, any>
@@ -67,7 +66,6 @@ export class Signalize {
 			off(this);
 			domReady(this);
 			select(this);
-			traverseDom(this);
 			vnode(this);
 			signal(this);
 			bind(this);
@@ -83,6 +81,13 @@ export class Signalize {
 
 			this.root.__signalize = this;
 			inited = true;
+
+			this.observeMutations(this.root, (event, node) => {
+				if (!(node instanceof Element)) {
+					return;
+				}
+				this.dispatch(event, node);
+			});
 		}
 
 		const signalizeInstance = this.root.__signalize;
