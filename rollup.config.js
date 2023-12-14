@@ -100,6 +100,23 @@ const packages = [
 		]
 	},
 
+	// signalizejs/evaluator
+	{
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/evaluate.ts`,
+		treeshake: false,
+		output: [
+			{
+				file: `${signalizeDir}/dist/plugins/evaluate.js`,
+				format: 'esm'
+			},
+			{
+				file: `${signalizeDir}/dist/plugins/evaluate.cjs`,
+				format: 'cjs'
+			}
+		]
+	},
+
 	// signalizejs/fetch
 	{
 		plugins: [typescript()],
@@ -180,6 +197,23 @@ const packages = [
 			},
 			{
 				file: `${signalizeDir}/dist/plugins/spa.cjs`,
+				format: 'cjs'
+			}
+		]
+	},
+
+	// signalizejs/dialog
+	{
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/traverse-dom.ts`,
+		treeshake: false,
+		output: [
+			{
+				file: `${signalizeDir}/dist/plugins/traverse-dom.js`,
+				format: 'esm'
+			},
+			{
+				file: `${signalizeDir}/dist/plugins/traverse-dom.cjs`,
 				format: 'cjs'
 			}
 		]

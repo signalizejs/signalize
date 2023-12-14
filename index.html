@@ -17,254 +17,58 @@
 	</style>
 
 	<script type="module">
-		/* import Signalize from 'signalizejs';
+		import Signalize from 'signalizejs';
 		import directives from 'signalizejs/directives';
+		import traverseDom from 'signalizejs/traverse-dom';
+		import evaluator from 'signalizejs/evaluate';
 		import ifDirective from 'signalizejs/directives/if';
-		import forDirective from 'signalizejs/directives/for'; */
+		import forDirective from 'signalizejs/directives/for';
 
 		// Use the directives plugin
-		/* const { component, on, signal, select, observeSignals, bind } = new Signalize({
+		const { component, on, signal, select, observeSignals, bind } = new Signalize({
 			plugins: [
+				traverseDom(),
+				evaluator(),
 				directives(),
 				ifDirective(),
 				forDirective()
 			]
 		});
- */
-		/* component('todo', {
+
+		component('todo', {
 			construct() {
-				const count = signal(1000);
+				const count = signal(1);
 				const text = signal('');
 
 				return {
 					count,
 					items: Object.entries({a: 2, b: 3}),
 					text,
-					label() {
-						return `${this.i % 2 === 0 ? 'Even' : 'Odd'} ${this.i} -  ${text()}`
-					},
 					styleLabel() {
 						return `color:${text().length > 2 ? 'red': 'blue'}`
 					},
-					isEven() {
-						return this.i % 2 === 0
-					},
-					isOdd() {
-						return this.i % 2 !== 0
-					},
-					oddText() {
-						return 'Odd - ' + this.i + '-' + text
-					},
-					evenText() {
-						return 'Even - ' + this.i + '-' + text
-					},
-					increment: () => count(count() + 1),
-					decrement: () => count(count() - 1)
 				}
 			}
-		}) */
-
-		const evaluate = (str, context = {}) => {
-			const chunkKeywordMap = {
-				'undefined': undefined,
-				'true': true,
-				'false': false,
-			}
-			// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
-			var precedenceOperatorsMap =  {
-				//14: {
-/* 					'++': (a) => ++a,
-					'--': (a) => --a,
-					'!': (a) => !!a,
-					'!!': (a) => !!a,
-					'typeof': (a) => typeof a,
-*/
-				//},
-				13: {
-					'**': (a, b) => a ** b,
-				},
-				12: {
-					'*': (a, b) => a * b,
-					'/': (a, b) => a / b,
-					'%': (a, b) => a % b,
-				},
-				11: {
-					'+': (a, b) => a + b,
-					'-': (a, b) => a - b,
-				},
- 				9: {
-					'<': (a, b) => a < b,
-					'<=': (a, b) => a <= b,
-					'>':  (a, b) => a > b,
-					'>=': (a, b) => a >= b,
-					in: (a, b) => a in b,
-					instanceof: (a, b) => a instanceof b,
-				},
-				8: {
-					'==': (a, b) => a === b ,
-					'!=':  (a, b) => a !== b,
-					'===': (a, b) => a === b,
-					'!==': (a, b) => a !== b,
-				},
-				7: {
-					'&':  (a, b) => a & b,
-				},
-				6: {
-					'^': (a, b) => a ^ b,
-				},
-				5: {
-					'|':  (a, b) => a | b,
-				},
-				4: {
-					'&&': (a, b) => a && b,
-				},
-				3: {
-					'||': (a, b) => a || b,
-					'??': (a, b) => a ?? b,
-				}
-			};
-
-			let operatorsKeys = [];
-
-			for (const precedence in precedenceOperatorsMap) {
-				operatorsKeys = [
-					...operatorsKeys,
-					...Object.keys(precedenceOperatorsMap[precedence])
-				]
-			}
-
-			const parse = (str) => {
-				const operatorsRe = new RegExp(`^(${operatorsKeys
-					.map((item) => {
-						return item.replace(/\|/g, '\\|')
-						.replace(/\+/g, '\\+')
-						.replace(/\//g, '\\/')
-						.replace(/\?/g, '\\?')
-						.replace(/\*/g, '\\*')
-						.replace(/\^/, '\\^')
-					})
-					.sort((a, b) => b.length - a.length)
-					.join('|')})`);
-				const chunks = [];
-				let inString = false;
-				let inArgument = false;
-				let tokensQueue = '';
-				while(true) {
-					const token = str[0];
-					if (token === undefined) {
-						break;
-					}
-					str = str.slice(1);
-					tokensQueue += token;
-
-					if (['"', "'"].includes(token)) {
-						inString = !inString;
-					}
-
-					const operatorsDetected = operatorsRe.test(str);
-
-					if (str[0] === undefined || (!inString && !inArgument && operatorsDetected)) {
-						chunks.push(tokensQueue.trim());
-						if (operatorsDetected) {
-							str = str.replace(operatorsRe, (match) => {
-								chunks.push(match.trim())
-								return '';
-							});
-						}
-
-						tokensQueue = '';
-					}
-				}
-				return chunks;
-			}
-
-			const prepareChunk = (chunk) => {
-				if (chunk in context) {
-					// Todo, check, if it is a function, call it with arguments
-					return context[chunk];
-				}
-
-				if (!Number.isNaN(parseFloat(chunk))) {
-					return parseFloat(chunk);
-				}
-
-				if (["'", '"'].includes(chunk[0])) {chunk
-					return chunk.substring(1).substring(0, chunk.length - 2);
-				}
-
-				if (chunk in chunkKeywordMap) {
-					return chunkKeywordMap[chunk];
-				}
-
-				return chunk;
-			}
-
-			const execute = (precedences, chunks) => {
-				const precedence = precedences.shift();
-
-				if (precedence === undefined || chunks.length === 1) {
-					return chunks[0];
-				}
-
-				const operators = precedenceOperatorsMap[precedence];
-				let a;
-				let b;
-				let operator;
-				let startIndex = 0;
-				const chunksLength = chunks.length;
-
-				while(startIndex <= chunksLength) {
-					if (chunks[startIndex] in operators) {
-						operator = chunks[startIndex];
-						a = prepareChunk(chunks[startIndex + 1]);
-						chunks[startIndex] = operators[operator](a);
-						chunks.splice(startIndex + 1, 1);
-					} else if (chunks[startIndex + 1] in operators) {
-						a = prepareChunk(chunks[startIndex]);
-						operator = chunks[startIndex + 1];
-						b = prepareChunk(chunks[startIndex + 2]);
-						chunks[startIndex] = operators[operator](a, b);
-						chunks.splice(startIndex + 1, 2);
-					} else {
-						startIndex ++;
-					}
-				}
-
-				return execute(precedences, chunks);
-			}
-
-			return execute(
-				Object.keys(precedenceOperatorsMap).sort((a, b) => b - a),
-				parse(str)
-			);
-		}
-
-		const result = evaluate('a * 2 / 2.5', {
-			a: 2,
-			b: 4,
-			c: 3
-		});
-		console.log(result)
-
+		})
 	</script>
 
-	<!-- <x-todo cloak>
+	<x-todo cloak>
 		<input :value="text">
-		<button @click="increment">Přidej<span :text="count"></span></button>
-		<button @click="decrement">Odeber<span :text="count"></span></button><br>
+		<button @click="count(count() + 1)">Přidej<span :text="count"></span></button>
+		<button @click="count(count() - 1)">Odeber<span :text="count"></span></button><br>
 		<ul>
 			<template :for="i of count">
 				<li>
-					<template :if="isOdd">
-						<span :text="oddText"></span>
+					<template :if="i % 2 !== 0">
+						<span :text="'Odd - ' + i + '-' + text"></span>
 					</template>
-					<template :if="isEven">
-						<span :text="evenText" :style="styleLabel"></span>
+					<template :if="i % 2 === 0">
+						<span :text="'Even - ' + i + '-' + text" :style="styleLabel()"></span>
 					</template>
 				</li>
 			</template>
 		</ul>
-	</x-todo> -->
+	</x-todo>
 
 	<!-- <div $count="1">
 		<template :for="i of 1">

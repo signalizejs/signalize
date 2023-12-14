@@ -14,8 +14,10 @@ export default defineConfig({
 			'signalizejs/directives/for': `${pluginsDir}/directives/for.ts`,
 			'signalizejs/directives/if': `${pluginsDir}/directives/if.ts`,
 			'signalizejs/directives': `${pluginsDir}/directives.ts`,
+			'signalizejs/evaluate': `${pluginsDir}/evaluate.ts`,
 			'signalizejs/fetch': `${pluginsDir}/fetch.ts`,
 			'signalizejs/h': `${pluginsDir}/h.ts`,
+			'signalizejs/height': `${pluginsDir}/height.ts`,
 			'signalizejs/intersection-observer': `${pluginsDir}/intersection-observer.ts`,
 			'signalizejs/is-in-viewport': `${pluginsDir}/is-in-viewport.ts`,
 			'signalizejs/is-visible': `${pluginsDir}/is-visible.ts`,
@@ -24,7 +26,7 @@ export default defineConfig({
 			'signalizejs/snippets': `${pluginsDir}/snippets.ts`,
 			'signalizejs/spa': `${pluginsDir}/spa.ts`,
 			'signalizejs/width': `${pluginsDir}/width.ts`,
-			'signalizejs/height': `${pluginsDir}/height.ts`,
+			'signalizejs/traverse-dom': `${pluginsDir}/traverse-dom.ts`,
 			signalizejs: `${signalizejsSourceDir}/index.ts`
 		}
 	},

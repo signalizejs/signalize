@@ -36,7 +36,7 @@ export default (): SignalizePlugin => {
 					let conditionResult;
 					if (!inited) {
 						const getSignalsToWatch = $.observeSignals(context);
-						conditionResult = await processValue(context[attribute.value]);
+						conditionResult = $.evaluate(attribute.value, context);
 						ifSignalsToWatch = getSignalsToWatch();
 						inited = true;
 
@@ -44,7 +44,7 @@ export default (): SignalizePlugin => {
 							return;
 						}
 					} else {
-						conditionResult = await processValue(context[attribute.value]);
+						conditionResult = await $.evaluate(attribute.value, context);
 					}
 
 					if (conditionResult === previousResult) {

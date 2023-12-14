@@ -241,19 +241,19 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				const isShorthand = attribute.name.startsWith('{');
 				const attributeValue = isShorthand ? matches[3] : attribute.value;
 				const attributeName = isShorthand ? matches[3] : matches[1];
-				const contextValue = context[attributeValue];
-
-				const processDataValue = (): any => {
-					return typeof contextValue === 'function' ? contextValue.call(context) : contextValue;
-				}
-
 				const getSignalsToWatch = $.observeSignals(context);
-				processDataValue()
+				const process = () => {
+					const res = $.evaluate(attributeValue, context);
+					return typeof res === 'function' ? res.call(context) : res;
+				};
+
+				process();
+
 				const signalsToWatch = getSignalsToWatch();
 				$.bind(node, {
 					[attributeName]: [
 						...signalsToWatch,
-						processDataValue
+						process
 					]
 				});
 			}
@@ -263,7 +263,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			matcher: new RegExp(`(?:\\@|${$.attributePrefix}on${$.attributeSeparator})(\\S+)`),
 			callback: async ({ matches, node, context, attribute }) => {
 				$.on(matches[1], node, async (event) => {
-					context[attribute.value].call(context, event);
+					$.evaluate(attribute.value, context);
 				});
 			}
 		});
