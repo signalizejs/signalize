@@ -155,14 +155,17 @@ export default ($: Signalize): void => {
 				await this.#constructPromise;
 				await options?.connected?.call(this);
 				this.removeAttribute(cloakAttribute);
+				dispatch('component:connected', this.$el);
 			}
 
 			disconnectedCallback (): void {
 				void options?.disconnected?.call(this);
+				dispatch('component:disconnected', this.$el);
 			}
 
 			adoptedCallback (): void {
 				void options?.adopted?.call(this);
+				dispatch('component:adopted', this.$el);
 			}
 
 			$parent = (name?: string): Element | null => {

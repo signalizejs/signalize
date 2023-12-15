@@ -11,8 +11,6 @@ export default () => {
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
 		var precedenceOperatorsMap =  {
 			// Todo left side like typeof a
-			// TODO Groups ()
-            // TODO ternary
 			/* 14: {
 				'++': (a) => ++a,
 				'--': (a) => --a,
@@ -41,7 +39,7 @@ export default () => {
 			9: {
 				'<': (a, b) => a < b,
 				'<=': (a, b) => a <= b,
-				'>':  (a, b) => a > b,
+				'>': (a, b) => a > b,
 				'>=': (a, b) => a >= b,
 				in: (a, b) => a in b,
 				instanceof: (a, b) => a instanceof b,
@@ -87,41 +85,36 @@ export default () => {
 		$.evaluate = (str, context = {}) => {
 			const parse = (str) => {
 				const operatorsRe = new RegExp(`^(${operatorsKeys
-					.map((item) => {
-						return item.replace(/\|/g, '\\|')
-							.replace(/\+/g, '\\+')
-							.replace(/\//g, '\\/')
-							.replace(/\?/g, '\\?')
-							.replace(/\*/g, '\\*')
-							.replace(/\^/g, '\\^')
-							.replace(/\./g, '\\.')
-							.replace(/,/g, '\\,')
-							.replace(/\)/g, '\\)')
-							.replace(/\(/g, '\\(')
-					})
+					.map((item) => item.replace(/[|+\\/?*^.,()]/g, '\\$&'))
 					.sort((a, b) => b.length - a.length)
 					.join('|')})`);
+
 				const chunks = [];
 				let inString = false;
 				let inArgument = false;
 				let tokensQueue = '';
 
-				while(true) {
+				while (true) {
 					const token = str[0];
 					if (token === undefined) {
 						break;
 					}
+
+					let operatorsDetected = operatorsRe.test(str)
 					str = str.slice(1);
+					operatorsDetected = operatorsDetected || operatorsRe.test(str);
 					tokensQueue += token;
 
 					if (quotes.includes(token)) {
 						inString = !inString;
 					}
 
-					const operatorsDetected = operatorsRe.test(str);
-
 					if (str.length === 0 || (!inString && !inArgument && operatorsDetected)) {
-						chunks.push(tokensQueue.trim());
+						const tokenToAdd = tokensQueue.trim();
+						if (tokenToAdd.length) {
+							chunks.push(tokensQueue.trim());
+						}
+
 						if (operatorsDetected) {
 							str = str.replace(operatorsRe, (match) => {
 								chunks.push(match.trim())
@@ -170,62 +163,79 @@ export default () => {
 				let startIndex = 0;
 				const chunksLength = chunks.length;
 
+				const loadGroupedChunks = (chunks, cursorIndex) => {
+					const groupChunks = []
+					let closingBracesRequired = 1;
+					while (closingBracesRequired > 0 || cursorIndex > chunks.length) {
+						cursorIndex += 1;
+						const token = chunks[cursorIndex];
+
+						if (token === '(') {
+							closingBracesRequired ++;
+						}
+
+						if (token === ')') {
+							closingBracesRequired --;
+						}
+
+						if (closingBracesRequired === 0) {
+							break;
+						}
+
+						groupChunks.push(chunks[cursorIndex]);
+					}
+
+					return groupChunks;
+				}
+
+				const processGroup = (chunks, operatorIndex = 0) => {
+					const args = loadGroupedChunks(chunks, operatorIndex);
+					const argsLength = args.length + 2;
+					chunks[operatorIndex] = compile([...allPrecedences], args)
+					chunks.splice(operatorIndex + 1, argsLength);
+				}
+
 				while (startIndex <= chunksLength) {
 					if (chunks[startIndex] in operators) {
 						operator = chunks[startIndex];
-						a = prepareChunk(chunks[startIndex + 1]);
-						chunks[startIndex] = operators[operator](a);
-						chunks.splice(startIndex + 1, 1);
+
+						if (operator === '(') {
+							processGroup(chunks);
+						} else {
+							chunks[startIndex] = operators[operator](prepareChunk(chunks[startIndex + 1]));
+							chunks.splice(startIndex + 1, 1);
+						}
 					} else if (chunks[startIndex + 1] in operators) {
-						let operatorIndex = startIndex + 1;
+						const operatorIndex = startIndex + 1;
 						operator = chunks[operatorIndex];
 						a = prepareChunk(chunks[startIndex]);
 
 						if (operator === '(') {
-							const args = [];
-							let closingBracesRequired = 1;
-							while (closingBracesRequired > 0 || operatorIndex > chunks.length) {
-								operatorIndex += 1;
-								const token = chunks[operatorIndex];
-
-								if (token === '(') {
-									closingBracesRequired ++;
-								}
-
-								if (token === ')') {
-									closingBracesRequired --;
-								}
-
-								if (closingBracesRequired === 0) {
-									break;
-								}
-
-								args.push(chunks[operatorIndex]);
+							if (typeof a === 'function') {
+								const args = loadGroupedChunks(chunks, operatorIndex);
+								const argsLength = args.length;
+								chunks[startIndex] = a.apply(
+									context,
+									argsLength > 0 ? [compile([...allPrecedences], args)] : []
+								);
+								chunks.splice(startIndex + 1, argsLength + 2);
+							} else {
+								processGroup(chunks, operatorIndex);
 							}
-
-							const argsLength = args.length;
-							chunks[startIndex] = a.apply(
-								context,
-								argsLength > 0 ? [compile([...allPrecedences], [...args])] : []
-							);
-							chunks.splice(startIndex + 1, args.length > 0 ? args.length : 2);
 						} else {
 							b = prepareChunk(chunks[startIndex + 2]);
 							chunks[startIndex] = operators[operator](a, b);
 							chunks.splice(startIndex + 1, 2);
 						}
 					} else {
-						startIndex ++;
+						startIndex++;
 					}
 				}
 
 				return compile(precedences, chunks);
 			}
 
-			const res = compile(
-				[...allPrecedences],
-				parse(str)
-			);
+			const res = compile([...allPrecedences], parse(str));
 
 			return res;
 		}
