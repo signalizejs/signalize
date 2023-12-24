@@ -17,8 +17,8 @@ export default ($: Signalize): void => {
 		return (options?.target ?? $.root).dispatchEvent(
 			new window.CustomEvent(eventName, {
 				detail: eventData,
-				cancelable: options?.cancelable ?? true,
-				bubbles: options?.bubbles ?? true
+				cancelable: options?.cancelable ?? false,
+				bubbles: options?.bubbles ?? false
 			})
 		);
 	};

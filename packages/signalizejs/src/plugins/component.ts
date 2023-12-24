@@ -7,14 +7,15 @@ declare module '..' {
 	}
 
 	interface CustomEventListeners {
-		'component:init': CustomEventListener
-		'component:defined': CustomEventListener
+		'component:constructed': CustomEventListener
+		'component:connected': CustomEventListener
+		'component:disconnected': CustomEventListener
+		'component:adopted': CustomEventListener
 	}
 }
 
 export interface ComponentOptions {
 	props?: Record<string, any> | string[]
-	template?: string | DocumentFragment
 	construct?: () => void | Promise<void>
 	constructed?: () => void | Promise<void>
 	connected?: () => void | Promise<void>
@@ -24,18 +25,14 @@ export interface ComponentOptions {
 }
 
 export default ($: Signalize): void => {
-	const { signal, select, selectAll, dispatch } = $;
+	const { signal, dispatch, vnode } = $;
 
-	const refAttribute = `${$.attributePrefix}ref`;
 	const componentAttribute = `${$.attributePrefix}component`;
 	const cloakAttribute = `${$.attributePrefix}cloak`;
+	$.componentAttribute = componentAttribute;
 
 	const component = (name: string, options: ComponentOptions): typeof HTMLElement => {
-		let componentName = name;
-
-		if (!componentName.includes('-')) {
-			componentName = `x-${componentName}`;
-		}
+		let componentName = `${$.componentPrefix}${name}`;
 
 		if (customElements.get(componentName) !== undefined) {
 			throw new Error(`Custom element "${componentName}" already defined.`);
@@ -62,8 +59,8 @@ export default ($: Signalize): void => {
 		const observableAttributes = Object.keys(attributesPropertiesMap);
 
 		class Component extends HTMLElement {
-			#constructPromise
-			$el = this;
+			#constructPromise;
+			readonly #vnode;
 
 			constructor () {
 				super();
@@ -71,38 +68,40 @@ export default ($: Signalize): void => {
 			}
 
 			async #construct (): Promise<void> {
-				for (const [key, value] of Object.entries(properties)) {
-					this[key] = signal(value);
+				/* const originalInnerHTML = this.innerHTML; */
+				let root = this;
+
+				if (options?.shadow) {
+					root = this.attachShadow({
+						...options?.shadow
+					});
 				}
+
+				this.#vnode = vnode(root, (node) => {
+					node.$props = {};
+
+					for (const [key, value] of Object.entries(properties)) {
+						node.$props[key] = signal(value);
+						node.$data[key] = node.$props[key];
+					}
+				});
 
 				if (options?.construct !== undefined) {
-					const data = await options?.construct?.call(this);
+					const data = await options?.construct?.call(undefined, this.#vnode);
 
 					for (const [key, value] of Object.entries(data ?? {})) {
-						this[key] = value;
+						this.#vnode.$data[key] = value;
 					}
 				}
 
-				let template = options?.template;
-
-				if (typeof template === 'string') {
-					if (template.startsWith('#')) {
-						template = select(template)?.content.cloneNode(true);
-					} else {
-						const templateElement = document.createElement('template')
-						templateElement.innerHTML = template;
-						template = templateElement;
-					}
-				}
-
-				const convertInnerHtmlToFragment = () => {
+				/* const convertInnerHtmlToFragment = () => {
 					const template = document.createElement('template');
 					template.innerHTML = this.innerHTML.trim();
 					return template;
-				}
+				} */
 
-				let root = this;
-
+				/* let root = this;
+root
 				if (options?.shadow) {
 					root = this.attachShadow({
 						...options?.shadow
@@ -122,20 +121,12 @@ export default ($: Signalize): void => {
 					}
 
 					select('slot:not([name])', template.content)?.replaceWith(currentTemplate.content);
-				}
-
-				if (template !== undefined) {
-					root.innerHTML = '';
-					$.vnode(root, (vnode) => {
-						vnode.context = this;
-					});
-					root.append(template.content);
-				}
+				} */
 
 				this.setAttribute(componentAttribute, name);
 
-				await options?.constructed?.call(this);
-				dispatch('component:constructed', root);
+				await options?.constructed?.call(this, this.#vnode);
+				dispatch('component:constructed', this.#vnode, { target: this.#vnode.$el, bubbles: true });
 			}
 
 			static get observedAttributes (): string[] {
@@ -144,42 +135,28 @@ export default ($: Signalize): void => {
 
 			attributeChangedCallback (name: string, oldValue: string, newValue: string): void {
 				if (observableAttributes.includes(name)) {
-					const currentProperty = this[attributesPropertiesMap[name]];
+					const currentProperty = this.#vnode.$props[attributesPropertiesMap[name]];
 					currentProperty(
-						Number.isNaN(currentProperty()) ? newValue : parseFloat(newValue)
+						Number.isNaN(parseFloat(currentProperty())) ? newValue : parseFloat(newValue)
 					);
 				}
 			}
 
 			async connectedCallback (): Promise<void> {
 				await this.#constructPromise;
-				await options?.connected?.call(this);
+				await options?.connected?.call(undefined, this.#vnode);
 				this.removeAttribute(cloakAttribute);
-				dispatch('component:connected', this.$el);
+				dispatch('component:connected', this.#vnode, { target: this.#vnode.$el });
 			}
 
 			disconnectedCallback (): void {
-				void options?.disconnected?.call(this);
-				dispatch('component:disconnected', this.$el);
+				void options?.disconnected?.call(undefined, this.#vnode);
+				dispatch('component:disconnected', this.#vnode, { target: this.#vnode.$el });
 			}
 
 			adoptedCallback (): void {
-				void options?.adopted?.call(this);
-				dispatch('component:adopted', this.$el);
-			}
-
-			$parent = (name?: string): Element | null => {
-				return this.closest(`[${componentAttribute}${name === undefined ? '' : `="${name}"`}]`);
-			}
-
-			$ref = (name: string): Element | null => {
-				return this.$refs(name)[0] ?? null;
-			}
-
-			$refs = (name: string): Element[] => {
-				return [...selectAll(`[${refAttribute}="${name}"]`, this)].filter((element) => {
-					return element.closest(`[${componentAttribute}]`) === this;
-				});
+				void options?.adopted?.call(undefined, this.#vnode);
+				dispatch('component:adopted', this.#vnode, { target: this.#vnode.$el });
 			}
 		}
 

@@ -10,16 +10,17 @@ export default (): SignalizePlugin => {
 
 				return new RegExp(`(?::|${$.attributePrefix})if`);
 			},
-			callback: async ({ node, context, attribute }) => {
-				let nextSibling = node.nextSibling;
+			callback: async ({ vnode, attribute }) => {
+				const { $el } = vnode;
+				let nextSibling = $el.nextSibling;
 				const nextSiblingVnode = $.vnode(nextSibling);
-				let rendered = nextSiblingVnode?.template === node;
+				let rendered = nextSiblingVnode?.template === $el;
 				let previousResult = rendered;
 				let prerendered = true;
 				let renderedNodes = [];
 
 				if (rendered === false) {
-					renderedNodes = $.getPrerenderedNodes(node);
+					renderedNodes = $.getPrerenderedNodes($el);
 					if (renderedNodes.length) {
 						rendered = true;
 						prerendered = true;
@@ -28,15 +29,11 @@ export default (): SignalizePlugin => {
 				let inited = false;
 				let ifSignalsToWatch = [];
 
-				const processValue = async (value) => {
-					return typeof value === 'function' ? value.call(context) : value;
-				}
-
 				const render = async (): Promise<void> => {
 					let conditionResult;
 					if (!inited) {
-						const getSignalsToWatch = $.observeSignals(context);
-						conditionResult = $.evaluate(attribute.value, context);
+						const getSignalsToWatch = $.observeSignals(vnode);
+						conditionResult = $.evaluate(attribute.value, vnode);
 						ifSignalsToWatch = getSignalsToWatch();
 						inited = true;
 
@@ -44,7 +41,7 @@ export default (): SignalizePlugin => {
 							return;
 						}
 					} else {
-						conditionResult = await $.evaluate(attribute.value, context);
+						conditionResult = await $.evaluate(attribute.value, vnode);
 					}
 
 					if (conditionResult === previousResult) {
@@ -64,13 +61,14 @@ export default (): SignalizePlugin => {
 						return;
 					}
 
-					let fragment = node.cloneNode(true).content;
-					$.vnode(fragment, (elVnode) => {
-						elVnode.context = context;
+					let fragment = $el.cloneNode(true).content;
+					$.vnode(fragment, (fragmentVnode) => {
+						fragmentVnode.$data = vnode.$parentVnode.$data;
 					});
+
 					await $.processDirectives({ root: fragment });
 					renderedNodes = [...fragment.childNodes];
-					node.after(fragment);
+					$el.after(fragment);
 					rendered = true;
 				}
 
@@ -82,7 +80,7 @@ export default (): SignalizePlugin => {
 					unwatchSignalCallbacks.push(ifSignalsToWatch.shift().watch(render));
 				}
 
-				$.vnode(node).cleanup(() => {
+				vnode.$cleanup(() => {
 					while (renderedNodes.length > 0) {
 						renderedNodes.pop().remove()
 					}

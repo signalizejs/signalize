@@ -25,6 +25,7 @@ export interface SignalizeOptions {
 	root: Element | Document
 	attributeSeparator: string
 	attributePrefix: string
+	componentPrefix: string
 	globals?: SignalizeGlobals
 	plugins?: SignalizePlugin[]
 }
@@ -32,10 +33,11 @@ export interface SignalizeOptions {
 export type SignalizePlugin = (signalize: Signalize) => void
 
 export class Signalize {
-	#plugins = new Set();
+	_plugins = new Set();
 	root!: Element | Document;
 	attributeSeparator!: string;
 	attributePrefix!: string;
+	componentPrefix!: string;
 	globals!: SignalizeGlobals;
 
 	constructor (options: Partial<SignalizeOptions> = {}) {
@@ -52,6 +54,7 @@ export class Signalize {
 		if (this.root?.__signalize === undefined) {
 			this.attributePrefix = options?.attributePrefix ?? '';
 			this.attributeSeparator = options?.attributeSeparator ?? '-';
+			this.componentPrefix = options?.componentPrefix ?? '';
 			this.globals = { ...this.globals, ...options?.globals ?? {} };
 			task(this);
 			dispatch(this);
@@ -99,14 +102,14 @@ export class Signalize {
 	}
 
 	use = (plugin: SignalizePlugin): void => {
-		const pluginString = plugin.toString().replace(/(\s|\n)*/g, '');
+		const pluginCacheName = plugin.name.length > 0 ? plugin.name : plugin.toString().replace(/(\s|\n)*/g, '');
 
-		if (this.#plugins.has(pluginString)) {
+		if (this._plugins.has(pluginCacheName)) {
 			return;
 		}
 
-		this.#plugins.add(pluginString);
-		plugin(this);
+		this._plugins.add(pluginCacheName);
+		plugin.call(undefined, this);
 	}
 }
 

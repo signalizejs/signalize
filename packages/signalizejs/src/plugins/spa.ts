@@ -196,7 +196,11 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 				let urlHash = window.location.hash ?? null;
 
-				const navigationScrollStopped = dispatch('spa:navigation:beforeScroll') === false;
+				const navigationScrollStopped = dispatch(
+					'spa:navigation:beforeScroll',
+					undefined,
+					{ cancelable: true }
+				) === false;
 
 				if (!navigationScrollStopped) {
 					if (urlHash !== null && urlHash.trim().length > 2) {
@@ -281,7 +285,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 			event.preventDefault();
 
-			const clickCanceled = dispatch('spa:click', { element }) === false;
+			const clickCanceled = dispatch('spa:click', { element }, { cancelable: true }) === false;
 
 			if (clickCanceled) {
 				return;

@@ -75,11 +75,10 @@ export default ($: Signalize): void => {
 		const events = event.split(' ').map((event) => event.trim());
 		let target: Selectable;
 		let listener: CallableFunction;
-		const root = $.root ?? document;
 		options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
 
 		if (typeof targetOrCallback === 'function') {
-			target = root;
+			target = $.root;
 			listener = targetOrCallback;
 		} else {
 			target = targetOrCallback

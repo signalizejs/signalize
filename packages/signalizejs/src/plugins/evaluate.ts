@@ -6,23 +6,33 @@ export default () => {
 			'undefined': undefined,
 			'true': true,
 			'false': false,
+			...$.globals,
+			Object: Object
 		}
 		const quotes = ['"', "'", '`'];
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
 		var precedenceOperatorsMap =  {
 			// Todo left side like typeof a
-			/* 14: {
-				'++': (a) => ++a,
-				'--': (a) => --a,
-				'!': (a) => !!a,
-				'!!;': (a) => !!a,
-				'typeof': (a) => typeof a,
-			}, */
+			18: {
+				'(': () => {},
+				')': () => {}
+			},
 			17: {
 				'?.': (a, b) => a[b] ?? undefined,
 				'.': (a, b) => a[b],
 				'(': () => {},
 				')': () => {}
+			},
+			15: {
+				'++': (a) => a++,
+				'--': (a) => a--
+			},
+			14: {
+				'++': (a) => ++a,
+				'--': (a) => --a,
+				'!': (a) => !a,
+				'!!;': (a) => !!a,
+				'typeof': (a) => typeof a,
 			},
 			13: {
 				'**': (a, b) => a ** b,
@@ -41,7 +51,7 @@ export default () => {
 				'<=': (a, b) => a <= b,
 				'>': (a, b) => a > b,
 				'>=': (a, b) => a >= b,
-				in: (a, b) => a in b,
+				//in: (a, b) => a in b,
 				instanceof: (a, b) => a instanceof b,
 			},
 			8: {
@@ -60,11 +70,15 @@ export default () => {
 				'|':  (a, b) => a | b,
 			},
 			4: {
-				'&&': (a, b) => a && b,
+				'&&': (a, b) => a && b
 			},
 			3: {
 				'||': (a, b) => a || b,
 				'??': (a, b) => a ?? b,
+			},
+			2: {
+				'?': () => {},
+				':': () => {}
 			},
 			1: {
 				',': (a, b) => {}
@@ -90,6 +104,7 @@ export default () => {
 					.join('|')})`);
 
 				const chunks = [];
+				let inWord = false;
 				let inString = false;
 				let inArgument = false;
 				let tokensQueue = '';
@@ -100,9 +115,15 @@ export default () => {
 						break;
 					}
 
-					let operatorsDetected = operatorsRe.test(str)
+					if (!inWord) {
+						inWord = tokensQueue.length === 0 && /\w/.test(token);
+					} else if (/\W/.test(token) && token !== '_') {
+						inWord = false;
+					}
+					inWord = false;
+					let operatorsDetected = !inWord && operatorsRe.test(str)
 					str = str.slice(1);
-					operatorsDetected = operatorsDetected || operatorsRe.test(str);
+					operatorsDetected = !inWord && (operatorsDetected || operatorsRe.test(str));
 					tokensQueue += token;
 
 					if (quotes.includes(token)) {
@@ -157,6 +178,11 @@ export default () => {
 				}
 
 				const operators = precedenceOperatorsMap[precedence];
+
+				if (!chunks.some((chunk) => chunk in operators)) {
+					return compile(precedences, chunks);
+				}
+
 				let a;
 				let b;
 				let operator;
@@ -166,7 +192,7 @@ export default () => {
 				const loadGroupedChunks = (chunks, cursorIndex) => {
 					const groupChunks = []
 					let closingBracesRequired = 1;
-					while (closingBracesRequired > 0 || cursorIndex > chunks.length) {
+					while (closingBracesRequired > 0 || cursorIndex < chunks.length) {
 						cursorIndex += 1;
 						const token = chunks[cursorIndex];
 
@@ -190,15 +216,16 @@ export default () => {
 
 				const processGroup = (chunks, operatorIndex = 0) => {
 					const args = loadGroupedChunks(chunks, operatorIndex);
-					const argsLength = args.length + 2;
+					const argsLength = args.length + 1;
 					chunks[operatorIndex] = compile([...allPrecedences], args)
 					chunks.splice(operatorIndex + 1, argsLength);
 				}
 
-				while (startIndex <= chunksLength) {
+				let runs = 0;
+
+				while (startIndex <= chunksLength && runs <= chunksLength) {
 					if (chunks[startIndex] in operators) {
 						operator = chunks[startIndex];
-
 						if (operator === '(') {
 							processGroup(chunks);
 						} else {
@@ -209,7 +236,6 @@ export default () => {
 						const operatorIndex = startIndex + 1;
 						operator = chunks[operatorIndex];
 						a = prepareChunk(chunks[startIndex]);
-
 						if (operator === '(') {
 							if (typeof a === 'function') {
 								const args = loadGroupedChunks(chunks, operatorIndex);
@@ -222,6 +248,36 @@ export default () => {
 							} else {
 								processGroup(chunks, operatorIndex);
 							}
+						} else if (operator === '?') {
+							let b = [];
+							let c = [];
+							let index = 1;
+							let colonFound = false;
+							while (index < chunksLength) {
+								index += 1;
+								const token = chunks[index];
+								const isColon = token === ':';
+
+								if (!colonFound) {
+									colonFound = isColon;
+									if (colonFound) {
+										continue;
+									}
+								}
+
+								if (!isColon && operatorsKeys.includes(token)) {
+									break;
+								}
+
+								if (colonFound) {
+									c.push(prepareChunk(chunks[index]));
+								} else {
+									b.push(prepareChunk(chunks[index]));
+								}
+							}
+
+							chunks[startIndex] = !!a ? b.join('') : c.join('');
+							chunks.splice(startIndex + 1, b.length + c.length + 2);
 						} else {
 							b = prepareChunk(chunks[startIndex + 2]);
 							chunks[startIndex] = operators[operator](a, b);
@@ -230,6 +286,8 @@ export default () => {
 					} else {
 						startIndex++;
 					}
+
+					runs ++;
 				}
 
 				return compile(precedences, chunks);

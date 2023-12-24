@@ -7,7 +7,7 @@ declare module '..' {
 }
 
 export default ($: Signalize): void => {
-	const { vnode, on, Signal } = $;
+	const { on, Signal } = $;
 
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
@@ -64,16 +64,18 @@ export default ($: Signalize): void => {
 					element[attribute] = !!value;
 				} else if (attribute === 'class') {
 					if (attributeInited) {
-						if (previousSettedValue !== undefined && previousSettedValue.length > 0) {
-							element.classList.remove(previousSettedValue);
+						if (previousSettedValue !== undefined) {
+							for (const className of previousSettedValue) {
+								element.classList.remove(className);
+							}
 						}
 					}
 
-					const valueToSet = value.trim();
+					const valueToSet = value.trim().split(' ').filter((className) => className.trim().length > 0)
+					previousSettedValue = valueToSet;
 
-					if (valueToSet.length > 0) {
-						element.classList.add(value);
-						previousSettedValue = valueToSet;
+					for (const className of valueToSet) {
+						element.classList.add(className);
 					}
 				} else {
 					element.setAttribute(attribute, value);
@@ -136,10 +138,12 @@ export default ($: Signalize): void => {
 			}
 		}
 
-		vnode(element).cleanup(() => {
-			for (const unwatch of unwatchSignalCallbacks) {
-				unwatch();
-			}
-		});
+		$.vnode(element, ({ $cleanup }) => {
+			$cleanup(() => {
+				for (const unwatch of unwatchSignalCallbacks) {
+					unwatch();
+				}
+			});
+		})
 	}
 }
