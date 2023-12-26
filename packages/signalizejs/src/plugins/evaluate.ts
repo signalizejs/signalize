@@ -38,7 +38,6 @@ export default () => {
 				['(', ')', ({ index, a, chunks, compile, getGroupChunks }) => {
 					const args = getGroupChunks(chunks, index, '(', ')');
 					const spliceLength = args.length;
-					console.log(args);
 					const compiledArgs = compile([...allPrecedences], args) ?? [];
 					const applyArgs = Array.isArray(compiledArgs) ? compiledArgs : [compiledArgs];
 
@@ -159,9 +158,16 @@ export default () => {
 
 		let operatorsKeys = Object.values(precedenceOperatorKeysMap).flat();
 		const allPrecedences = Object.keys(precedenceOperatorsMap).sort((a, b) => b - a);
+		const parseCache = {};
 
 		$.evaluate = (str, context = {}) => {
 			const parse = (str) => {
+				const originalString = str;
+
+				if (originalString in parseCache) {
+					return [...parseCache[originalString]];
+				}
+
 				const operatorsRe = new RegExp(`^(${operatorsKeys
 					.map((item) => item.replace(/[|+\\/?*^.,()]/g, '\\$&'))
 					.sort((a, b) => b.length - a.length)
@@ -220,7 +226,8 @@ export default () => {
 					}
 				}
 
-				return chunks;
+				parseCache[originalString] = chunks;
+				return [...chunks];
 			}
 
 			const compile = (precedences, chunks) => {
