@@ -33,7 +33,7 @@ export interface SignalizeOptions {
 export type SignalizePlugin = (signalize: Signalize) => void
 
 export class Signalize {
-	_plugins = new Set();
+	#plugins = new Set();
 	root!: Element | Document;
 	attributeSeparator!: string;
 	attributePrefix!: string;
@@ -104,11 +104,11 @@ export class Signalize {
 	use = (plugin: SignalizePlugin): void => {
 		const pluginCacheName = plugin.name.length > 0 ? plugin.name : plugin.toString().replace(/(\s|\n)*/g, '');
 
-		if (this._plugins.has(pluginCacheName)) {
+		if (this.#plugins.has(pluginCacheName)) {
 			return;
 		}
 
-		this._plugins.add(pluginCacheName);
+		this.#plugins.add(pluginCacheName);
 		plugin.call(undefined, this);
 	}
 }

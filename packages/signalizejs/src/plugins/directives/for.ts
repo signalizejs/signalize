@@ -178,7 +178,7 @@ export default (): SignalizePlugin => {
 									$.vnode(child, (elVnode) => {
 										elVnode.$data = $.vnode(fragment).$data;
 										elVnode.$parentVnode = $.vnode(fragment);
-									})
+									});
 									void $.processDirectives({ root: child });
 								}
 							}

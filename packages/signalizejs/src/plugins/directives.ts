@@ -167,7 +167,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			await $.traverseDom(
 				root,
 				async (node) => {
-					if (node?.closest(`[${ignoreAttribute}]`) || node?.closest('[component]') !== root) {
+					if (node?.closest(`[${ignoreAttribute}]`) || vnode(node)?.$directives !== undefined) {
 						return;
 					}
 
@@ -267,7 +267,10 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			matcher: new RegExp(`(?:\\@|${$.attributePrefix}on${$.attributeSeparator})(\\S+)`),
 			callback: async ({ matches, vnode, attribute }) => {
 				$.on(matches[1], vnode.$el, async (event) => {
-					const result = $.evaluate(attribute.value, vnode);
+					const result = $.evaluate(attribute.value, {
+						...vnode,
+						$event: event
+					});
 					if (typeof result === 'function') {
 						result(event);
 					}

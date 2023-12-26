@@ -1,99 +1,163 @@
-import type { Signalize } from "..";
+import type { Signalize } from '..';
 
 export default () => {
 	return ($: Signalize) => {
 		const chunkKeywordMap = {
-			'undefined': undefined,
-			'true': true,
-			'false': false,
+			undefined,
+			true: true,
+			false: false,
+			null: null,
 			...$.globals,
-			Object: Object
+			Object,
+			Boolean,
+			Number,
+			String,
+			Function,
+			Array,
+			JSON
 		}
 		const quotes = ['"', "'", '`'];
+
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
-		var precedenceOperatorsMap =  {
-			// Todo left side like typeof a
-			18: {
-				'(': () => {},
-				')': () => {}
-			},
-			17: {
-				'?.': (a, b) => a[b] ?? undefined,
-				'.': (a, b) => a[b],
-				'(': () => {},
-				')': () => {}
-			},
-			15: {
-				'++': (a) => a++,
-				'--': (a) => a--
-			},
-			14: {
-				'++': (a) => ++a,
-				'--': (a) => --a,
-				'!': (a) => !a,
-				'!!;': (a) => !!a,
-				'typeof': (a) => typeof a,
-			},
-			13: {
-				'**': (a, b) => a ** b,
-			},
-			12: {
-				'*': (a, b) => a * b,
-				'/': (a, b) => a / b,
-				'%': (a, b) => a % b,
-			},
-			11: {
-				'+': (a, b) => a + b,
-				'-': (a, b) => a - b,
-			},
-			9: {
-				'<': (a, b) => a < b,
-				'<=': (a, b) => a <= b,
-				'>': (a, b) => a > b,
-				'>=': (a, b) => a >= b,
-				//in: (a, b) => a in b,
-				instanceof: (a, b) => a instanceof b,
-			},
-			8: {
-				'==': (a, b) => a === b ,
-				'!=':  (a, b) => a !== b,
-				'===': (a, b) => a === b,
-				'!==': (a, b) => a !== b,
-			},
-			7: {
-				'&':  (a, b) => a & b,
-			},
-			6: {
-				'^': (a, b) => a ^ b,
-			},
-			5: {
-				'|':  (a, b) => a | b,
-			},
-			4: {
-				'&&': (a, b) => a && b
-			},
-			3: {
-				'||': (a, b) => a || b,
-				'??': (a, b) => a ?? b,
-			},
-			2: {
-				'?': () => {},
-				':': () => {}
-			},
-			1: {
-				',': (a, b) => {}
-			}
+		let precedenceOperatorsMap = {
+			18: [
+				['(', ')', ({ a, chunks, getGroupChunks, index, compile }) => {
+					const groupTokens = getGroupChunks(chunks, index, '(', ')');
+					const groupTokensLength = groupTokens.length;
+
+					if (!/^(?:\s|\W)/.test(a.toString())) {
+						return groupTokensLength + 2;
+					}
+
+					return [compile([...allPrecedences], groupTokens), groupTokensLength + 1, index]
+				}]
+			],
+			17: [
+				['?.', ({ a, b }) => [a?.[b], 2]],
+				['.', ({ a, b }) => [a[b], 2]],
+				['(', ')', ({ index, a, chunks, compile, getGroupChunks }) => {
+					const args = getGroupChunks(chunks, index, '(', ')');
+					const spliceLength = args.length;
+					console.log(args);
+					const compiledArgs = compile([...allPrecedences], args) ?? [];
+					const applyArgs = Array.isArray(compiledArgs) ? compiledArgs : [compiledArgs];
+
+					return [
+						a.apply(undefined, applyArgs.flat()),
+						spliceLength + 2
+					]
+				}]
+			],
+			15: [
+				['++.', ({ a }) => [a++, 1]],
+				['--.', ({ a }) => [a--, 1]]
+			],
+			14: [
+				['++', ({ b, index }) => [++b, 1, index]],
+				['--', ({ b, index }) => [--b, 1, index]],
+				['!', ({ b, index }) => [!b, 1, index]],
+				['!!', ({ b, index }) => [!!b, 1, index]],
+				['typeof', ({ b, index }) => [typeof b, 1, index]]
+			],
+			13: [
+				['**', ({ a, b }) => [a ** b]],
+			],
+			12: [
+				['*', ({ a, b }) => [a * b]],
+				['/', ({ a, b }) => [a / b]],
+				['%', ({ a, b }) => [a % b]],
+			],
+			11: [
+				['+', ({ a, b }) => [a + b]],
+				['-', ({ a, b }) => [a - b]]
+			],
+			9: [
+				['<', ({ a, b }) => [a < b]],
+				['<=', ({ a, b }) => [a <= b]],
+				['>', ({ a, b }) => [a > b]],
+				['>=', ({ a, b }) => [a >= b]],
+				['in', ({ a, b }) => [[a in b]]],
+				['instanceof', ({ a, b }) => [[a instanceof b]]]
+			],
+			8: [
+				['==', ({ a, b }) => [a == b]],
+				['!=', ({ a, b }) => [a != b]],
+				['===', ({ a, b }) => [a === b]],
+				['!==', ({ a, b }) => [a !== b]]
+			],
+			7: [
+				['&', ({ a, b }) => [a & b]]
+			],
+			6: [
+				['^', ({ a, b }) => [a ^ b]]
+			],
+			5: [
+				['|', ({ a, b }) => [a | b]]
+			],
+			4: [
+				['&&', ({ a, b }) => [a && b]]
+			],
+			3: [
+				['||', ({ a, b }) => [a || b]],
+				['??', ({ a, b }) => [a ?? b]]
+			],
+			2: [
+				['?', ':', ({ a, index, chunks, prepareChunk }) => {
+					let b = [];
+					let c = [];
+					let startIndex = 1;
+					let colonFound = false;
+					const chunksLength = chunks.length - 1;
+					while (startIndex < chunksLength) {
+						startIndex += 1;
+						const token = chunks[startIndex];
+						const isColon = token === ':';
+
+						if (!colonFound) {
+							colonFound = isColon;
+							if (colonFound) {
+								continue;
+							}
+						}
+
+						if (!isColon && operatorsKeys.includes(token)) {
+							break;
+						}
+
+						if (colonFound) {
+							c.push(prepareChunk(chunks[startIndex]));
+						} else {
+							b.push(prepareChunk(chunks[startIndex]));
+						}
+					}
+
+					chunks[index - 1] = !!a ? b.join('') : c.join('');
+					chunks.splice(index, b.length + c.length + 2);
+				}]
+			],
+			1: [
+				[',', ({ a, b }) => [[...Array.isArray(a) ? a : [a], ...Array.isArray(b) ? b : [b]]]]
+			]
 		};
 
-		let operatorsKeys = [];
+		let precedenceOperatorKeysMap = {};
+		let precedenceOperatorCompilerMap = {};
 
 		for (const precedence in precedenceOperatorsMap) {
-			operatorsKeys = [
-				...operatorsKeys,
-				...Object.keys(precedenceOperatorsMap[precedence])
-			]
+			for (const operatorDefinition of precedenceOperatorsMap[precedence]) {
+				const operators = Object.values(operatorDefinition);
+				precedenceOperatorKeysMap[precedence] = [
+					...precedenceOperatorKeysMap[precedence] ?? [],
+					...operators.slice(0, -1)
+				];
+				precedenceOperatorCompilerMap[precedence] = {
+					...precedenceOperatorCompilerMap[precedence],
+					[operators[0]]: operators.pop()
+				};
+			}
 		}
 
+		let operatorsKeys = Object.values(precedenceOperatorKeysMap).flat();
 		const allPrecedences = Object.keys(precedenceOperatorsMap).sort((a, b) => b - a);
 
 		$.evaluate = (str, context = {}) => {
@@ -101,7 +165,8 @@ export default () => {
 				const operatorsRe = new RegExp(`^(${operatorsKeys
 					.map((item) => item.replace(/[|+\\/?*^.,()]/g, '\\$&'))
 					.sort((a, b) => b.length - a.length)
-					.join('|')})`);
+					.join('|')})`
+				);
 
 				const chunks = [];
 				let inWord = false;
@@ -111,6 +176,7 @@ export default () => {
 
 				while (true) {
 					const token = str[0];
+
 					if (token === undefined) {
 						break;
 					}
@@ -120,11 +186,18 @@ export default () => {
 					} else if (/\W/.test(token) && token !== '_') {
 						inWord = false;
 					}
+
 					inWord = false;
 					let operatorsDetected = !inWord && operatorsRe.test(str)
 					str = str.slice(1);
-					operatorsDetected = !inWord && (operatorsDetected || operatorsRe.test(str));
+
+					let operatorMatch = str.match(operatorsRe);
+					operatorsDetected = !inWord && (operatorsDetected || operatorMatch !== null);
 					tokensQueue += token;
+
+					if (operatorsDetected && /^\w/.test(operatorMatch) && /\w$/.test(tokensQueue)) {
+						operatorsDetected = false;
+					}
 
 					if (quotes.includes(token)) {
 						inString = !inString;
@@ -150,57 +223,54 @@ export default () => {
 				return chunks;
 			}
 
-			const prepareChunk = (chunk) => {
-				if (chunk in chunkKeywordMap) {
-					return chunkKeywordMap[chunk];
-				}
-
-				if (quotes.includes(chunk[0])) {
-					return chunk.substring(1).substring(0, chunk.length - 2);
-				}
-
-				if (!Number.isNaN(parseFloat(chunk))) {
-					return parseFloat(chunk);
-				}
-
-				if (chunk in context) {
-					return context[chunk];
-				}
-
-				return chunk;
-			}
-
 			const compile = (precedences, chunks) => {
 				const precedence = precedences.shift();
+				const prepareChunk = (chunk) => {
+					if (chunk in chunkKeywordMap) {
+						return chunkKeywordMap[chunk];
+					}
 
-				if (precedence === undefined || chunks.length === 1) {
-					return prepareChunk(chunks[0]);
+					if (quotes.includes(chunk[0])) {
+						return chunk.substring(1).substring(0, chunk.length - 2);
+					}
+
+					if (!Array.isArray(chunk) && !Number.isNaN(parseFloat(chunk))) {
+						return parseFloat(chunk);
+					}
+
+					if (chunk in context) {
+						return context[chunk];
+					}
+
+					return chunk;
 				}
 
-				const operators = precedenceOperatorsMap[precedence];
+				if (precedence === undefined || chunks.length === 1) {
+					return prepareChunk(chunks);
+				}
 
-				if (!chunks.some((chunk) => chunk in operators)) {
+				const operators = precedenceOperatorKeysMap[precedence];
+
+				if (!chunks.some((chunk) => operators.includes(chunk))) {
 					return compile(precedences, chunks);
 				}
 
-				let a;
-				let b;
-				let operator;
 				let startIndex = 0;
 				const chunksLength = chunks.length;
 
-				const loadGroupedChunks = (chunks, cursorIndex) => {
+				const getGroupChunks = (chunks, cursorIndex, openToken, closeToken) => {
 					const groupChunks = []
 					let closingBracesRequired = 1;
+
 					while (closingBracesRequired > 0 || cursorIndex < chunks.length) {
 						cursorIndex += 1;
 						const token = chunks[cursorIndex];
 
-						if (token === '(') {
+						if (token === openToken) {
 							closingBracesRequired ++;
 						}
 
-						if (token === ')') {
+						if (token === closeToken) {
 							closingBracesRequired --;
 						}
 
@@ -214,88 +284,43 @@ export default () => {
 					return groupChunks;
 				}
 
-				const processGroup = (chunks, operatorIndex = 0) => {
-					const args = loadGroupedChunks(chunks, operatorIndex);
-					const argsLength = args.length + 1;
-					chunks[operatorIndex] = compile([...allPrecedences], args)
-					chunks.splice(operatorIndex + 1, argsLength);
-				}
-
 				let runs = 0;
 
 				while (startIndex <= chunksLength && runs <= chunksLength) {
-					if (chunks[startIndex] in operators) {
-						operator = chunks[startIndex];
-						if (operator === '(') {
-							processGroup(chunks);
+					const token = chunks[startIndex];
+
+					if (operators.includes(token)) {
+						const result = precedenceOperatorCompilerMap[precedence][token]({
+							a: prepareChunk(chunks[startIndex - 1]),
+							b: prepareChunk(chunks[startIndex + 1]),
+							compile,
+							prepareChunk,
+							getGroupChunks,
+							index: startIndex,
+							chunks
+						});
+						if (typeof result === 'number') {
+							startIndex += result;
 						} else {
-							chunks[startIndex] = operators[operator](prepareChunk(chunks[startIndex + 1]));
-							chunks.splice(startIndex + 1, 1);
-						}
-					} else if (chunks[startIndex + 1] in operators) {
-						const operatorIndex = startIndex + 1;
-						operator = chunks[operatorIndex];
-						a = prepareChunk(chunks[startIndex]);
-						if (operator === '(') {
-							if (typeof a === 'function') {
-								const args = loadGroupedChunks(chunks, operatorIndex);
-								const argsLength = args.length;
-								chunks[startIndex] = a.apply(
-									context,
-									argsLength > 0 ? [compile([...allPrecedences], args)] : []
-								);
-								chunks.splice(startIndex + 1, argsLength + 2);
-							} else {
-								processGroup(chunks, operatorIndex);
+							let resultPosition = result[2] ?? undefined;
+							const spliceLength = result[1] ?? 2;
+							if (resultPosition === undefined) {
+								resultPosition = typeof chunks[startIndex - 1] === undefined ? startIndex : startIndex - 1;
 							}
-						} else if (operator === '?') {
-							let b = [];
-							let c = [];
-							let index = 1;
-							let colonFound = false;
-							while (index < chunksLength) {
-								index += 1;
-								const token = chunks[index];
-								const isColon = token === ':';
-
-								if (!colonFound) {
-									colonFound = isColon;
-									if (colonFound) {
-										continue;
-									}
-								}
-
-								if (!isColon && operatorsKeys.includes(token)) {
-									break;
-								}
-
-								if (colonFound) {
-									c.push(prepareChunk(chunks[index]));
-								} else {
-									b.push(prepareChunk(chunks[index]));
-								}
-							}
-
-							chunks[startIndex] = !!a ? b.join('') : c.join('');
-							chunks.splice(startIndex + 1, b.length + c.length + 2);
-						} else {
-							b = prepareChunk(chunks[startIndex + 2]);
-							chunks[startIndex] = operators[operator](a, b);
-							chunks.splice(startIndex + 1, 2);
+							chunks[resultPosition] = result[0];
+							chunks.splice(resultPosition + 1, spliceLength);
 						}
 					} else {
 						startIndex++;
 					}
 
-					runs ++;
+					runs++;
 				}
 
 				return compile(precedences, chunks);
 			}
 
-			const res = compile([...allPrecedences], parse(str));
-
-			return res;
+			return compile([...allPrecedences], parse(str));
 		}
 	}
 }
