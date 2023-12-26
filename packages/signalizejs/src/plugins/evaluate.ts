@@ -7,14 +7,14 @@ export default () => {
 			true: true,
 			false: false,
 			null: null,
-			...$.globals,
 			Object,
 			Boolean,
 			Number,
 			String,
 			Function,
 			Array,
-			JSON
+			JSON,
+			...$.globals
 		};
 
 		const quotes = ['"', "'", '`'];
@@ -27,7 +27,9 @@ export default () => {
 					const groupTokens = getGroupChunks(chunks, index, '(', ')');
 					const groupTokensLength = groupTokens.length;
 
-					if (!/^(?:\s|\W)/.test(a.toString())) {
+					// Check if it the previous argument isnt a function call
+					// If it is, skip to the end of the group
+					if (typeof a === 'function') {
 						return groupTokensLength + 2;
 					}
 
@@ -104,7 +106,7 @@ export default () => {
 				['??', ({ a, b }) => [a ?? b]]
 			],
 			2: [
-				['?', ':', ({ a, index, chunks, prepareChunk }) => {
+				['?', ':', ({ a, chunks, prepareChunk }) => {
 					let b = [];
 					let c = [];
 					let startIndex = 1;
@@ -133,8 +135,7 @@ export default () => {
 						}
 					}
 
-					chunks[index - 1] = !!a ? b.join('') : c.join('');
-					chunks.splice(index, b.length + c.length + 2);
+					return [!!a ? b.join('') : c.join(''), b.length + c.length + 2]
 				}]
 			],
 			1: [
