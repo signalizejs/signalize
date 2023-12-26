@@ -274,11 +274,11 @@ export default () => {
 						const token = chunks[cursorIndex];
 
 						if (token === openToken) {
-							closingBracesRequired ++;
+							closingBracesRequired++;
 						}
 
 						if (token === closeToken) {
-							closingBracesRequired --;
+							closingBracesRequired--;
 						}
 
 						if (closingBracesRequired === 0) {
