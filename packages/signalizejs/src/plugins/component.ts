@@ -86,6 +86,10 @@ export default ($: Signalize): void => {
 					}
 				});
 
+				for (const attr of this.#vnode.$el.attributes) {
+					this.attributeChangedCallback(attr.name, undefined, this.#vnode.$el.getAttribute(attr.name))
+				}
+
 				if (options?.construct !== undefined) {
 					const data = await options?.construct?.call(undefined, this.#vnode);
 
@@ -134,12 +138,18 @@ root
 			}
 
 			attributeChangedCallback (name: string, oldValue: string, newValue: string): void {
-				if (observableAttributes.includes(name)) {
-					const currentProperty = this.#vnode.$props[attributesPropertiesMap[name]];
-					currentProperty(
-						Number.isNaN(parseFloat(currentProperty())) ? newValue : parseFloat(newValue)
-					);
+				if (!observableAttributes.includes(name)) {
+					return
 				}
+
+				const currentProperty = this.#vnode.$props[attributesPropertiesMap[name]];
+				let valueToSet = Number.isNaN(parseFloat(currentProperty())) ? newValue : parseFloat(newValue);
+
+				if (typeof currentProperty() === 'boolean') {
+					valueToSet = valueToSet.length > 0 ? !!valueToSet : this.#vnode.$el.hasAttribute(name);
+				}
+
+				currentProperty(valueToSet);
 			}
 
 			async connectedCallback (): Promise<void> {

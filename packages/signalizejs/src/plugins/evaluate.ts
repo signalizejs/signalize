@@ -15,12 +15,14 @@ export default () => {
 			Function,
 			Array,
 			JSON
-		}
+		};
+
 		const quotes = ['"', "'", '`'];
 
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
 		let precedenceOperatorsMap = {
 			18: [
+				// Groups
 				['(', ')', ({ a, chunks, getGroupChunks, index, compile }) => {
 					const groupTokens = getGroupChunks(chunks, index, '(', ')');
 					const groupTokensLength = groupTokens.length;
@@ -35,6 +37,7 @@ export default () => {
 			17: [
 				['?.', ({ a, b }) => [a?.[b], 2]],
 				['.', ({ a, b }) => [a[b], 2]],
+				// Function call
 				['(', ')', ({ index, a, chunks, compile, getGroupChunks }) => {
 					const args = getGroupChunks(chunks, index, '(', ')');
 					const spliceLength = args.length;
@@ -194,13 +197,15 @@ export default () => {
 					}
 
 					inWord = false;
+					// Check befor the token is separated from string
 					let operatorsDetected = !inWord && operatorsRe.test(str)
 					str = str.slice(1);
-
+					// Check after token is separated from string
 					let operatorMatch = str.match(operatorsRe);
 					operatorsDetected = !inWord && (operatorsDetected || operatorMatch !== null);
 					tokensQueue += token;
 
+					// If token starts with letters like "in", prevent matching in word like "JSON.strINgify"
 					if (operatorsDetected && /^\w/.test(operatorMatch) && /\w$/.test(tokensQueue)) {
 						operatorsDetected = false;
 					}
