@@ -16,7 +16,7 @@ export default ($: Signalize): void => {
 
 	const callOnDomReadyListeners = (): void => {
 		while (domReadyListeners.length > 0) {
-			$.task(domReadyListeners.shift())
+			domReadyListeners.shift()
 		}
 	}
 
@@ -25,13 +25,15 @@ export default ($: Signalize): void => {
 		return documentElement.readyState !== 'loading'
 	};
 
-	$.customEventListener('dom:ready', ({ listener }) => {
-		if (isDomReady()) {
-			listener()
-		} else {
-			domReadyListeners.push(listener);
+	$.customEventListener('dom:ready', ({
+		on: ({ listener }) => {
+			if (isDomReady()) {
+				listener();
+			} else {
+				domReadyListeners.push(listener);
+			}
 		}
-	});
+	}));
 
 	if (isDomReady()) {
 		callOnDomReadyListeners();

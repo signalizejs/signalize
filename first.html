@@ -17,32 +17,31 @@
 		}
 	</style>
 
-	<script type="module">
-		import Signalize from 'signalizejs';
-		import fetch from 'signalizejs/fetch';
-		import snippets from 'signalizejs/snippets';
-		import directives from 'signalizejs/directives';
-		import spa from 'signalizejs/spa';
-
-		const { scope } = new Signalize({
-			plugins: [
-				fetch(),
-				snippets(),
-				spa(),
-				directives()
-			]
-		});
-
-		scope('test', ({ data }) => {
-			data.click = () => alert('meh');
-		});
-	</script>
-
 	<div snippet="body">
+		<script type="module">
+			import Signalize from 'signalizejs';
+			import fetch from 'signalizejs/fetch';
+			import snippets from 'signalizejs/snippets';
+			import evaluator from 'signalizejs/evaluate';
+			import domTraverser from 'signalizejs/traverse-dom';
+			import directives from 'signalizejs/directives';
+			import spa from 'signalizejs/spa';
+
+			const { component, on } = new Signalize({
+				plugins: [
+					fetch(),
+					snippets(),
+					spa(),
+					evaluator(),
+					domTraverser(),
+					directives()
+				]
+			});
+
+			on('spa:page:ready', (event) => {})
+		</script>
+
 		<a href="/second.html">Second</a>
-		<div scope="test">
-			<button @click="click()">Click</button>
-		</div>
 	</div>
 
 </body>

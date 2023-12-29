@@ -58,6 +58,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 		const spaCacheHeader = options?.cacheHeader ?? 'X-Spa-Cache-Control';
 		const spaAppVersionHeader = options?.appVersionHeader ?? 'X-Spa-App-Version';
 
+		let currentState = null;
 		let currentLocation = new URL(window.location.href);
 		let abortNavigationController: AbortController;
 		const spaVersion = null;
@@ -83,7 +84,23 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			return true;
 		}
 
+		let firstNavigationTriggered = false;
+
+		$.customEventListener('spa:page:ready', ({
+			on: ({ listener }) => {
+				$.root.addEventListener('spa:page:ready', listener, { passive: true });
+
+				if (!firstNavigationTriggered) {
+					listener($.customEvent('spa:page:ready', currentState));
+				}
+			},
+			off: ({ listener }) => {
+				$.root.removeEventListener('spa:page:ready', listener)
+			}
+		}));
+
 		const navigate = async (data: NavigationData): Promise<SpaDispatchEventData> => {
+			firstNavigationTriggered = true;
 			const dispatchEventData: SpaDispatchEventData = {
 				...data,
 				success: undefined
@@ -154,16 +171,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				if (stateAction === 'replace') {
 					window.history.replaceState(window.history.state, '', urlString);
 				} else if (stateAction === 'push') {
-					window.history.pushState(
-						{
-							url: data.url,
-							spa: true,
-							scrollX: data.scrollX ?? window.scrollX,
-							scrollY: data.scrollY ?? window.scrollY
-						},
-						'',
-						urlString
-					);
+					currentState = {
+						url: data.url,
+						spa: true,
+						scrollX: data.scrollX ?? window.scrollX,
+						scrollY: data.scrollY ?? window.scrollY
+					};
+					window.history.pushState(currentState, '', urlString);
 				}
 
 				if (shouldCacheResponse === null) {
@@ -220,9 +234,12 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				currentLocation = new URL(window.location.href);
 			}
 
-			const navigationEndData = { ...dispatchEventData, success: responseData !== null };
+			const success = responseData !== null;
+			const navigationEndData = { ...dispatchEventData, success };
 			dispatch('spa:navigation:end', navigationEndData);
-			dispatch('spa:page:ready', navigationEndData);
+			if (success) {
+				dispatch('spa:page:ready', navigationEndData);
+			}
 			return navigationEndData;
 		}
 
@@ -298,8 +315,9 @@ export default (options?: PluginOptions): SignalizePlugin => {
 		}
 
 		on('dom:ready', () => {
-			const currentState = {
+			currentState = {
 				spa: true,
+				url: window.location.pathname,
 				scrollX: window.scrollX,
 				scrollY: window.scrollY
 			};
@@ -308,7 +326,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				window.history.replaceState(currentState, '', window.location.href);
 			}
 
-			dispatch('spa:page:ready', { ...currentState, success: true });
+			dispatch('spa:page:ready', currentState)
 
 			on('click', `a[href], [${spaUrlAttribute}]`, onClick);
 

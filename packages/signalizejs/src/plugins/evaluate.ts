@@ -45,7 +45,6 @@ export default () => {
 					const spliceLength = args.length;
 					const compiledArgs = compile([...allPrecedences], args) ?? [];
 					const applyArgs = Array.isArray(compiledArgs) ? compiledArgs : [compiledArgs];
-
 					return [
 						a.apply(undefined, applyArgs.flat()),
 						spliceLength + 2
@@ -53,8 +52,8 @@ export default () => {
 				}]
 			],
 			15: [
-				['++.', ({ a }) => [a++, 1]],
-				['--.', ({ a }) => [a--, 1]]
+				['++', ({ a }) => [a++, 1]],
+				['--', ({ a }) => [a--, 1]]
 			],
 			14: [
 				['++', ({ b, index }) => [++b, 1, index]],
@@ -259,7 +258,7 @@ export default () => {
 				}
 
 				if (precedence === undefined || chunks.length === 1) {
-					return prepareChunk(chunks);
+					return chunks.map((item) => prepareChunk(item));
 				}
 
 				const operators = precedenceOperatorKeysMap[precedence];
@@ -333,7 +332,9 @@ export default () => {
 				return compile(precedences, chunks);
 			}
 
-			return compile([...allPrecedences], parse(str));
+			const compiledChunks = compile([...allPrecedences], parse(str));
+			// There is always only one at the end of the evaluation.
+			return compiledChunks[0];
 		}
 	}
 }

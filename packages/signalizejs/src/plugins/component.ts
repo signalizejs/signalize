@@ -61,6 +61,7 @@ export default ($: Signalize): void => {
 		class Component extends HTMLElement {
 			#constructPromise;
 			readonly #vnode;
+			readonly constructed = false;
 
 			constructor () {
 				super();

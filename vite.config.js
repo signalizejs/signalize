@@ -26,6 +26,7 @@ export default defineConfig({
 			'signalizejs/snippets': `${pluginsDir}/snippets.ts`,
 			'signalizejs/spa': `${pluginsDir}/spa.ts`,
 			'signalizejs/width': `${pluginsDir}/width.ts`,
+			'signalizejs/task': `${pluginsDir}/task.ts`,
 			'signalizejs/traverse-dom': `${pluginsDir}/traverse-dom.ts`,
 			signalizejs: `${signalizejsSourceDir}/index.ts`
 		}

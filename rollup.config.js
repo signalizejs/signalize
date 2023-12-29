@@ -69,6 +69,7 @@ const packages = [
 		]
 	},
 
+	// signalizejs/directives/for
 	{
 		plugins: [typescript()],
 		input: `${signalizeDir}/src/plugins/directives/for.ts`,
@@ -84,6 +85,8 @@ const packages = [
 			}
 		]
 	},
+
+	// signalizejs/directives/if
 	{
 		plugins: [typescript()],
 		input: `${signalizeDir}/src/plugins/directives/if.ts`,
@@ -151,7 +154,7 @@ const packages = [
 		]
 	},
 
-	// signalizejs/h
+	// signalizejs/logger
 	{
 		plugins: [typescript()],
 		input: `${signalizeDir}/src/plugins/logger.ts`,
@@ -168,7 +171,7 @@ const packages = [
 		]
 	},
 
-	// signalizejs/h
+	// signalizejs/snippets
 	{
 		plugins: [typescript()],
 		input: `${signalizeDir}/src/plugins/snippets.ts`,
@@ -185,7 +188,7 @@ const packages = [
 		]
 	},
 
-	// signalizejs/h
+	// signalizejs/spa
 	{
 		plugins: [typescript()],
 		input: `${signalizeDir}/src/plugins/spa.ts`,
@@ -202,7 +205,7 @@ const packages = [
 		]
 	},
 
-	// signalizejs/dialog
+	// signalizejs/traverse-dom
 	{
 		plugins: [typescript()],
 		input: `${signalizeDir}/src/plugins/traverse-dom.ts`,
@@ -214,6 +217,23 @@ const packages = [
 			},
 			{
 				file: `${signalizeDir}/dist/plugins/traverse-dom.cjs`,
+				format: 'cjs'
+			}
+		]
+	},
+
+	// signalizejs/task
+	{
+		plugins: [typescript()],
+		input: `${signalizeDir}/src/plugins/task.ts`,
+		treeshake: false,
+		output: [
+			{
+				file: `${signalizeDir}/dist/plugins/task.js`,
+				format: 'esm'
+			},
+			{
+				file: `${signalizeDir}/dist/plugins/task.cjs`,
 				format: 'cjs'
 			}
 		]

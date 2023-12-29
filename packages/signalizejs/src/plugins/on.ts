@@ -9,6 +9,7 @@ declare module '..' {
 			callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 			options?: AddEventListenerOptions
 		) => void
+		off: (type: string, element: Element | Document, listener: EventListenerOrEventListenerObject, options?: Record<string, any>) => void
 		customEventListener: (name: string, listener: CustomEventListener) => void
 	}
 
@@ -20,7 +21,10 @@ declare module '..' {
 
 export type EventTarget = string | NodeListOf<Element> | Element[] | Element | Window;
 
-export type CustomEventListener = (args: CustomEventListenerArgs) => void;
+export type CustomEventListener = {
+	on: (args: CustomEventListenerArgs) => void
+	off?: (args: CustomEventListenerArgs) => void
+}
 
 export interface CustomEventListenerArgs {
 	target: Element
@@ -40,39 +44,47 @@ export interface PluginOptions {
 
 export default ($: Signalize): void => {
 	const customEventListeners: Record<string, CustomEventListener> = {
-		clickOutside: ({ target, listener, options }) => {
-			document.addEventListener('click', (listenerEvent) => {
-				const eventTarget = listenerEvent.target as Element;
+		clickOutside: {
+			on: ({ target, listener, options }) => {
+				document.addEventListener('click', (listenerEvent) => {
+					const eventTarget = listenerEvent.target as Element;
 
-				if ((typeof target === 'string' && (eventTarget.matches(target) || eventTarget.closest(target) !== null)) ||
-					(target instanceof Element && target === eventTarget)
-				) {
-					return
-				}
+					if ((typeof target === 'string' && (eventTarget.matches(target) || eventTarget.closest(target) !== null)) ||
+						(target instanceof Element && target === eventTarget)
+					) {
+						return
+					}
 
-				if (eventTarget !== target && (typeof target === 'string' && (!eventTarget.matches(target) || !eventTarget.closest(target)))) {
-					listener(listenerEvent);
-				}
-			}, options);
-		},
-		remove: ({ target, listener }) => {
-			const callback = (event) => {
-				if (event.detail === target) {
-					listener();
-					$.off('dom:mutation:node:removed', $.root, callback);
-				}
+					const targetIsString = typeof target === 'string';
+					if (eventTarget !== target && (!targetIsString || (targetIsString && (!eventTarget.matches(target) || eventTarget.closest(target) === null)))) {
+						listener(listenerEvent);
+					}
+				}, options);
+			},
+			off: ({ listener }) => {
+				document.removeEventListener('click', listener);
 			}
-			on('dom:mutation:node:removed', callback, { once: true, passive: true });
+		},
+		remove: {
+			on: ({ target, listener }) => {
+				const callback = (event) => {
+					if (event.detail === target) {
+						listener();
+						$.off('dom:mutation:node:removed', $.root, callback);
+					}
+				}
+
+				on('dom:mutation:node:removed', callback, { passive: true });
+			}
 		}
 	}
 
 	const on = (
-		event: keyof CustomEventListeners,
+		events: keyof CustomEventListeners,
 		targetOrCallback: EventTarget | CallableFunction,
 		callbackOrOptions?: CallableFunction | AddEventListenerOptions,
 		options?: AddEventListenerOptions
 	): void => {
-		const events = event.split(' ').map((event) => event.trim());
 		let target: Selectable;
 		let listener: CallableFunction;
 		options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
@@ -88,7 +100,7 @@ export default ($: Signalize): void => {
 		const listenerType = typeof target === 'string' ? 'global' : 'direct';
 		const handlers: Record<string, CustomEventListener> = {
 			global: ({ target, listener, options }) => {
-				document.addEventListener(event, (listenerEvent) => {
+				document.addEventListener(events, (listenerEvent) => {
 					const eventTarget = listenerEvent.target as Element;
 
 					if (eventTarget.matches(target as string) || (eventTarget.closest(target as string) != null)) {
@@ -98,15 +110,22 @@ export default ($: Signalize): void => {
 			},
 			direct: ({ target, listener, options }) => {
 				for (const element of $.selectorToIterable(target)) {
-					element.addEventListener(event, listener, options)
+					element.addEventListener(events, listener, options)
 				}
 			}
 		}
 
-		for (const event of events) {
+		for (const event of events.split(' ').map((event) => event.trim())) {
 			const listenerData: CustomEventListenerArgs = { event, target, listener, options };
+
 			if (event in customEventListeners) {
-				customEventListeners[event].call(this, listenerData);
+				if (options?.once === true) {
+					listenerData.listener = (...args) => {
+						listener.apply(undefined, args);
+						customEventListeners[event]?.off(listenerData);
+					}
+				}
+				customEventListeners[event].on(listenerData);
 				continue;
 			}
 
@@ -114,8 +133,23 @@ export default ($: Signalize): void => {
 		}
 	}
 
-	$.customEventListener = (name, listener) => {
-		customEventListeners[name] = listener
+	$.customEventListener = (name, config) => {
+		customEventListeners[name] = config;
+	}
+
+	$.off = (events, element, listener, options = {}) => {
+		const elements = $.selectorToIterable(element);
+
+		for (const event of events.split(' ')) {
+			if (event in customEventListeners) {
+				customEventListeners[event]?.off({ event, target: element, listener, options })
+				continue;
+			}
+
+			for (const element of elements) {
+				element.removeEventListener(event, listener, options);
+			}
+		}
 	}
 
 	$.on = on;

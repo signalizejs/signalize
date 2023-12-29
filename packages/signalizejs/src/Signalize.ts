@@ -2,14 +2,12 @@ import bind from './plugins/bind';
 import dispatch from './plugins/dispatch'
 import domReady from './plugins/dom-ready';
 import mutationsObserver from './plugins/mutation-observer';
-import off from './plugins/off';
 import on from './plugins/on';
 import type { CustomEventListener } from './plugins/on';
 import component from './plugins/component';
 import dashCase from './plugins/dash-case';
 import select from './plugins/select';
 import signal from './plugins/signal';
-import task from './plugins/task';
 import vnode from './plugins/vnode';
 
 export type SignalizeGlobals = Record<string, any>
@@ -56,7 +54,6 @@ export class Signalize {
 			this.attributeSeparator = options?.attributeSeparator ?? '-';
 			this.componentPrefix = options?.componentPrefix ?? '';
 			this.globals = { ...this.globals, ...options?.globals ?? {} };
-			task(this);
 			dispatch(this);
 			on(this);
 			this.customEventListener('signalize:ready', ({ listener }) => {
@@ -66,7 +63,6 @@ export class Signalize {
 				}
 				readyListeners.push(listener);
 			});
-			off(this);
 			domReady(this);
 			select(this);
 			vnode(this);
