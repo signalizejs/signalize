@@ -27,10 +27,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/signalize.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/signalize.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -44,10 +40,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/dialog.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/dialog.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -61,10 +53,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/directives.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/directives.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -78,10 +66,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/directives/for.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/directives/for.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -95,10 +79,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/directives/if.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/directives/if.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -106,16 +86,12 @@ const packages = [
 	// signalizejs/evaluator
 	{
 		plugins: [typescript()],
-		input: `${signalizeDir}/src/plugins/evaluate.ts`,
+		input: `${signalizeDir}/src/plugins/evaluator.ts`,
 		treeshake: false,
 		output: [
 			{
-				file: `${signalizeDir}/dist/plugins/evaluate.js`,
+				file: `${signalizeDir}/dist/plugins/evaluator.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/evaluate.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -129,10 +105,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/fetch.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/fetch.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -140,16 +112,12 @@ const packages = [
 	// signalizejs/h
 	{
 		plugins: [typescript()],
-		input: `${signalizeDir}/src/plugins/h.ts`,
+		input: `${signalizeDir}/src/plugins/hyperscript.ts`,
 		treeshake: false,
 		output: [
 			{
-				file: `${signalizeDir}/dist/plugins/h.js`,
+				file: `${signalizeDir}/dist/plugins/hyperscript.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/h.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -163,10 +131,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/logger.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/logger.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -180,10 +144,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/snippets.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/snippets.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -197,10 +157,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/spa.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/spa.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -214,10 +170,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/traverse-dom.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/traverse-dom.cjs`,
-				format: 'cjs'
 			}
 		]
 	},
@@ -231,10 +183,6 @@ const packages = [
 			{
 				file: `${signalizeDir}/dist/plugins/task.js`,
 				format: 'esm'
-			},
-			{
-				file: `${signalizeDir}/dist/plugins/task.cjs`,
-				format: 'cjs'
 			}
 		]
 	}

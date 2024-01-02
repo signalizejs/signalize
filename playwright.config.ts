@@ -1,44 +1,46 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const httpServerAddress = 'http://0.0.0.0:4000';
+/**
+ * Read environment variables from file.
+ * https://github.com/motdotla/dotenv
+ */
+// require('dotenv').config();
 
-let package = 'signalize';
-
-if (typeof process.env.PACKAGE === 'string') {
-	package += '/' + process.env.PACKAGE
-}
-
+/**
+ * See https://playwright.dev/docs/test-configuration.
+ */
 export default defineConfig({
-	testDir: package + '/tests',
+	testDir: './packages/signalizejs/tests',
 	fullyParallel: true,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
 	workers: process.env.CI ? 1 : undefined,
-	reporter: process.env.CI ? 'line' : 'html',
+	reporter: 'html',
 	use: {
-		baseURL: httpServerAddress,
+		/* Base URL to use in actions like `await page.goto('/')`. */
+		// baseURL: 'http://127.0.0.1:3000',
 		trace: 'on-first-retry'
 	},
+
+	/* Configure projects for major browsers */
 	projects: [
 		{
 			name: 'chromium',
 			use: { ...devices['Desktop Chrome'] }
 		},
-
 		{
 			name: 'firefox',
 			use: { ...devices['Desktop Firefox'] }
-		},
-
-		{
-			name: 'webkit',
-			use: { ...devices['Desktop Safari'] }
 		}
-	],
 
+		/* {
+			name: 'webkit',
+			use: { ...devices['Desktop Safari'] },
+		}, */
+	],
 	webServer: {
 		command: 'npm run http-server:start',
-		url: httpServerAddress,
+		url: 'http://localhost:4000',
 		reuseExistingServer: !process.env.CI,
 	}
 });

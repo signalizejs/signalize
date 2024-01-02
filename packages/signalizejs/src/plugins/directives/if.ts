@@ -10,11 +10,10 @@ export default (): SignalizePlugin => {
 
 				return new RegExp(`(?::|${$.attributePrefix})if`);
 			},
-			callback: async ({ vnode, attribute }) => {
-				const { $el } = vnode;
-				let nextSibling = $el.nextSibling;
-				const nextSiblingVnode = $.vnode(nextSibling);
-				let rendered = nextSiblingVnode?.template === $el;
+			callback: async ({ scope, attribute }) => {
+				const { $el } = scope;
+				const nextSiblingScope = $.scope($el.nextSibling);
+				let rendered = nextSiblingScope?.template === $el;
 				let previousResult = rendered;
 				let prerendered = true;
 				let renderedNodes = [];
@@ -32,8 +31,8 @@ export default (): SignalizePlugin => {
 				const render = async (): Promise<void> => {
 					let conditionResult;
 					if (!inited) {
-						const getSignalsToWatch = $.observeSignals(vnode);
-						conditionResult = $.evaluate(attribute.value, vnode);
+						const getSignalsToWatch = $.observeSignals(scope);
+						conditionResult = $.evaluate(attribute.value, scope);
 						ifSignalsToWatch = getSignalsToWatch();
 						inited = true;
 
@@ -41,7 +40,7 @@ export default (): SignalizePlugin => {
 							return;
 						}
 					} else {
-						conditionResult = await $.evaluate(attribute.value, vnode);
+						conditionResult = await $.evaluate(attribute.value, scope);
 					}
 
 					if (conditionResult === previousResult) {
@@ -62,8 +61,8 @@ export default (): SignalizePlugin => {
 					}
 
 					let fragment = $el.cloneNode(true).content;
-					$.vnode(fragment, (fragmentVnode) => {
-						fragmentVnode.$data = vnode.$parentVnode.$data;
+					$.scope(fragment, (fragmentScope) => {
+						fragmentScope.$data = scope.$parentScope.$data;
 					});
 
 					await $.processDirectives({ root: fragment });
@@ -80,7 +79,7 @@ export default (): SignalizePlugin => {
 					unwatchSignalCallbacks.push(ifSignalsToWatch.shift().watch(render));
 				}
 
-				vnode.$cleanup(() => {
+				scope.$cleanup(() => {
 					while (renderedNodes.length > 0) {
 						renderedNodes.pop().remove()
 					}

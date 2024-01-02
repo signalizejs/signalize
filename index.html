@@ -16,59 +16,51 @@
 		}
 	</style>
 
-	<!--
-	<script type="module">
-		import Signalize from 'signalizejs';
-		import directives from 'signalizejs/directives';
-		import traverseDomPlugin from 'signalizejs/traverse-dom';
-		import evaluator from 'signalizejs/evaluate';
-		import ifDirective from 'signalizejs/directives/if';
-		import forDirective from 'signalizejs/directives/for';
-
-		// Use the directives plugin
-		const { component } = new Signalize({
-			plugins: [
-				traverseDomPlugin(),
-				evaluator(),
-				directives()
-			]
-		});
-
-		component('custom-wrapper')
-
-		component('test-button', {
-			construct() {
-				return {
-					alert: () => {
-						console.log('fu');
-					}
-  				}
-			}
-		})
-	</script> -->
-
-	<a class="btn" role="button">Click</a>
-
 	<script type="module">
 		import Signalize from 'signalizejs';
 		import directives from 'signalizejs/directives';
 		import domTraverser from 'signalizejs/traverse-dom';
-		import evaluator from 'signalizejs/evaluate';
-		import ifDirective from 'signalizejs/directives/if';
-		import forDirective from 'signalizejs/directives/for';
+		import evaluator from 'signalizejs/evaluator';
 
 		// Use the directives plugin
-		const { component, signal, on, select } = new Signalize({
-			plugins: [
-				evaluator(),
-				domTraverser(),
-				directives(),
-				forDirective()
-			]
+		const { component, signal, on, select, scope } = new Signalize({
 		});
 
-	</script>
+		component('x-button', {
+			setup({ $ref, $child, $connected, $disconnected }) {
+				const form = $ref('form');
+				const number = signal(2);
 
+				$child('x-form').then((elscop) => {
+					console.log(elscop);
+				});
+
+				return {
+					number
+				}
+			},
+		});
+
+		setTimeout(() => {
+			component('x-form', {
+				async setup() {
+					await new Promise((resolve) => {
+						setTimeout(() => {
+							resolve();
+							console.log('meh');
+						}, 3000);
+					})
+				}
+			});
+			console.log('set');
+		}, 2000);
+
+	</script>
 </body>
 
+	<x-button>
+		<x-form ref="form">
+			<input />
+		</x-form>
+	</x-button>
 </html>

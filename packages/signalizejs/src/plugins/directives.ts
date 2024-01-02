@@ -52,7 +52,7 @@ interface PluginOptions {
 
 export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 	return function Directives ($: Signalize) {
-		const { on, vnode, attributePrefix, attributeSeparator } = $;
+		const { on, scope, attributePrefix, attributeSeparator } = $;
 		const directivesRegister: Record<string, RegisteredDirective> = {};
 		const directivesAttribute = `${attributePrefix}directives`;
 		const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
@@ -66,13 +66,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			const mode = options.mode ?? 'init';
 			const canExecute = ['reinit', 'init'].includes(mode);
 			const canCompile = mode === 'init';
-			let elementVnode = vnode(element);
+			let elementScope = scope(element);
 
 			if (mode === 'reinit') {
-				elementVnode.$cleanup();
+				elementScope.$cleanup();
 			}
 
-			const compiledDirectives = elementVnode?.$directives ?? new Map();
+			const compiledDirectives = elementScope?.$directives ?? new Map();
 
 			let directivesQueue = [...options.$directives ?? Object.keys(directivesRegister)];
 			const customDirectivesOrder = element.getAttribute(orderAttribute) ?? '';
@@ -109,7 +109,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 							continue;
 						}
 
-						elementVnode = vnode(element, (node) => {
+						elementScope = scope(element, (node) => {
 							if (node?.$directives === undefined) {
 								node.$directives = new Map();
 							}
@@ -118,13 +118,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 						countdown--;
 
 						processedAttributes.push(attribute.name);
-						elementVnode.$directives.set(
+						elementScope.$directives.set(
 							directiveName,
 							[
-								...elementVnode.$directives.get(directiveName) ?? [],
-								(elementVnode) => {
+								...elementScope.$directives.get(directiveName) ?? [],
+								(elementScope) => {
 									return directivesRegister[directiveName].callback({
-										vnode: elementVnode,
+										scope: elementScope,
 										matches,
 										attribute
 									})
@@ -135,13 +135,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				}
 			}
 
-			const directivesToRun = [...elementVnode?.$directives?.keys() ?? []]
+			const directivesToRun = [...elementScope?.$directives?.keys() ?? []]
 
 			const runDirective = async (name: string): Promise<void> => {
 				const promises = [];
 
-				for (const directiveFunction of elementVnode.$directives.get(name)) {
-					promises.push(directiveFunction(elementVnode));
+				for (const directiveFunction of elementScope.$directives.get(name)) {
+					promises.push(directiveFunction(elementScope));
 				}
 
 				await Promise.all(promises);
@@ -163,18 +163,18 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				return;
 			}
 
-			const rootVnode = vnode(root);
+			const rootScope = scope(root);
 			await $.traverseDom(
 				root,
 				async (node) => {
-					if (node?.closest(`[${ignoreAttribute}]`) || vnode(node)?.$directives !== undefined) {
+					if (node?.closest(`[${ignoreAttribute}]`) || scope(node)?.$directives !== undefined) {
 						return;
 					}
 
 					if (node !== root) {
-						$.vnode(node, (elVnode) => {
-							elVnode.$data = rootVnode.$data;
-							elVnode.$parentVnode = rootVnode;
+						$.scope(node, (elScope) => {
+							elScope.$data = rootScope.$data;
+							elScope.$parentScope = rootScope;
 						});
 					}
 
@@ -241,15 +241,15 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 
 				return new RegExp(`(?::|${$.attributePrefix}bind${$.attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`)
 			},
-			callback: async ({ matches, vnode, attribute }) => {
-				const { $el } = vnode;
+			callback: async ({ matches, scope, attribute }) => {
+				const { $el } = scope;
 				const isShorthand = attribute.name.startsWith('{');
 				const attributeValue = isShorthand ? matches[3] : attribute.value;
 				const attributeName = isShorthand ? matches[3] : matches[1];
-				const getSignalsToWatch = $.observeSignals(vnode);
+				const getSignalsToWatch = $.observeSignals(scope);
 				const process = () => {
-					const res = $.evaluate(attributeValue, vnode);
-					return typeof res === 'function' ? res.call(vnode) : res;
+					const res = $.evaluate(attributeValue, scope);
+					return typeof res === 'function' ? res(scope) : res;
 				};
 
 				process();
@@ -265,10 +265,10 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 
 		directive('on', {
 			matcher: new RegExp(`(?:\\@|${$.attributePrefix}on${$.attributeSeparator})(\\S+)`),
-			callback: async ({ matches, vnode, attribute }) => {
-				$.on(matches[1], vnode.$el, async (event) => {
+			callback: async ({ matches, scope, attribute }) => {
+				$.on(matches[1], scope.$el, async (event) => {
 					const result = $.evaluate(attribute.value, {
-						...vnode,
+						...scope,
 						$event: event
 					});
 					if (typeof result === 'function') {
@@ -278,7 +278,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			}
 		});
 
-		on('component:constructed', (event) => {
+		on('component:setuped', (event) => {
 			processDirectives({ root: event.detail.$el })
 		});
 

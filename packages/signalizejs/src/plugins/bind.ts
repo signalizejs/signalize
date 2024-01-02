@@ -138,7 +138,7 @@ export default ($: Signalize): void => {
 			}
 		}
 
-		$.vnode(element, ({ $cleanup }) => {
+		$.scope(element, ({ $cleanup }) => {
 			$cleanup(() => {
 				for (const unwatch of unwatchSignalCallbacks) {
 					unwatch();

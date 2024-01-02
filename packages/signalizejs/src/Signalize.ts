@@ -8,7 +8,7 @@ import component from './plugins/component';
 import dashCase from './plugins/dash-case';
 import select from './plugins/select';
 import signal from './plugins/signal';
-import vnode from './plugins/vnode';
+import scope from './plugins/scope';
 
 export type SignalizeGlobals = Record<string, any>
 
@@ -65,7 +65,7 @@ export class Signalize {
 			});
 			domReady(this);
 			select(this);
-			vnode(this);
+			scope(this);
 			signal(this);
 			bind(this);
 			dashCase(this);

@@ -10,8 +10,8 @@ export default (): SignalizePlugin => {
 
 				return new RegExp(`(?::|${$.attributePrefix})for`);
 			},
-			callback: async ({ vnode, attribute }) => {
-				const { $el, $parentVnode } = vnode;
+			callback: async ({ scope, attribute }) => {
+				const { $el, $parentScope } = scope;
 				if ($el.tagName.toLowerCase() !== 'template') {
 					return;
 				}
@@ -29,7 +29,7 @@ export default (): SignalizePlugin => {
 				let nextElementSibling = $el.nextElementSibling;
 
 				while (nextElementSibling !== null) {
-					if ($.vnode(nextElementSibling)?.$template !== $el) {
+					if ($.scope(nextElementSibling)?.$template !== $el) {
 						break;
 					}
 
@@ -47,7 +47,7 @@ export default (): SignalizePlugin => {
 				let loopSignalsToWatch = [];
 
 				const processValue = async () => {
-					const result = $.evaluate(argumentsMatch[3], vnode.$data);
+					const result = $.evaluate(argumentsMatch[3], scope.$data);
 					return typeof result === 'function' ? result() : result;
 				}
 
@@ -55,7 +55,7 @@ export default (): SignalizePlugin => {
 					let stack;
 
 					if (!inited) {
-						const getSignalsToWatch = $.observeSignals(vnode.$data);
+						const getSignalsToWatch = $.observeSignals(scope.$data);
 						stack = await processValue();
 						loopSignalsToWatch = getSignalsToWatch();
 						inited = true;
@@ -83,7 +83,7 @@ export default (): SignalizePlugin => {
 					let lastInsertPoint = currentState[currentState.length - 1] ?? $el;
 
 					const isArrayDestruct = argumentsMatch[0].trim().startsWith('[');
-					const parentContext = vnode.$data;
+					const parentContext = scope.$data;
 					const iterate = async (context: any, counter: number): Promise<void> => {
 						const iterator = $.signal({
 							count: counter,
@@ -109,14 +109,14 @@ export default (): SignalizePlugin => {
 						}
 
 						const processChild = async (fragment: Node): Promise<void> => {
-							$.vnode(fragment, (elVnode) => {
-								elVnode.$data = {
+							$.scope(fragment, (elScope) => {
+								elScope.$data = {
 									...destruct,
 									...parentContext,
 									iterator
 								};
-								elVnode.$template = $el;
-								elVnode.$parentVnode = $parentVnode;
+								elScope.$template = $el;
+								elScope.$parentScope = $parentScope;
 							});
 
 							await $.processDirectives({ root: fragment, onlyRoot: true });
@@ -149,9 +149,9 @@ export default (): SignalizePlugin => {
 									lastInsertPoint.after(fragment);
 									lastInsertPoint = fragment;
 									for (const child of fragment.children) {
-										$.vnode(child, (elVnode) => {
-											elVnode.$data = $.vnode(fragment).$data;
-											elVnode.$parentVnode = $.vnode(fragment);
+										$.scope(child, (elScope) => {
+											elScope.$data = $.scope(fragment).$data;
+											elScope.$parentScope = $.scope(fragment);
 										})
 										void $.processDirectives({ root: child });
 									}
@@ -160,7 +160,7 @@ export default (): SignalizePlugin => {
 									void $.processDirectives({ root: fragment });
 								}
 							} else if (currentState.length > 0 && counter < currentState.length) {
-								$.vnode(currentState[counter], ({ $data }) => {
+								$.scope(currentState[counter], ({ $data }) => {
 									for (const [key, value] of Object.entries({ ...destruct, iterator })) {
 										const valueToSet = value instanceof $.Signal ? value() : value;
 										if ($data[key] instanceof $.Signal) {
@@ -175,9 +175,9 @@ export default (): SignalizePlugin => {
 								currentState.push(fragment);
 								lastInsertPoint = fragment;
 								for (const child of fragment.children) {
-									$.vnode(child, (elVnode) => {
-										elVnode.$data = $.vnode(fragment).$data;
-										elVnode.$parentVnode = $.vnode(fragment);
+									$.scope(child, (elScope) => {
+										elScope.$data = $.scope(fragment).$data;
+										elScope.$parentScope = $.scope(fragment);
 									});
 									void $.processDirectives({ root: child });
 								}
@@ -217,8 +217,8 @@ export default (): SignalizePlugin => {
 					unwatchSignalCallbacks.push(signalToWatch.watch(process))
 				}
 
-				$.vnode($el, (elVnode) => {
-					elVnode.$cleanup(() => {
+				$.scope($el, (elScope) => {
+					elScope.$cleanup(() => {
 						reduceState(0);
 						while (unwatchSignalCallbacks.length > 0) {
 							unwatchSignalCallbacks.shift()()

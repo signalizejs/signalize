@@ -2,24 +2,24 @@ import type { Signalize } from '..';
 
 declare module '..' {
 	interface Signalize {
-		vnode: (node: Node, init?: VnodeInitFunction) => VnodeInterface
+		scope: (node: Node, init?: ScopeInitFunction) => ScopeInterface
 	}
 }
 
-export interface VnodeInterface {
+export interface ScopeInterface {
 	$el: Element
 	$cleanup: (callback?: CallableFunction) => void
 }
 
-export type VnodeInitFunction = (vnode: VnodeInterface) => void
+export type ScopeInitFunction = (scope: ScopeInterface) => void
 
 export default ($: Signalize): void => {
 	const { selectAll } = $;
-	const vnodeKey = '__signalizeVnode';
+	const scopeKey = '__signalizeScope';
 	const refAttribute = `${$.attributePrefix}ref`;
 	const componentAttribute = $.componentAttribute;
 
-	class Vnode implements VnodeInterface {
+	class Scope implements ScopeInterface {
 		readonly #cleanups = new Set<CallableFunction>();
 		readonly #data = {};
 		readonly $ = $;
@@ -27,7 +27,7 @@ export default ($: Signalize): void => {
 
 		constructor ({ node }: { node: Node }) {
 			this.$el = node;
-			node[vnodeKey] = this;
+			node[scopeKey] = this;
 		}
 
 		get $data() {
@@ -64,7 +64,7 @@ export default ($: Signalize): void => {
 
 			const cleanChildren = (element: Element): void => {
 				for (const child of [...element.childNodes]) {
-					vnode(child)?.$cleanup();
+					scope(child)?.$cleanup();
 
 					if (child instanceof Element && child.childNodes.length > 0) {
 						cleanChildren(child);
@@ -81,10 +81,6 @@ export default ($: Signalize): void => {
 			cleanChildren(this.$el);
 		}
 
-		$parent = (name?: string): Element | null => {
-			return this.$el.closest(`[${componentAttribute}${name === undefined ? '' : `="${name}"`}]`);
-		}
-
 		$ref = (name: string): Element | null => {
 			return this.$refs(name)[0] ?? null;
 		}
@@ -96,17 +92,17 @@ export default ($: Signalize): void => {
 		}
 	}
 
-	const vnode = (node: Node, init?: VnodeInitFunction): Vnode | undefined => {
+	const scope = (node: Node, init?: ScopeInitFunction): Scope | undefined => {
 		if (typeof init === 'function') {
-			init(node[vnodeKey] ?? new Vnode({ node }));
+			init(node[scopeKey] ?? new Scope({ node }));
 		}
 
-		return node[vnodeKey] ?? undefined;
+		return node[scopeKey] ?? undefined;
 	}
 
 	$.on('dom:mutation:node:removed', (event) => {
-		vnode(event.detail)?.$cleanup();
+		scope(event.detail)?.$cleanup();
 	});
 
-	$.vnode = vnode;
+	$.scope = scope;
 }

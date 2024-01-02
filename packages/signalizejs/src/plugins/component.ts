@@ -16,16 +16,12 @@ declare module '..' {
 
 export interface ComponentOptions {
 	props?: Record<string, any> | string[]
-	construct?: () => void | Promise<void>
-	constructed?: () => void | Promise<void>
-	connected?: () => void | Promise<void>
-	adopted?: () => void | Promise<void>
-	disconnected?: () => void | Promise<void>
+	setup?: () => void | Promise<void>
 	shadow?: ShadowRootInit
 }
 
 export default ($: Signalize): void => {
-	const { signal, dispatch, vnode } = $;
+	const { signal, dispatch, scope } = $;
 
 	const componentAttribute = `${$.attributePrefix}component`;
 	const cloakAttribute = `${$.attributePrefix}cloak`;
@@ -59,16 +55,18 @@ export default ($: Signalize): void => {
 		const observableAttributes = Object.keys(attributesPropertiesMap);
 
 		class Component extends HTMLElement {
-			#constructPromise;
-			readonly #vnode;
-			readonly constructed = false;
+			readonly #constructPromise;
+			readonly #scope
+			readonly #connected = () => {}
+			readonly #disconnected = () => {}
+			readonly #adopted = () => {}
 
 			constructor () {
 				super();
-				this.#constructPromise = this.#construct();
+				this.#constructPromise = this.#setup();
 			}
 
-			async #construct (): Promise<void> {
+			async #setup (): Promise<void> {
 				/* const originalInnerHTML = this.innerHTML; */
 				let root = this;
 
@@ -78,7 +76,7 @@ export default ($: Signalize): void => {
 					});
 				}
 
-				this.#vnode = vnode(root, (node) => {
+				this.#scope = scope(root, (node) => {
 					node.$props = {};
 
 					for (const [key, value] of Object.entries(properties)) {
@@ -87,15 +85,55 @@ export default ($: Signalize): void => {
 					}
 				});
 
-				for (const attr of this.#vnode.$el.attributes) {
-					this.attributeChangedCallback(attr.name, undefined, this.#vnode.$el.getAttribute(attr.name))
+				this.#scope.$children = async (name: string) => {
+					if (customElements.get(name) === undefined) {
+						await customElements.whenDefined(name);
+					}
+
+					const childComponents = $.selectAll(name, this.#scope.$el);
+					const initPromises = [];
+					for (const childComponent of childComponents) {
+						const componentScope = scope(childComponent);
+						initPromises.push(
+							componentScope?._setuped === true
+								? componentScope
+								: new Promise((resolve) => {
+									$.on('component:setuped', ({ detail }) => {
+										if (detail.$el === childComponent) {
+											resolve(detail);
+										}
+									})
+								})
+						)
+					}
+
+					return await Promise.all(initPromises);
 				}
 
-				if (options?.construct !== undefined) {
-					const data = await options?.construct?.call(undefined, this.#vnode);
+				this.#scope.$child = async (name: string) => {
+					return (await this.#scope.$children(name))[0] ?? null;
+				}
+
+				for (const attr of this.#scope.$el.attributes) {
+					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name))
+				}
+
+				if (options?.setup !== undefined) {
+					const data = await options?.setup?.call(undefined, {
+						...this.#scope,
+						$connected: (listener) => {
+							this.#connected = listener
+						},
+						$disconnected: (listener) => {
+							this.#disconnected = listener
+						},
+						$adopted: (listener) => {
+							this.#adopted = listener;
+						},
+					});
 
 					for (const [key, value] of Object.entries(data ?? {})) {
-						this.#vnode.$data[key] = value;
+						this.#scope.$data[key] = value;
 					}
 				}
 
@@ -130,8 +168,8 @@ root
 
 				this.setAttribute(componentAttribute, name);
 
-				await options?.constructed?.call(this, this.#vnode);
-				dispatch('component:constructed', this.#vnode, { target: this.#vnode.$el, bubbles: true });
+				dispatch('component:setuped', this.#scope, { target: this.#scope.$el, bubbles: true });
+				this.#scope._setuped = true;
 			}
 
 			static get observedAttributes (): string[] {
@@ -143,11 +181,11 @@ root
 					return
 				}
 
-				const currentProperty = this.#vnode.$props[attributesPropertiesMap[name]];
+				const currentProperty = this.#scope.$props[attributesPropertiesMap[name]];
 				let valueToSet = Number.isNaN(parseFloat(currentProperty())) ? newValue : parseFloat(newValue);
 
 				if (typeof currentProperty() === 'boolean') {
-					valueToSet = valueToSet.length > 0 ? !!valueToSet : this.#vnode.$el.hasAttribute(name);
+					valueToSet = valueToSet.length > 0 ? !!valueToSet : this.#scope.$el.hasAttribute(name);
 				}
 
 				currentProperty(valueToSet);
@@ -155,19 +193,19 @@ root
 
 			async connectedCallback (): Promise<void> {
 				await this.#constructPromise;
-				await options?.connected?.call(undefined, this.#vnode);
+				await this.#connected();
 				this.removeAttribute(cloakAttribute);
-				dispatch('component:connected', this.#vnode, { target: this.#vnode.$el });
+				dispatch('component:connected', this.#scope, { target: this.#scope.$el });
 			}
 
-			disconnectedCallback (): void {
-				void options?.disconnected?.call(undefined, this.#vnode);
-				dispatch('component:disconnected', this.#vnode, { target: this.#vnode.$el });
+			async disconnectedCallback (): Promise<void> {
+				await this.#disconnected();
+				dispatch('component:disconnected', this.#scope, { target: this.#scope.$el });
 			}
 
-			adoptedCallback (): void {
-				void options?.adopted?.call(undefined, this.#vnode);
-				dispatch('component:adopted', this.#vnode, { target: this.#vnode.$el });
+			async adoptedCallback (): Promise<void> {
+				await this.#adopted();
+				dispatch('component:adopted', this.#scope, { target: this.#scope.$el });
 			}
 		}
 

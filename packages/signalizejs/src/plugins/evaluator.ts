@@ -37,8 +37,14 @@ export default () => {
 				}]
 			],
 			17: [
-				['?.', ({ a, b }) => [a?.[b], 2]],
-				['.', ({ a, b }) => [a[b], 2]],
+				['?.', ({ a, b }) => {
+					const chained = a?.[b];
+					return [typeof chained === 'function' ? chained.bind(a) : chained, 2]
+				}],
+				['.', ({ a, b }) => {
+					const chained = a[b];
+					return [typeof chained === 'function' ? chained.bind(a) : chained, 2]
+				}],
 				// Function call
 				['(', ')', ({ index, a, chunks, compile, getGroupChunks }) => {
 					const args = getGroupChunks(chunks, index, '(', ')');
@@ -332,9 +338,8 @@ export default () => {
 				return compile(precedences, chunks);
 			}
 
-			const compiledChunks = compile([...allPrecedences], parse(str));
 			// There is always only one at the end of the evaluation.
-			return compiledChunks[0];
+			return compile([...allPrecedences], parse(str))[0];
 		}
 	}
 }
