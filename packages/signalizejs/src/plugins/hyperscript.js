@@ -1,23 +1,48 @@
-import type { Signalize, SignalizePlugin } from '..';
-import type { Signal } from './signal';
-
-declare module 'signalizejs' {
+/* declare module 'signalizejs' {
 	interface Signalize {
 		h: <T extends Element>(tagName: string, ...children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>) => T
 	}
-}
+} */
 
-type HyperscriptChild = string | number | Element | Node | Signal<any>;
+/**
+ * Represents a child element in hyperscript, which can be a string, number, Element, Node, or Signal.
+ *
+ * @typedef {(string | number | Element | Node | import('./signal').Signal<any>)} HyperscriptChild
+ */
 
-type HyperscriptChildAttrs = Record<string, string | Signal>;
+/**
+ * Represents attributes for a hyperscript child element, where each attribute is a key-value pair
+ * with the key being a string and the value being either a string or a Signal.
+ *
+ * @typedef {Object.<string, string | import('./signal').Signal>} HyperscriptChildAttrs
+ */
 
-export default (): SignalizePlugin => {
-	return ($: Signalize): void => {
-		$.h = <T extends Element>(tagName: string, ...children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>): T => {
-			let attrs: HyperscriptChildAttrs = {};
+/**
+ * @returns {import('../Signalize').SignalizePlugin}
+ */
+export default () => {
+	/**
+	 * @param {import('../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
+
+		/**
+		 * Creates a new HTML element using hyperscript syntax.
+		 *
+		 * @function
+		 * @template T
+		 * @param {string} tagName - The tag name of the HTML element to create.
+		 * @param {...(HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[])} children - Child elements or attributes.
+		 * @returns {T} The newly created HTML element.
+		 */
+		$.h = (tagName, ...children) => {
+			/** @type {HyperscriptChildAttrs} */
+			let attrs = {};
 
 			if (children[0]?.constructor?.name === 'Object') {
-				attrs = children.shift() as HyperscriptChildAttrs;
+				/** @type {HyperscriptChildAttrs} */
+				attrs = children.shift();
 			}
 
 			children = children.flat(Infinity);
@@ -28,8 +53,14 @@ export default (): SignalizePlugin => {
 				$.bind(el, attrs);
 			}
 
-			const normalizeChild = (child: string | number | Element | Node | Signal<any>): Array<Node | Element> => {
-				const result: Array<Node | Element> = [];
+			/**
+			 *
+			 * @param {string | number | Element | Node | import('./signal').Signal<any>} child
+			 * @returns {Array<Node | Element>}
+			 */
+			const normalizeChild = (child) => {
+				/** @type {Array<Node | Element>} */
+				const result = [];
 
 				if (child instanceof Element || child instanceof Node) {
 					result.push(child);
@@ -61,7 +92,7 @@ export default (): SignalizePlugin => {
 				}
 
 				return result;
-			}
+			};
 
 			const fragment = document.createDocumentFragment();
 
@@ -71,7 +102,8 @@ export default (): SignalizePlugin => {
 
 			el.appendChild(fragment);
 
-			return el as T
-		}
-	}
-}
+			/** @type {T} */
+			return el;
+		};
+	};
+};

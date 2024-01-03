@@ -1,7 +1,6 @@
-import type { Signalize, SignalizePlugin, CustomEventListener } from '..';
-import type { FetchReturn } from './fetch';
+/* import { FetchReturn } from './fetch'; */
 
-declare module '..' {
+/* declare module '..' {
 	interface Signalize {
 		navigate: (data: NavigationData) => Promise<SpaDispatchEventData>
 	}
@@ -20,34 +19,73 @@ declare module '..' {
 		'spa:popstate': CustomEventListener
 		'spa:click': CustomEventListener
 	}
-}
+} */
 
-type StateAction = 'push' | 'replace';
+/**
+ * Represents an action type for managing state (e.g., push or replace).
+ *
+ * @typedef {'push' | 'replace'} StateAction
+ */
 
-interface NavigationData {
-	url: string | URL
-	scrollX?: number
-	scrollY?: number
-	stateAction?: StateAction
-}
+/**
+ * Represents data associated with navigation.
+ *
+ * @typedef {Object} NavigationData
+ * @property {string | URL} url - The URL for navigation.
+ * @property {number} [scrollX] - The scroll position on the X-axis.
+ * @property {number} [scrollY] - The scroll position on the Y-axis.
+ * @property {StateAction} [stateAction] - The action type for managing state (push or replace).
+ */
 
-interface SpaHistoryState extends Partial<NavigationData> {
-	spa?: true
-}
+/**
+ * Represents the state object for Single Page Application (SPA) history.
+ *
+ * @typedef {Object} SpaHistoryState
+ * @property {string | URL} [url] - The URL for navigation.
+ * @property {number} [scrollX] - The scroll position on the X-axis.
+ * @property {number} [scrollY] - The scroll position on the Y-axis.
+ * @property {StateAction} [stateAction] - The action type for managing state (push or replace).
+ * @property {boolean} [spa] - Indicates that the history state is related to a Single Page Application (SPA).
+ */
 
-interface SpaDispatchEventData extends NavigationData {
-	success?: boolean
-}
+/**
+ * Represents data associated with dispatching events for Single Page Application (SPA).
+ *
+ * @typedef {Object} SpaDispatchEventData
+ * @property {string | URL} url - The URL for navigation.
+ * @property {number} [scrollX] - The scroll position on the X-axis.
+ * @property {number} [scrollY] - The scroll position on the Y-axis.
+ * @property {StateAction} [stateAction] - The action type for managing state (push or replace).
+ * @property {boolean} [success] - Indicates the success of the dispatch event.
+ */
 
-type ResponseCache = Record<string, string>;
+/**
+ * Represents a cache for responses with keys as strings and values as strings.
+ *
+ * @typedef {Record<string, string>} ResponseCache
+ */
 
-export interface PluginOptions {
-	cacheHeader?: string
-	appVersionHeader?: string
-}
+/**
+ * Options for configuring a plugin.
+ *
+ * @interface PluginOptions
+ * @property {string} [cacheHeader] - The cache header option for the plugin.
+ * @property {string} [appVersionHeader] - The app version header option for the plugin.
+ */
 
-export default (options?: PluginOptions): SignalizePlugin => {
-	return ($: Signalize): void => {
+/**
+ * Factory function for creating a Signalize plugin.
+ *
+ * @function
+ * @param {PluginOptions} [options] - Options to configure the plugin.
+ * @returns {import('../Signalize').SignalizePlugin} A Signalize plugin instance.
+ */
+export default (options) => {
+	/**
+	 * @param {import('../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
 		const { dispatch, fetch, redrawSnippet, select, on } = $;
 
 		const spaAttribute = `${$.attributePrefix}spa`;
@@ -60,29 +98,40 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 		let currentState = null;
 		let currentLocation = new URL(window.location.href);
-		let abortNavigationController: AbortController;
+		/** @type {AbortController} */
+		let abortNavigationController;
 		const spaVersion = null;
 		const host = window.location.host;
-		const responseCache: ResponseCache = {};
+		/** @type {ResponseCache} */
+		const responseCache = {};
 
-		const createUrl = (urlString: string): URL | null => {
+		/**
+		 *
+		 * @param {string} urlString
+		 * @returns {URL|null}
+		 */
+		const createUrl = (urlString) => {
 			try {
 				const url = new URL(urlString);
 				return url;
-			} catch (error) {
-			}
+			} catch (error) { /* empty */ }
 
 			return null;
-		}
+		};
 
-		const isJson = (content: any): boolean => {
+		/**
+		 *
+		 * @param {any} content
+		 * @returns {boolean}
+		 */
+		const isJson = (content) => {
 			try {
 				JSON.parse(content);
 			} catch (e) {
 				return false;
 			}
 			return true;
-		}
+		};
 
 		let firstNavigationTriggered = false;
 
@@ -95,16 +144,23 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				}
 			},
 			off: ({ listener }) => {
-				$.root.removeEventListener('spa:page:ready', listener)
+				$.root.removeEventListener('spa:page:ready', listener);
 			}
 		}));
 
-		const navigate = async (data: NavigationData): Promise<SpaDispatchEventData> => {
+		/**
+		 * @param {NavigationData} data
+		 * @returns {Promise<SpaDispatchEventData>}
+		 */
+		const navigate = async (data) => {
 			firstNavigationTriggered = true;
-			const dispatchEventData: SpaDispatchEventData = {
+			/**
+			 * @type {SpaDispatchEventData}
+			 */
+			const dispatchEventData = {
 				...data,
 				success: undefined
-			}
+			};
 
 			if (abortNavigationController !== undefined) {
 				abortNavigationController.abort();
@@ -118,8 +174,10 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 			const urlString = url instanceof URL ? url.toString() : url;
 
-			let request: Promise<FetchReturn>;
-			let responseData: string | null = null;
+			/** @type {Promise<import('./fetch.js').FetchReturn} */
+			let request;
+			/** @type {string|null} */
+			let responseData = null;
 
 			const urlIsCached = urlString in responseCache;
 
@@ -146,8 +204,12 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				dispatch('spa:request:end', { request, ...dispatchEventData, success: responseData !== null });
 			}
 
-			const updateDom = (): void => {
-				let shouldCacheResponse: boolean | null = null;
+			/**
+			 * @returns {void}
+			 */
+			const updateDom = () => {
+				/** @type {boolean|null} */
+				let shouldCacheResponse = null;
 
 				const headers = request?.response?.headers ?? {};
 
@@ -184,13 +246,13 @@ export default (options?: PluginOptions): SignalizePlugin => {
 					const metaCacheControlElement = select(`meta[name="${spaMetaCacheNameAttribute}"]`);
 					shouldCacheResponse = !urlIsCached && (
 						metaCacheControlElement === null || metaCacheControlElement.getAttribute('content') !== 'no-cache'
-					)
+					);
 				}
 
 				if (shouldCacheResponse) {
 					responseCache[urlString] = responseData;
 				}
-			}
+			};
 
 			if (responseData !== null) {
 				dispatch('spa:redraw:start', dispatchEventData);
@@ -201,7 +263,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 						dispatch('spa:transition:start', dispatchEventData);
 						const transition = document.startViewTransition(() => updateDom());
 						await transition.ready;
-						dispatch('spa:transition:end', dispatchEventData)
+						dispatch('spa:transition:end', dispatchEventData);
 					}
 				} catch (e) {
 					console.log(e);
@@ -227,7 +289,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 							});
 						}
 					} else {
-						window.scrollTo(data.scrollX ?? 0, data.scrollY ?? 0)
+						window.scrollTo(data.scrollX ?? 0, data.scrollY ?? 0);
 					}
 				}
 
@@ -241,10 +303,14 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				dispatch('spa:page:ready', navigationEndData);
 			}
 			return navigationEndData;
-		}
+		};
 
-		const onPopState = (): void => {
-			const state = window.history.state as SpaHistoryState;
+		/**
+		 * @returns {void}
+		 */
+		const onPopState = () => {
+			/** @type {SpaHistoryState} */
+			const state = window.history.state;
 
 			if (!(state?.spa ?? false)) {
 				return;
@@ -256,7 +322,8 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				return;
 			}
 
-			const navigationConfig: NavigationData = {
+			/** @type {NavigationData} */
+			const navigationConfig = {
 				url: location,
 				scrollX: state.scrollX,
 				scrollY: state.scrollY
@@ -265,14 +332,19 @@ export default (options?: PluginOptions): SignalizePlugin => {
 			dispatch('spa:popstate', navigationConfig);
 
 			void navigate(navigationConfig);
-		}
+		};
 
-		const onClick = async (event: CustomEvent): Promise<void> => {
+		/**
+		 * @param {CustomEvent} event
+		 * @returns {Promise<void>}
+		 */
+		const onClick = async (event) => {
 			if (event.ctrlKey === true || event.metaKey === true) {
 				return;
 			}
 
-			const element = event.target.closest('a') as HTMLAnchorElement;
+			/** @type {HTMLAnchorElement} */
+			const element = event.target.closest('a');
 			const targetAttribute = element.getAttribute('target');
 
 			if (element.hasAttribute(spaIgnoreAttribute) || ![null, '_self'].includes(targetAttribute) || element.hasAttribute('download')) {
@@ -310,9 +382,10 @@ export default (options?: PluginOptions): SignalizePlugin => {
 
 			void navigate({
 				url,
-				stateAction: (element.getAttribute(spaStateActionAttribute) ?? 'push') as StateAction
+				/** @type {StateAction} */
+				stateAction: (element.getAttribute(spaStateActionAttribute) ?? 'push')
 			});
-		}
+		};
 
 		on('dom:ready', () => {
 			currentState = {
@@ -326,7 +399,7 @@ export default (options?: PluginOptions): SignalizePlugin => {
 				window.history.replaceState(currentState, '', window.location.href);
 			}
 
-			dispatch('spa:page:ready', currentState)
+			dispatch('spa:page:ready', currentState);
 
 			on('click', `a[href], [${spaUrlAttribute}]`, onClick);
 
@@ -334,5 +407,5 @@ export default (options?: PluginOptions): SignalizePlugin => {
 		});
 
 		$.navigate = navigate;
-	}
-}
+	};
+};

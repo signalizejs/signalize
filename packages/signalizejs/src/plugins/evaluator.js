@@ -1,7 +1,12 @@
-import type { Signalize } from '..';
-
+/**
+ * @returns {import('../Signalize').SignalizePlugin}
+ */
 export default () => {
-	return ($: Signalize) => {
+	/**
+	 * @param {import('../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
 		const chunkKeywordMap = {
 			undefined,
 			true: true,
@@ -17,7 +22,7 @@ export default () => {
 			...$.globals
 		};
 
-		const quotes = ['"', "'", '`'];
+		const quotes = ['"', '\'', '`'];
 
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
 		let precedenceOperatorsMap = {
@@ -33,17 +38,17 @@ export default () => {
 						return groupTokensLength + 2;
 					}
 
-					return [compile([...allPrecedences], groupTokens), groupTokensLength + 1, index]
+					return [compile([...allPrecedences], groupTokens), groupTokensLength + 1, index];
 				}]
 			],
 			17: [
 				['?.', ({ a, b }) => {
 					const chained = a?.[b];
-					return [typeof chained === 'function' ? chained.bind(a) : chained, 2]
+					return [typeof chained === 'function' ? chained.bind(a) : chained, 2];
 				}],
 				['.', ({ a, b }) => {
 					const chained = a[b];
-					return [typeof chained === 'function' ? chained.bind(a) : chained, 2]
+					return [typeof chained === 'function' ? chained.bind(a) : chained, 2];
 				}],
 				// Function call
 				['(', ')', ({ index, a, chunks, compile, getGroupChunks }) => {
@@ -54,7 +59,7 @@ export default () => {
 					return [
 						a.apply(undefined, applyArgs.flat()),
 						spliceLength + 2
-					]
+					];
 				}]
 			],
 			15: [
@@ -140,7 +145,7 @@ export default () => {
 						}
 					}
 
-					return [!!a ? b.join('') : c.join(''), b.length + c.length + 2]
+					return [a ? b.join('') : c.join(''), b.length + c.length + 2];
 				}]
 			],
 			1: [
@@ -188,14 +193,9 @@ export default () => {
 				let inString = false;
 				let inArgument = false;
 				let tokensQueue = '';
+				let token = str[0];
 
-				while (true) {
-					const token = str[0];
-
-					if (token === undefined) {
-						break;
-					}
-
+				while (token !== undefined) {
 					if (!inWord) {
 						inWord = tokensQueue.length === 0 && /\w/.test(token);
 					} else if (/\W/.test(token) && token !== '_') {
@@ -204,7 +204,7 @@ export default () => {
 
 					inWord = false;
 					// Check befor the token is separated from string
-					let operatorsDetected = !inWord && operatorsRe.test(str)
+					let operatorsDetected = !inWord && operatorsRe.test(str);
 					str = str.slice(1);
 					// Check after token is separated from string
 					let operatorMatch = str.match(operatorsRe);
@@ -228,18 +228,20 @@ export default () => {
 
 						if (operatorsDetected) {
 							str = str.replace(operatorsRe, (match) => {
-								chunks.push(match.trim())
+								chunks.push(match.trim());
 								return '';
 							});
 						}
 
 						tokensQueue = '';
 					}
+
+					token = str[0];
 				}
 
 				parseCache[originalString] = chunks;
 				return [...chunks];
-			}
+			};
 
 			const compile = (precedences, chunks) => {
 				const precedence = precedences.shift();
@@ -261,7 +263,7 @@ export default () => {
 					}
 
 					return chunk;
-				}
+				};
 
 				if (precedence === undefined || chunks.length === 1) {
 					return chunks.map((item) => prepareChunk(item));
@@ -277,7 +279,7 @@ export default () => {
 				const chunksLength = chunks.length;
 
 				const getGroupChunks = (chunks, cursorIndex, openToken, closeToken) => {
-					const groupChunks = []
+					const groupChunks = [];
 					let closingBracesRequired = 1;
 
 					while (closingBracesRequired > 0 || cursorIndex < chunks.length) {
@@ -300,7 +302,7 @@ export default () => {
 					}
 
 					return groupChunks;
-				}
+				};
 
 				let runs = 0;
 
@@ -323,7 +325,7 @@ export default () => {
 							let resultPosition = result[2] ?? undefined;
 							const spliceLength = result[1] ?? 2;
 							if (resultPosition === undefined) {
-								resultPosition = typeof chunks[startIndex - 1] === undefined ? startIndex : startIndex - 1;
+								resultPosition = chunks[startIndex - 1] === undefined ? startIndex : startIndex - 1;
 							}
 							chunks[resultPosition] = result[0];
 							chunks.splice(resultPosition + 1, spliceLength);
@@ -336,10 +338,10 @@ export default () => {
 				}
 
 				return compile(precedences, chunks);
-			}
+			};
 
-			// There is always only one at the end of the evaluation.
+			// There is always only one at the end of the evaluation
 			return compile([...allPrecedences], parse(str))[0];
-		}
-	}
-}
+		};
+	};
+};

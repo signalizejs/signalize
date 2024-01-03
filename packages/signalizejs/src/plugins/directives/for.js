@@ -1,7 +1,12 @@
-import type { Signalize, SignalizePlugin } from '../..';
-
-export default (): SignalizePlugin => {
-	return ($: Signalize): void => {
+/**
+ * @returns {import('../../Signalize').SignalizePlugin}
+ */
+export default () => {
+	/**
+	 * @param {import('../../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
 		$.directive('for', {
 			matcher: ({ element }) => {
 				if (element.tagName.toLocaleLowerCase() !== 'template') {
@@ -23,7 +28,8 @@ export default (): SignalizePlugin => {
 					throw new Error(`Invalid for loop syntax "${attribute.value}".`);
 				}
 
-				const newContextVariables: string[] = argumentsMatch[1].replace(/[[({})\]\s]/g, '').split(',').map((key) => key.trim());
+				/** @type {string[]} */
+				const newContextVariables = argumentsMatch[1].replace(/[[({})\]\s]/g, '').split(',').map((key) => key.trim());
 				let currentState = $.getPrerenderedNodes($el);
 				let prerendered = currentState.length > 0;
 				let nextElementSibling = $el.nextElementSibling;
@@ -51,7 +57,10 @@ export default (): SignalizePlugin => {
 					return typeof result === 'function' ? result() : result;
 				}
 
-				const process = async (): Promise<void> => {
+				/**
+				 * @returns {Promise<void>}
+				 */
+				const process = async () => {
 					let stack;
 
 					if (!inited) {
@@ -84,7 +93,13 @@ export default (): SignalizePlugin => {
 
 					const isArrayDestruct = argumentsMatch[0].trim().startsWith('[');
 					const parentContext = scope.$data;
-					const iterate = async (context: any, counter: number): Promise<void> => {
+					/**
+					 *
+					 * @param {any} context
+					 * @param {number} counter
+					 * @returns {Promise<void>}
+					 */
+					const iterate = async (context, counter) => {
 						const iterator = $.signal({
 							count: counter,
 							first: counter === 0,
@@ -108,7 +123,12 @@ export default (): SignalizePlugin => {
 							destruct[newContextVariables] = $.signal(context);
 						}
 
-						const processChild = async (fragment: Node): Promise<void> => {
+						/**
+						 *
+						 * @param {Node} fragment
+						 * @returns {Promise<void>}
+						 */
+						const processChild = async (fragment) => {
 							$.scope(fragment, (elScope) => {
 								elScope.$data = {
 									...destruct,

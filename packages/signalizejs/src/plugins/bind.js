@@ -1,12 +1,14 @@
-import type { Signalize } from '..'
-
-declare module '..' {
+/* declare module '..' {
 	interface Signalize {
 		bind: (target: EventTarget, attributes: Record<string, any>) => void
 	}
-}
+} */
 
-export default ($: Signalize): void => {
+/**
+ * @param {import('../Signalize').Signalize} $
+ * @returns {void}
+ */
+export default ($) => {
 	const { on, Signal } = $;
 
 	const reactiveInputAttributes = ['value', 'checked'];
@@ -30,10 +32,11 @@ export default ($: Signalize): void => {
 	const attributesAliases = {
 		text: 'textContent',
 		html: 'innerHTML'
-	}
+	};
 
 	$.bind = (element, attributes) => {
-		const unwatchSignalCallbacks: CallableFunction[] = [];
+		/** @type {CallableFunction[]} */
+		const unwatchSignalCallbacks = [];
 
 		for (let [attr, attrOptions] of Object.entries(attributes)) {
 			if (attrOptions.length === 1) {
@@ -47,10 +50,16 @@ export default ($: Signalize): void => {
 			const attributeBinderType = typeof attributeBinder;
 			const attributeBinderIsSignal = attributeBinder instanceof Signal;
 			let attributeInited = false;
-			let previousSettedValue: any;
+			let previousSettedValue;
 			let previousValue;
 
-			const setAttribute = async (attribute, value): Promise<void> => {
+			/**
+			 *
+			 * @param {string} attribute
+			 * @param {string|number} value
+			 * @returns {Promise<void>}
+			 */
+			const setAttribute = async (attribute, value) => {
 				value = value instanceof Promise ? await value : value;
 				if (attributeInited && previousValue === value) {
 					return;
@@ -71,7 +80,7 @@ export default ($: Signalize): void => {
 						}
 					}
 
-					const valueToSet = value.trim().split(' ').filter((className) => className.trim().length > 0)
+					const valueToSet = value.trim().split(' ').filter((className) => className.trim().length > 0);
 					previousSettedValue = valueToSet;
 
 					for (const className of valueToSet) {
@@ -81,7 +90,7 @@ export default ($: Signalize): void => {
 					element.setAttribute(attribute, value);
 				}
 				attributeInited = true;
-			}
+			};
 
 			if (['string', 'number'].includes(attributeBinderType)) {
 				setAttribute(attr, attributeBinder);
@@ -92,8 +101,10 @@ export default ($: Signalize): void => {
 				signalsToWatch.push(attributeBinder);
 			}
 
-			let getListener: CallableFunction | null = null;
-			let setListener: CallableFunction | null = null;
+			/** @type {CallableFunction|null} */
+			let getListener = null;
+			/** @type {CallableFunction|null} */
+			let setListener = null;
 			if (attributeBinderIsSignal) {
 				getListener = () => attributeBinder();
 				setListener = (value) => attributeBinder(value);
@@ -130,8 +141,8 @@ export default ($: Signalize): void => {
 			}
 
 			if (typeof setListener === 'function' && reactiveInputAttributes.includes(attr)) {
-				const inputListener = (): void => {
-					setListener(isNumericInput ? Number(element[attr].replace(',', '.') as string) : element[attr] as string);
+				const inputListener = () => {
+					setListener(isNumericInput ? Number(element[attr].replace(',', '.')) : element[attr]);
 				};
 
 				on('input', element, inputListener, { passive: true });
@@ -144,6 +155,6 @@ export default ($: Signalize): void => {
 					unwatch();
 				}
 			});
-		})
-	}
-}
+		});
+	};
+};

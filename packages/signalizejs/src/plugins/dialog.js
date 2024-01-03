@@ -1,6 +1,4 @@
-import type { Signalize, SignalizePlugin, CustomEventListener } from '..';
-
-declare module '..' {
+/* declare module '..' {
 
 	interface Signalize {
 		dialog: (dialogOrId: string | HTMLDialogElement) => HTMLDialogElement | null
@@ -12,33 +10,62 @@ declare module '..' {
 		'dialog:open': CustomEventListener
 		'dialog:close': CustomEventListener
 	}
-}
+} */
 
-export default (): SignalizePlugin => {
-	return ($: Signalize): void => {
-		const { dispatch, attributePrefix, attributeSeparator, select, on } = $
+/**
+ * @returns {import('../Signalize').SignalizePlugin}
+ */
+export default () => {
+	/**
+	 * @param {import('../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
+		const { dispatch, attributePrefix, attributeSeparator, select, on } = $;
 		const dialogAttribute = `${attributePrefix}dialog`;
 		const dialogModelessAttribute = `${dialogAttribute}${attributeSeparator}modeless`;
 		const dialogCloseButtonAttribute = `${dialogAttribute}${attributeSeparator}close`;
 		const dialogOpenButtonAttribute = `${dialogAttribute}${attributeSeparator}open`;
 
-		const getDialog = (id: string): HTMLDialogElement | null => select<HTMLDialogElement>(`[${dialogAttribute}=${id}]`);
+		/**
+		 * Retrieves a dialog element with the specified ID.
+		 *
+		 * @function
+		 * @param {string} id - The ID of the dialog element to retrieve.
+		 * @returns {HTMLDialogElement | null} The dialog element with the specified ID, or null if not found.
+		 */
+		const getDialog = (id) => select(`[${dialogAttribute}=${id}]`);
 
-		const openDialog = (dialogOrId: string | HTMLDialogElement, modelessly = false): HTMLDialogElement | null => {
+		/**
+		 * Opens a dialog identified by either its ID or the dialog element itself.
+		 *
+		 * @function
+		 * @param {string | HTMLDialogElement} dialogOrId - The ID or HTMLDialogElement of the dialog to open.
+		 * @param {boolean} [modelessly=false] - Indicates whether to open the dialog modelessly (optional, default is false).
+		 * @returns {HTMLDialogElement | null} The opened dialog element or null if not found or not opened.
+		 */
+		const openDialog = (dialogOrId, modelessly = false) => {
 			const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
 
 			if (dialog != null) {
 				modelessly = dialog.hasAttribute(dialogModelessAttribute) ?? modelessly;
 				modelessly ? dialog.show() : dialog.showModal();
-				window.location.hash = `#${dialog.getAttribute(dialogAttribute) as string}`;
+				window.location.hash = `#${dialog.getAttribute(dialogAttribute)}`;
 
 				dispatch('dialog:opened', dialog);
 			}
 
 			return dialog;
-		}
+		};
 
-		const closeDialog = (dialogOrId: string | HTMLDialogElement): HTMLDialogElement | null => {
+		/**
+		 * Closes a dialog identified by either its ID or the dialog element itself.
+		 *
+		 * @function
+		 * @param {string | HTMLDialogElement} dialogOrId - The ID or HTMLDialogElement of the dialog to close.
+		 * @returns {HTMLDialogElement | null} The closed dialog element or null if not found or not closed.
+		 */
+		const closeDialog = (dialogOrId) => {
 			const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
 
 			if (dialog != null) {
@@ -52,9 +79,10 @@ export default (): SignalizePlugin => {
 			}
 
 			return dialog;
-		}
+		};
 
-		const openDialogByUrlHash = (): void => {
+
+		const openDialogByUrlHash = () => {
 			const id = window.location.hash.substring(1);
 
 			if (id.length === 0 || !/^#[-\w.:]+$/.test(id)) {
@@ -62,7 +90,7 @@ export default (): SignalizePlugin => {
 			}
 
 			openDialog(id);
-		}
+		};
 
 		on('dom:ready', () => {
 			on('click', `[${dialogCloseButtonAttribute}]`, ({ target }) => {
@@ -89,5 +117,5 @@ export default (): SignalizePlugin => {
 		$.openDialog = openDialog;
 		$.closeDialog = closeDialog;
 		$.dialog = getDialog;
-	}
-}
+	};
+};

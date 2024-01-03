@@ -16,51 +16,20 @@
 		}
 	</style>
 
+	<script type="importmap">
+		{
+			"imports": {
+				"signalizejs": "/packages/signalizejs/src/Signalize.js"
+			}
+		}
+	</script>
+
 	<script type="module">
 		import Signalize from 'signalizejs';
-		import directives from 'signalizejs/directives';
-		import domTraverser from 'signalizejs/traverse-dom';
-		import evaluator from 'signalizejs/evaluator';
 
-		// Use the directives plugin
-		const { component, signal, on, select, scope } = new Signalize({
-		});
-
-		component('x-button', {
-			setup({ $ref, $child, $connected, $disconnected }) {
-				const form = $ref('form');
-				const number = signal(2);
-
-				$child('x-form').then((elscop) => {
-					console.log(elscop);
-				});
-
-				return {
-					number
-				}
-			},
-		});
-
-		setTimeout(() => {
-			component('x-form', {
-				async setup() {
-					await new Promise((resolve) => {
-						setTimeout(() => {
-							resolve();
-							console.log('meh');
-						}, 3000);
-					})
-				}
-			});
-			console.log('set');
-		}, 2000);
-
+		const signalize = new Signalize();
+		console.log(signalize);
 	</script>
 </body>
 
-	<x-button>
-		<x-form ref="form">
-			<input />
-		</x-form>
-	</x-button>
 </html>

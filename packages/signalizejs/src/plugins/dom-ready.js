@@ -1,7 +1,4 @@
-import type { Signalize } from '..';
-import type { CustomEventListener } from './on';
-
-declare module '..' {
+/* declare module '..' {
 	interface Signalize {
 		isDomReady: () => boolean
 	}
@@ -9,20 +6,28 @@ declare module '..' {
 	interface CustomEventListeners {
 		'dom:ready': CustomEventListener
 	}
-}
+} */
 
-export default ($: Signalize): void => {
-	const domReadyListeners: CallableFunction[] = [];
+/**
+ * @param {import('../Signalize').Signalize} $
+ * @returns {void}
+ */
+export default ($) => {
+	/** @type {CallableFunction[]} */
+	const domReadyListeners = [];
 
-	const callOnDomReadyListeners = (): void => {
+	const callOnDomReadyListeners = () => {
 		while (domReadyListeners.length > 0) {
-			domReadyListeners.shift()
+			domReadyListeners.shift();
 		}
-	}
+	};
 
-	const isDomReady = (): boolean => {
+	/**
+	 * @returns {boolean}
+	 */
+	const isDomReady = () => {
 		const documentElement = $.root instanceof Document ? $.root : $.root?.ownerDocument;
-		return documentElement.readyState !== 'loading'
+		return documentElement.readyState !== 'loading';
 	};
 
 	$.customEventListener('dom:ready', ({
@@ -38,8 +43,8 @@ export default ($: Signalize): void => {
 	if (isDomReady()) {
 		callOnDomReadyListeners();
 	} else {
-		document.addEventListener('DOMContentLoaded', callOnDomReadyListeners, { once: true })
+		document.addEventListener('DOMContentLoaded', callOnDomReadyListeners, { once: true });
 	}
 
 	$.isDomReady = isDomReady;
-}
+};

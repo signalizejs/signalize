@@ -1,6 +1,4 @@
-import type { Signalize, SignalizePlugin, CustomEventListener } from '..';
-
-declare module '..' {
+/* declare module '..' {
 	interface Signalize {
 		redrawSnippet: (content: string) => void
 	}
@@ -9,19 +7,35 @@ declare module '..' {
 		'snippets:redraw:start': CustomEventListener
 		'snippets:redraw:end': CustomEventListener
 	}
-}
+} */
 
-export default (): SignalizePlugin => {
-	return ($: Signalize): void => {
+/**
+ * @returns {import('../Signalize').SignalizePlugin}
+ */
+export default () => {
+	/**
+	 * @param {import('../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
 		const { select, dispatch } = $;
 		const snippetAttribute = `${$.attributePrefix}snippet`;
 		const snippetStateAttribute = `${snippetAttribute}${$.attributeSeparator}state`;
 		const snippetActionAttribute = `${snippetAttribute}${$.attributeSeparator}action`;
 
-		const parseHtml = (html: string, type: DOMParserSupportedType = 'text/html'): Document =>
+		/**
+		 * @param {string} html
+		 * @param {DOMParserSupportedType} type
+		 * @returns {Document}
+		 */
+		const parseHtml = (html, type = 'text/html') =>
 			(new DOMParser()).parseFromString(html, type);
 
-		$.redrawSnippet = (content: string): void => {
+		/**
+		 * @param {string} content
+		 * @returns {void}
+		 */
+		$.redrawSnippet = (content) => {
 			const fragment = parseHtml(content);
 			const snippets = [...fragment.querySelectorAll(`[${snippetAttribute}]`)];
 
@@ -90,6 +104,6 @@ export default (): SignalizePlugin => {
 
 				existingSnippet.setAttribute(snippetStateAttribute, 'redrawed');
 			}
-		}
-	}
-}
+		};
+	};
+};

@@ -1,7 +1,4 @@
-import type { Signalize } from '..';
-import type { CustomEventListener } from './on';
-
-declare module '..' {
+/* declare module '..' {
 	interface Signalize {
 		component: (name: string, init: ComponentOptions) => typeof HTMLElement
 	}
@@ -12,22 +9,37 @@ declare module '..' {
 		'component:disconnected': CustomEventListener
 		'component:adopted': CustomEventListener
 	}
-}
+} */
 
-export interface ComponentOptions {
-	props?: Record<string, any> | string[]
-	setup?: () => void | Promise<void>
-	shadow?: ShadowRootInit
-}
+/**
+ * Options for configuring a component.
+ *
+ * @interface ComponentOptions
+ * @property {Record<string, any> | string[]} [props] - Props to be used by the component (optional).
+ * @property {() => void | Promise<void>} [setup] - Function for setting up the component (optional).
+ * @property {ShadowRootInit} [shadow] - Configuration options for the shadow DOM (optional).
+ */
 
-export default ($: Signalize): void => {
+/**
+ * @param {import('../Signalize').Signalize} $
+ * @returns {void}
+ */
+export default ($) => {
 	const { signal, dispatch, scope } = $;
 
 	const componentAttribute = `${$.attributePrefix}component`;
 	const cloakAttribute = `${$.attributePrefix}cloak`;
 	$.componentAttribute = componentAttribute;
 
-	const component = (name: string, options: ComponentOptions): typeof HTMLElement => {
+	/**
+	 * Creates a custom Web Component with the specified name and options.
+	 *
+	 * @function
+	 * @param {string} name - The name of the component.
+	 * @param {ComponentOptions} [options] - Options for configuring the component.
+	 * @returns {typeof HTMLElement} The constructor function for the component.
+	 */
+	const component = (name, options) => {
 		let componentName = `${$.componentPrefix}${name}`;
 
 		if (customElements.get(componentName) !== undefined) {
@@ -37,7 +49,7 @@ export default ($: Signalize): void => {
 		const properties = {};
 
 		if (Array.isArray(options?.props)) {
-			for (const property of options?.props) {
+			for (const property of options.props) {
 				properties[property] = undefined;
 			}
 		} else if (typeof options?.props === 'object') {
@@ -46,7 +58,7 @@ export default ($: Signalize): void => {
 			}
 		}
 
-		const attributesPropertiesMap = {}
+		const attributesPropertiesMap = {};
 
 		for (const propertyName of Object.keys(properties)) {
 			attributesPropertiesMap[$.dashCase(propertyName)] = propertyName;
@@ -55,18 +67,32 @@ export default ($: Signalize): void => {
 		const observableAttributes = Object.keys(attributesPropertiesMap);
 
 		class Component extends HTMLElement {
-			readonly #constructPromise;
-			readonly #scope
-			readonly #connected = () => {}
-			readonly #disconnected = () => {}
-			readonly #adopted = () => {}
+			/**
+			 * @readonly
+			 * @type {Promise<void>}
+			 */
+			#constructPromise;
+			/**
+			 * @readonly
+			 * @type {import('./scope').Scope}
+			 */
+			#scope;
+			/** @readonly */
+			#connected = async () => {};
+			/** @readonly */
+			#disconnected = async () => {};
+			/** @readonly */
+			#adopted = async () => {};
 
 			constructor () {
 				super();
 				this.#constructPromise = this.#setup();
 			}
 
-			async #setup (): Promise<void> {
+			/**
+			 * @return {Promise<void>}
+			 */
+			async #setup () {
 				/* const originalInnerHTML = this.innerHTML; */
 				let root = this;
 
@@ -85,7 +111,10 @@ export default ($: Signalize): void => {
 					}
 				});
 
-				this.#scope.$children = async (name: string) => {
+				/**
+				 * @param {string} name
+				 */
+				this.#scope.$children = async (name) => {
 					if (customElements.get(name) === undefined) {
 						await customElements.whenDefined(name);
 					}
@@ -102,30 +131,33 @@ export default ($: Signalize): void => {
 										if (detail.$el === childComponent) {
 											resolve(detail);
 										}
-									})
+									});
 								})
-						)
+						);
 					}
 
 					return await Promise.all(initPromises);
-				}
+				};
 
-				this.#scope.$child = async (name: string) => {
+				/**
+				 * @param {string} name
+				 */
+				this.#scope.$child = async (name) => {
 					return (await this.#scope.$children(name))[0] ?? null;
-				}
+				};
 
 				for (const attr of this.#scope.$el.attributes) {
-					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name))
+					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));
 				}
 
 				if (options?.setup !== undefined) {
 					const data = await options?.setup?.call(undefined, {
 						...this.#scope,
 						$connected: (listener) => {
-							this.#connected = listener
+							this.#connected = listener;
 						},
 						$disconnected: (listener) => {
-							this.#disconnected = listener
+							this.#disconnected = listener;
 						},
 						$adopted: (listener) => {
 							this.#adopted = listener;
@@ -172,13 +204,21 @@ root
 				this.#scope._setuped = true;
 			}
 
-			static get observedAttributes (): string[] {
+			/**
+			 * @returns {string[]}
+			 */
+			static get observedAttributes () {
 				return observableAttributes;
 			}
 
-			attributeChangedCallback (name: string, oldValue: string, newValue: string): void {
+			/**
+			 * @param {string} name
+			 * @param {string} oldValue
+			 * @returns {void}
+			 */
+			attributeChangedCallback (name, oldValue, newValue) {
 				if (!observableAttributes.includes(name)) {
-					return
+					return;
 				}
 
 				const currentProperty = this.#scope.$props[attributesPropertiesMap[name]];
@@ -191,19 +231,28 @@ root
 				currentProperty(valueToSet);
 			}
 
-			async connectedCallback (): Promise<void> {
+			/**
+			 * @returns {Promise<void>}
+			 */
+			async connectedCallback () {
 				await this.#constructPromise;
 				await this.#connected();
 				this.removeAttribute(cloakAttribute);
 				dispatch('component:connected', this.#scope, { target: this.#scope.$el });
 			}
 
-			async disconnectedCallback (): Promise<void> {
+			/**
+			 * @returns {Promise<void>}
+			 */
+			async disconnectedCallback () {
 				await this.#disconnected();
 				dispatch('component:disconnected', this.#scope, { target: this.#scope.$el });
 			}
 
-			async adoptedCallback (): Promise<void> {
+			/**
+			 * @returns {Promise<void>}
+			 */
+			async adoptedCallback () {
 				await this.#adopted();
 				dispatch('component:adopted', this.#scope, { target: this.#scope.$el });
 			}
@@ -211,7 +260,7 @@ root
 
 		customElements.define(componentName, Component);
 		return Component;
-	}
+	};
 
 	$.component = component;
-}
+};

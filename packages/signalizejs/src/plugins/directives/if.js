@@ -1,7 +1,13 @@
-import type { Signalize, SignalizePlugin } from '../..';
-
-export default (): SignalizePlugin => {
-	return ($: Signalize): void => {
+/**
+ * @param {Pluginoptions} [options]
+ * @returns {import('../../Signalize').SignalizePlugin}
+ */
+export default () => {
+	/**
+	 * @param {import('../../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
 		$.directive('if', {
 			matcher: ({ element }) => {
 				if (element.tagName.toLowerCase() !== 'template') {
@@ -28,7 +34,10 @@ export default (): SignalizePlugin => {
 				let inited = false;
 				let ifSignalsToWatch = [];
 
-				const render = async (): Promise<void> => {
+				/**
+				 * @returns {Promise<void>}
+				 */
+				const render = async () => {
 					let conditionResult;
 					if (!inited) {
 						const getSignalsToWatch = $.observeSignals(scope);

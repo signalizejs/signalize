@@ -1,68 +1,120 @@
-import type { Signalize, SignalizePlugin, Scope } from '..'
-
-declare module '..' {
+/* declare module '..' {
 	interface Signalize {
 		directive: (name: string, data: Directive) => void
 		getPrerenderedNodes: (element: Element) => Node[]
 		processDirectives: (options?: ProcessDirectiveOptions) => Promise<void>
 	}
-}
+} */
 
-type DirectiveCallback = (data: DirectiveCallbackData) => Promise<void> | void;
+/**
+ * Represents a callback function for a directive.
+ *
+ * @typedef {function} DirectiveCallback
+ * @param {DirectiveCallbackData} data - Data related to the directive callback.
+ * @returns {Promise<void> | void} A promise or void representing the result of the directive callback.
+ */
 
-interface DirectiveCallbackData extends Scope {
-	matches: RegExpMatchArray
-	attribute: Attr
-}
+/**
+ * Represents data passed to a directive callback.
+ *
+ * @interface DirectiveCallbackData
+ * @extends {Scope}
+ * @property {RegExpMatchArray} matches - The result of matching a regular expression against an attribute value.
+ * @property {Attr} attribute - The attribute associated with the directive.
+ */
 
-interface DirectiveMatcherParameters {
-	element: Element
-	attribute: Attr
-}
+/**
+ * Represents parameters for a directive matcher.
+ *
+ * @interface DirectiveMatcherParameters
+ * @property {Element} element - The HTML element associated with the directive.
+ * @property {Attr} attribute - The attribute associated with the directive.
+ */
 
-type DirectiveMatcherReturn = RegExp | undefined
+/**
+ * Represents the return type of a directive matcher.
+ *
+ * @typedef {(RegExp | undefined)} DirectiveMatcherReturn
+ */
 
-type DirectiveMatcher = (params: DirectiveMatcherParameters) => DirectiveMatcherReturn
+/**
+ * Represents a directive matcher function.
+ *
+ * @typedef {function} DirectiveMatcher
+ * @param {DirectiveMatcherParameters} params - Parameters for the directive matcher.
+ * @returns {DirectiveMatcherReturn} The regular expression or undefined returned by the directive matcher.
+ */
 
-interface ProcessElementOptions {
-	element: Element
-	mode: 'init' | 'reinit'
-}
+/**
+ * Represents options for processing an HTML element in the context of directives.
+ *
+ * @interface ProcessElementOptions
+ * @property {Element} element - The HTML element to be processed.
+ * @property {'init' | 'reinit'} mode - The mode of processing (init or reinit).
+ */
 
-interface Directive {
-	matcher?: RegExp | DirectiveMatcher
-	callback: DirectiveCallback
-}
+/**
+ * Represents a directive, consisting of a matcher and a callback.
+ *
+ * @interface Directive
+ * @property {RegExp | DirectiveMatcher | undefined} [matcher] - The matcher for the directive.
+ * @property {DirectiveCallback} callback - The callback function for the directive.
+ */
 
-interface RegisteredDirective extends Directive {
-	matcher?: DirectiveMatcher
-}
+/**
+ * Represents a registered directive, consisting of a matcher and a callback.
+ *
+ * @interface RegisteredDirective
+ * @extends {Directive}
+ * @property {DirectiveMatcher} [matcher] - The matcher function for the directive.
+ */
 
-interface ProcessDirectiveOptions {
-	root: Element
-	directives?: string[]
-	mode?: 'init' | 'reinit'
-	onlyRoot?: boolean
-}
+/**
+ * Represents options for processing directives within a DOM tree.
+ *
+ * @interface ProcessDirectiveOptions
+ * @property {Element} root - The root element of the DOM tree to process.
+ * @property {string[]} [directives] - An array of directive names to process (optional).
+ * @property {'init' | 'reinit'} [mode] - The mode of processing (init or reinit, optional).
+ * @property {boolean} [onlyRoot] - Indicates whether to process directives only within the root element (optional).
+ */
 
-interface PluginOptions {
-	prerenderedBlockStart?: string
-	prerenderedBlockEnd?: string
-}
+/**
+ * Represents options for configuring a plugin related to directives.
+ *
+ * @interface PluginOptions
+ * @property {string} [prerenderedBlockStart] - The start marker for prerendered blocks (optional).
+ * @property {string} [prerenderedBlockEnd] - The end marker for prerendered blocks (optional).
+ */
 
-export default (pluginOptions?: PluginOptions): SignalizePlugin => {
-	return function Directives ($: Signalize) {
+/**
+ * @param {PluginOptions} options
+ * @returns {import('../Signalize').SignalizePlugin}
+ */
+export default (pluginOptions) => {
+	/**
+	 * @param {import('../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
 		const { on, scope, attributePrefix, attributeSeparator } = $;
-		const directivesRegister: Record<string, RegisteredDirective> = {};
+		/** @type {Record<string, RegisteredDirective} */
+		const directivesRegister = {};
 		const directivesAttribute = `${attributePrefix}directives`;
 		const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
-		const orderAttribute = `${directivesAttribute}${attributeSeparator}order`
+		const orderAttribute = `${directivesAttribute}${attributeSeparator}order`;
 		const renderedTemplateStartComment = pluginOptions?.prerenderedBlockStart ?? 'prerendered';
 		const renderedTemplateEndComment = pluginOptions?.prerenderedBlockEnd ?? '/prerendered';
 		let inited = false;
 
-		const processElement = async (options?: ProcessElementOptions): Promise<Element> => {
-			const element: Element = options.element;
+		/**
+		 *
+		 * @param {ProcessElementOptions} options
+		 * @returns {Promise<Element>}
+		 */
+		const processElement = async (options) => {
+			/** @type {Element} */
+			const element = options.element;
 			const mode = options.mode ?? 'init';
 			const canExecute = ['reinit', 'init'].includes(mode);
 			const canCompile = mode === 'init';
@@ -81,7 +133,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				directivesQueue = [...new Set([
 					...customDirectivesOrder.split(',').map((item) => item.trim()).filter((item) => item.length > 0),
 					...directivesQueue
-				])]
+				])];
 			}
 
 			directivesQueue = directivesQueue.filter((item) => !compiledDirectives.has(item) );
@@ -91,7 +143,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			if (canCompile) {
 				while (directivesQueue.length && countdown) {
 					const directiveName = directivesQueue.shift();
-					const matcher = directivesRegister[directiveName]?.matcher
+					const matcher = directivesRegister[directiveName]?.matcher;
 
 					for (const attribute of element.attributes) {
 						if (attribute.name in processedAttributes) {
@@ -127,7 +179,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 										scope: elementScope,
 										matches,
 										attribute
-									})
+									});
 								}
 							]
 						);
@@ -135,9 +187,13 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				}
 			}
 
-			const directivesToRun = [...elementScope?.$directives?.keys() ?? []]
+			const directivesToRun = [...elementScope?.$directives?.keys() ?? []];
 
-			const runDirective = async (name: string): Promise<void> => {
+			/**
+			 * @param {string} name
+			 * @returns {Promise<void>}
+			 */
+			const runDirective = async (name) => {
 				const promises = [];
 
 				for (const directiveFunction of elementScope.$directives.get(name)) {
@@ -145,21 +201,28 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				}
 
 				await Promise.all(promises);
-			}
+			};
 
 			while (canExecute && directivesToRun.length > 0) {
-				await runDirective(directivesToRun.shift())
+				await runDirective(directivesToRun.shift());
 			}
 
 			return element;
 		};
 
-		const processDirectives = async (options?: ProcessDirectiveOptions = {}): Promise<void> => {
+		/**
+		 * Asynchronously processes directives within a DOM tree based on the specified options.
+		 *
+		 * @function
+		 * @param {ProcessDirectiveOptions} [options={}] - Options for processing directives within the DOM tree (optional).
+		 * @returns {Promise<void>} A promise that resolves once the directive processing is complete.
+		 */
+		const processDirectives = async (options = {}) => {
 			let { root, directives, mode = 'init', onlyRoot } = options;
 			directives = directives ?? Object.keys(directivesRegister);
 
 			if (onlyRoot === true) {
-				await processElement({ element: root, mode, directives })
+				await processElement({ element: root, mode, directives });
 				return;
 			}
 
@@ -182,9 +245,19 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 				},
 				[1]
 			);
-		}
+		};
 
-		const directive = (name: string, { matcher, callback }: Directive): void => {
+		/**
+		 * Defines a custom directive with the specified name, matcher, and callback.
+		 *
+		 * @function
+		 * @param {string} name - The name of the custom directive.
+		 * @param {Directive} options - An object containing the matcher and callback for the directive.
+		 * @param {RegExp | DirectiveMatcher | undefined} [options.matcher] - The matcher for the directive (optional).
+		 * @param {DirectiveCallback} options.callback - The callback function for the directive.
+		 * @returns {void}
+		 */
+		const directive = (name, { matcher, callback }) => {
 			if (name in directivesRegister) {
 				throw new Error(`Directive "${name}" already defined.`);
 			}
@@ -192,14 +265,21 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			directivesRegister[name] = {
 				callback,
 				matcher: typeof matcher === 'function' ? matcher : () => matcher
-			}
+			};
 
 			if (inited) {
-				void processDirectives({ root: $.root, directives: [name] })
+				void processDirectives({ root: $.root, directives: [name] });
 			}
-		}
+		};
 
-		const getPrerenderedNodes = (element: Element): Node[] => {
+		/**
+		 * Retrieves prerendered nodes from the specified HTML element.
+		 *
+		 * @function
+		 * @param {Element} element - The HTML element to retrieve prerendered nodes from.
+		 * @returns {Node[]} An array of nodes representing the prerendered content.
+		 */
+		const getPrerenderedNodes = (element) => {
 			const renderedNodes = [];
 			let renderedTemplateSibling = element.nextSibling;
 			let renderedTemplateOpenned = false;
@@ -231,7 +311,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 			}
 
 			return renderedNodes;
-		}
+		};
 
 		directive('bind', {
 			matcher: ({ element, attribute }) => {
@@ -239,7 +319,7 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 					return;
 				}
 
-				return new RegExp(`(?::|${$.attributePrefix}bind${$.attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`)
+				return new RegExp(`(?::|${$.attributePrefix}bind${$.attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`);
 			},
 			callback: async ({ matches, scope, attribute }) => {
 				const { $el } = scope;
@@ -279,11 +359,11 @@ export default (pluginOptions?: PluginOptions): SignalizePlugin => {
 		});
 
 		on('component:setuped', (event) => {
-			processDirectives({ root: event.detail.$el })
+			processDirectives({ root: event.detail.$el });
 		});
 
 		$.getPrerenderedNodes = getPrerenderedNodes;
 		$.processDirectives = processDirectives;
 		$.directive = directive;
-	}
-}
+	};
+};

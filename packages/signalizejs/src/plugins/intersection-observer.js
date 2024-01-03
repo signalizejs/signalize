@@ -1,13 +1,24 @@
-import type { Signalize } from '..';
-
-declare module '..' {
+/* declare module '..' {
 	interface Signalize {
 		observeIntersection: (root: Element, callback: () => void, options?: IntersectionObserverInit) => IntersectionObserver
 	}
-}
+} */
 
+/**
+ * @returns {import('../Signalize').SignalizePlugin}
+ */
 export default () => {
-	return ($: Signalize): void => {
+	/**
+	 * @param {import('../Signalize').Signalize} $
+	 * @returns {void}
+	 */
+	return ($) => {
+		/**
+		 * @param {Element} element
+		 * @param {CallableFunction} callback
+		 * @param {IntersectionObserverInit} options
+		 * @returns {IntersectionObserver}
+		 */
 		$.observeIntersection = (element, callback, options) => {
 			const observer = new IntersectionObserver(callback, {
 				root: element.closest(`[${$.attributePrefix}intersection-observer-root]`),
@@ -18,6 +29,6 @@ export default () => {
 
 			observer.observe(element);
 			return observer;
-		}
-	}
-}
+		};
+	};
+};

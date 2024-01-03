@@ -1,26 +1,42 @@
 module.exports = {
-	env: {
-		browser: true,
-		es2021: true
+	'env': {
+		'browser': true,
+		'es2022': true
 	},
-	ignorePatterns: [
-		'**/dist'
+	'extends': 'eslint:recommended',
+	'overrides': [
+		{
+			'env': {
+				'node': true
+			},
+			'files': [
+				'.eslintrc.{js,cjs}'
+			],
+			'parserOptions': {
+				'sourceType': 'script'
+			}
+		}
 	],
-	extends: [
-		'standard-with-typescript'
-	],
-	parserOptions: {
-		ecmaVersion: 'latest',
-		sourceType: 'module',
-		project: './tsconfig.json'
+	'parserOptions': {
+		'ecmaVersion': 'latest',
+		'sourceType': 'module'
 	},
-	rules: {
-		'no-tabs': ['error', { allowIndentationTabs: true }],
-		'@typescript-eslint/indent': ['error', 'tab'],
-		indent: ['error', 'tab'],
-		'no-extra-semi': 'error',
-		semi: 'off',
-		'@typescript-eslint/semi': ['off'],
-		'@typescript-eslint/no-extra-semi': ['error']
+	'rules': {
+		'indent': [
+			'error',
+			'tab'
+		],
+		'linebreak-style': [
+			'error',
+			'unix'
+		],
+		'quotes': [
+			'error',
+			'single'
+		],
+		'semi': [
+			'error',
+			'always'
+		],
 	}
-}
+};

@@ -1,37 +1,33 @@
 // https://nitropack.io/blog/post/improve-interaction-to-next-paint-inp
 // https://web.dev/optimize-long-tasks/
 
-import type { Signalize, SignalizePlugin } from '..';
-
-declare global {
-	interface Navigator {
-		scheduling?: {
-			isInputPending(): boolean;
-		}
-	}
-}
-
-declare module '..' {
-	interface Signalize {
-		task: (callback: CallableFunction) => void
-	}
-}
-
-export type DomReady = (callback: CallableFunction) => void;
-
-export default (): SignalizePlugin => {
-	return ($: Signalize) => {
+/**
+ * @returns {import('../Signalize').SignalizePlugin}
+ */
+export default () => {
+	/**
+	 * @param {import('../Signalize').Signalize} $
+	 */
+	return ($) => {
 		const deadlineInterval = 50;
 
-		const tasks: CallableFunction[] = [];
+		/** @type {CallableFunction[]} */
+		const tasks = [];
 
-		const yieldToMain = async (): Promise<void> => {
+		/**
+		 * @returns {Promise<void>}
+		 */
+		const yieldToMain = async () => {
 			await new Promise((resolve) => window.setTimeout(resolve, 0));
-		}
+		};
 
 		let processing = false;
 
-		$.task = (callback: CallableFunction): void => {
+		/**
+		 * @param {CallableFunction} callback
+		 * @returns {void}
+		 */
+		$.task = (callback) => {
 			tasks.push(callback);
 
 			if (processing) {
@@ -57,6 +53,6 @@ export default (): SignalizePlugin => {
 				processing = false;
 			})();
 		};
-	}
+	};
 
 };
