@@ -47,7 +47,7 @@ export default () => {
 					while (currentState.length > limit) {
 						currentState.pop().remove();
 					}
-				}
+				};
 
 				let inited = false;
 				let loopSignalsToWatch = [];
@@ -55,7 +55,7 @@ export default () => {
 				const processValue = async () => {
 					const result = $.evaluate(argumentsMatch[3], scope.$data);
 					return typeof result === 'function' ? result() : result;
-				}
+				};
 
 				/**
 				 * @returns {Promise<void>}
@@ -163,7 +163,7 @@ export default () => {
 										}
 										currentState[counter] = existingItem;
 										currentState[existingItemIndex] = tmp;
-										lastInsertPoint = currentState[currentState.length - 1]
+										lastInsertPoint = currentState[currentState.length - 1];
 									}
 								} else if (counter >= currentState.length) {
 									lastInsertPoint.after(fragment);
@@ -172,7 +172,7 @@ export default () => {
 										$.scope(child, (elScope) => {
 											elScope.$data = $.scope(fragment).$data;
 											elScope.$parentScope = $.scope(fragment);
-										})
+										});
 										void $.processDirectives({ root: child });
 									}
 								} else {
@@ -202,7 +202,7 @@ export default () => {
 									void $.processDirectives({ root: child });
 								}
 							}
-						}
+						};
 
 						const templateFragment = [...$el.cloneNode(true).content.children];
 						const childPromises = [];
@@ -211,41 +211,41 @@ export default () => {
 						}
 
 						await Promise.all(childPromises);
-					}
+					};
 
 					const iterationPromises = [];
 					if (argumentsMatch[2] === 'in') {
 						for (let stackItem in stack) {
-							iterationPromises.push(iterate(stackItem, counter++))
+							iterationPromises.push(iterate(stackItem, counter++));
 						}
 					} else {
 						for (let stackItem of stack) {
-							iterationPromises.push(iterate(stackItem, counter++))
+							iterationPromises.push(iterate(stackItem, counter++));
 						}
 					}
 
 					await Promise.all(iterationPromises);
 
 					reduceState(counter);
-				}
+				};
 
 				await process();
 
 				const unwatchSignalCallbacks = [];
 
 				for (const signalToWatch of loopSignalsToWatch) {
-					unwatchSignalCallbacks.push(signalToWatch.watch(process))
+					unwatchSignalCallbacks.push(signalToWatch.watch(process));
 				}
 
 				$.scope($el, (elScope) => {
 					elScope.$cleanup(() => {
 						reduceState(0);
 						while (unwatchSignalCallbacks.length > 0) {
-							unwatchSignalCallbacks.shift()()
+							unwatchSignalCallbacks.shift()();
 						}
-					})
+					});
 				});
 			}
 		});
-	}
-}
+	};
+};

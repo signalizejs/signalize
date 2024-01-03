@@ -60,7 +60,7 @@ export default () => {
 
 					if (conditionResult !== true || prerendered) {
 						while (renderedNodes.length > 0) {
-							renderedNodes.pop().remove()
+							renderedNodes.pop().remove();
 						}
 					}
 
@@ -78,7 +78,7 @@ export default () => {
 					renderedNodes = [...fragment.childNodes];
 					$el.after(fragment);
 					rendered = true;
-				}
+				};
 
 				await render();
 
@@ -90,7 +90,7 @@ export default () => {
 
 				scope.$cleanup(() => {
 					while (renderedNodes.length > 0) {
-						renderedNodes.pop().remove()
+						renderedNodes.pop().remove();
 					}
 					for (const unwatch of unwatchSignalCallbacks) {
 						unwatch();
@@ -98,5 +98,5 @@ export default () => {
 				});
 			}
 		});
-	}
-}
+	};
+};
