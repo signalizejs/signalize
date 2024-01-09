@@ -23,6 +23,8 @@ export default () => {
 		};
 
 		const quotes = ['"', '\'', '`'];
+		let operatorsRe;
+		let operatorsKeys = [];
 
 		// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
 		let precedenceOperatorsMap = {
@@ -34,7 +36,8 @@ export default () => {
 
 					// Check if it the previous argument isnt a function call
 					// If it is, skip to the end of the group
-					if (typeof a === 'function') {
+					// TODO check group at the beginning of the string
+					if (typeof a === 'function' || (a !== undefined && !operatorsKeys.includes(a))) {
 						return groupTokensLength + 2;
 					}
 
@@ -44,11 +47,16 @@ export default () => {
 			17: [
 				['?.', ({ a, b }) => {
 					const chained = a?.[b];
-					return [typeof chained === 'function' ? chained.bind(a) : chained, 2];
+					return [typeof chained === 'function' && chained.prototype === undefined ? chained.bind(a) : chained, 2];
 				}],
 				['.', ({ a, b }) => {
 					const chained = a[b];
-					return [typeof chained === 'function' ? chained.bind(a) : chained, 2];
+					return [typeof chained === 'function' && chained.prototype === undefined ? chained.bind(a) : chained, 2];
+				}],
+				['[', ']', ({ index, a, chunks, compile, getGroupChunks }) => {
+					const args = getGroupChunks(chunks, index, '[', ']');
+					const compiledArgs = compile([...allPrecedences], args) ?? [];
+					return [a[compiledArgs[0]], 3];
 				}],
 				// Function call
 				['(', ')', ({ index, a, chunks, compile, getGroupChunks }) => {
@@ -56,8 +64,9 @@ export default () => {
 					const spliceLength = args.length;
 					const compiledArgs = compile([...allPrecedences], args) ?? [];
 					const applyArgs = Array.isArray(compiledArgs) ? compiledArgs : [compiledArgs];
+					let applyResult = a(...applyArgs.flat());
 					return [
-						a.apply(undefined, applyArgs.flat()),
+						typeof applyResult === 'string' ? `\`${applyResult}\`` : applyResult,
 						spliceLength + 2
 					];
 				}]
@@ -90,8 +99,8 @@ export default () => {
 				['<=', ({ a, b }) => [a <= b]],
 				['>', ({ a, b }) => [a > b]],
 				['>=', ({ a, b }) => [a >= b]],
-				['in', ({ a, b }) => [[a in b]]],
-				['instanceof', ({ a, b }) => [[a instanceof b]]]
+				['in', ({ a, b }) => [a in b]],
+				['instanceof', ({ a, b }) => [a instanceof b]]
 			],
 			8: [
 				['==', ({ a, b }) => [a == b]],
@@ -170,11 +179,19 @@ export default () => {
 			}
 		}
 
-		let operatorsKeys = Object.values(precedenceOperatorKeysMap).flat();
+		operatorsKeys = Object.values(precedenceOperatorKeysMap).flat();
+		operatorsRe = new RegExp(`^(${operatorsKeys
+			.map((item) => item.replace(/[|+\\/?*^.,()[\]]/g, '\\$&'))
+			.sort((a, b) => b.length - a.length)
+			.join('|')})`
+		);
 		const allPrecedences = Object.keys(precedenceOperatorsMap).sort((a, b) => b - a);
 		const parseCache = {};
 
-		$.evaluate = (str, context = {}) => {
+		$.evaluate = (str, context = {}, trackSignals = false) => {
+			const signalsToWatch = new Set();
+			const signalsUnwatchCallbacks = new Set();
+
 			const parse = (str) => {
 				const originalString = str;
 
@@ -182,16 +199,9 @@ export default () => {
 					return [...parseCache[originalString]];
 				}
 
-				const operatorsRe = new RegExp(`^(${operatorsKeys
-					.map((item) => item.replace(/[|+\\/?*^.,()]/g, '\\$&'))
-					.sort((a, b) => b.length - a.length)
-					.join('|')})`
-				);
-
 				const chunks = [];
 				let inWord = false;
 				let inString = false;
-				let inArgument = false;
 				let tokensQueue = '';
 				let token = str[0];
 
@@ -202,38 +212,35 @@ export default () => {
 						inWord = false;
 					}
 
-					inWord = false;
-					// Check befor the token is separated from string
-					let operatorsDetected = !inWord && operatorsRe.test(str);
-					str = str.slice(1);
-					// Check after token is separated from string
-					let operatorMatch = str.match(operatorsRe);
-					operatorsDetected = !inWord && (operatorsDetected || operatorMatch !== null);
-					tokensQueue += token;
-
-					// If token starts with letters like "in", prevent matching in word like "JSON.strINgify"
-					if (operatorsDetected && /^\w/.test(operatorMatch) && /\w$/.test(tokensQueue)) {
-						operatorsDetected = false;
-					}
-
 					if (quotes.includes(token)) {
 						inString = !inString;
 					}
 
-					if (str.length === 0 || (!inString && !inArgument && operatorsDetected)) {
-						const tokenToAdd = tokensQueue.trim();
-						if (tokenToAdd.length) {
+					inWord = false;
+					let operatorMatch = inWord || inString ? null : str.match(operatorsRe);
+					let operatorDetected = !inWord && operatorMatch !== null;
+
+					if (operatorMatch && (
+						(/^\w/.test(operatorMatch[0]) && /\w$/.test(tokensQueue))
+						|| (/^\w/.test(operatorMatch[0]) && operatorMatch[0] !== operatorMatch.input)
+					)) {
+						operatorDetected = false;
+					}
+
+					str = str.slice(operatorDetected ? operatorMatch[0].length : 1);
+					if (operatorDetected) {
+						if (tokensQueue.trim().length) {
 							chunks.push(tokensQueue.trim());
+							tokensQueue = '';
 						}
 
-						if (operatorsDetected) {
-							str = str.replace(operatorsRe, (match) => {
-								chunks.push(match.trim());
-								return '';
-							});
-						}
+						chunks.push(operatorMatch[0]);
+					} else {
+						tokensQueue += token;
+					}
 
-						tokensQueue = '';
+					if (str.length === 0 && tokensQueue.trim().length) {
+						chunks.push(tokensQueue.trim());
 					}
 
 					token = str[0];
@@ -245,24 +252,31 @@ export default () => {
 
 			const compile = (precedences, chunks) => {
 				const precedence = precedences.shift();
+
 				const prepareChunk = (chunk) => {
-					if (chunk in chunkKeywordMap) {
-						return chunkKeywordMap[chunk];
+					let processedChunk = chunk;
+
+					if (typeof chunk !== 'function') {
+						if (quotes.includes(chunk?.[0])) {
+							processedChunk = String(chunk.substring(1).substring(0, chunk.length - 2));
+						} else if (chunk in chunkKeywordMap) {
+							processedChunk = chunkKeywordMap[chunk];
+						} else if (!Array.isArray(chunk) && !Number.isNaN(parseFloat(chunk))) {
+							processedChunk = parseFloat(chunk);
+						} else if (chunk in context) {
+							processedChunk = context[chunk];
+						}
 					}
 
-					if (quotes.includes(chunk[0])) {
-						return chunk.substring(1).substring(0, chunk.length - 2);
+					if (trackSignals && processedChunk instanceof $.Signal) {
+						const unwatch = processedChunk.watch(() => {
+							signalsToWatch.add(processedChunk);
+						}, { execution: 'onGet' });
+
+						signalsUnwatchCallbacks.add(unwatch);
 					}
 
-					if (!Array.isArray(chunk) && !Number.isNaN(parseFloat(chunk))) {
-						return parseFloat(chunk);
-					}
-
-					if (chunk in context) {
-						return context[chunk];
-					}
-
-					return chunk;
+					return processedChunk;
 				};
 
 				if (precedence === undefined || chunks.length === 1) {
@@ -317,8 +331,10 @@ export default () => {
 							prepareChunk,
 							getGroupChunks,
 							index: startIndex,
-							chunks
+							chunks,
+							context
 						});
+
 						if (typeof result === 'number') {
 							startIndex += result;
 						} else {
@@ -341,7 +357,8 @@ export default () => {
 			};
 
 			// There is always only one at the end of the evaluation
-			return compile([...allPrecedences], parse(str))[0];
+			const result = compile([...allPrecedences], parse(str))[0];
+			return { result, signalsToWatch };
 		};
 	};
 };

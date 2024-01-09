@@ -18,7 +18,7 @@ export default () => {
 	 * @returns {void}
 	 */
 	return ($) => {
-		const { select, dispatch } = $;
+		const { dispatch, root } = $;
 		const snippetAttribute = `${$.attributePrefix}snippet`;
 		const snippetStateAttribute = `${snippetAttribute}${$.attributeSeparator}state`;
 		const snippetActionAttribute = `${snippetAttribute}${$.attributeSeparator}action`;
@@ -47,7 +47,7 @@ export default () => {
 				}
 
 				const snippetId = newSnippet.getAttribute(snippetAttribute);
-				let existingSnippet = select(`[${snippetAttribute}="${snippetId}"]`);
+				let existingSnippet = root.querySelector(`[${snippetAttribute}="${snippetId}"]`);
 
 				if (existingSnippet === null) {
 					continue;

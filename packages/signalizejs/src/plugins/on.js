@@ -103,6 +103,30 @@ export default ($) => {
 	};
 
 	/**
+	 *
+	 * @param {Selectable} target
+	 * @param {boolean} normalizeDocument
+	 * @returns {IterableElements}
+	 */
+	const selectorToIterable = (target, normalizeDocument = false) => {
+		/** @type {IterableElements} */
+		let elements;
+
+		if (typeof target === 'string') {
+			elements = $.root.querySelectorAll(target);
+		} else {
+			const targetIsDocument = target instanceof Document;
+			if (target instanceof Element || targetIsDocument || target instanceof Window) {
+				elements = [targetIsDocument && normalizeDocument ? target.documentElement : target];
+			} else {
+				elements = target instanceof Array || target instanceof NodeList ? [...target] : [target];
+			}
+		}
+
+		return elements.filter((element) => element !== null);
+	};
+
+	/**
 	 * Adds an event listener to the specified target or invokes a callback for the given events.
 	 *
 	 * @function
@@ -142,7 +166,7 @@ export default ($) => {
 				}, options);
 			},
 			direct: ({ target, listener, options }) => {
-				for (const element of $.selectorToIterable(target)) {
+				for (const element of selectorToIterable(target)) {
 					element.addEventListener(events, listener, options);
 				}
 			}
@@ -172,7 +196,7 @@ export default ($) => {
 	};
 
 	$.off = (events, element, listener, options = {}) => {
-		const elements = $.selectorToIterable(element);
+		const elements = selectorToIterable(element);
 
 		for (const event of events.split(' ')) {
 			if (event in customEventListeners) {

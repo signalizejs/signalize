@@ -88,7 +88,7 @@
  */
 
 /**
- * @param {PluginOptions} options
+ * @param {PluginOptions} [options]
  * @returns {import('../Signalize').SignalizePlugin}
  */
 export default (pluginOptions) => {
@@ -227,6 +227,7 @@ export default (pluginOptions) => {
 			}
 
 			const rootScope = scope(root);
+
 			await $.traverseDom(
 				root,
 				async (node) => {
@@ -236,7 +237,7 @@ export default (pluginOptions) => {
 
 					if (node !== root) {
 						$.scope(node, (elScope) => {
-							elScope.$data = rootScope.$data;
+							elScope.$data = rootScope.$data,
 							elScope.$parentScope = rootScope;
 						});
 					}
@@ -326,20 +327,22 @@ export default (pluginOptions) => {
 				const isShorthand = attribute.name.startsWith('{');
 				const attributeValue = isShorthand ? matches[3] : attribute.value;
 				const attributeName = isShorthand ? matches[3] : matches[1];
-				const getSignalsToWatch = $.observeSignals(scope);
-				const process = () => {
-					const res = $.evaluate(attributeValue, scope);
-					return typeof res === 'function' ? res(scope) : res;
+				let trackedSignals;
+				const get = (trackSignals) => {
+					const { result, signalsToWatch } = $.evaluate(attributeValue, scope, trackSignals);
+					if (trackSignals) {
+						trackedSignals = signalsToWatch ?? [];
+					}
+
+					console.log(result);
+					return typeof result === 'function' ? result() : result;
 				};
 
-				process();
+				get(true);
 
-				$.bind($el, {
-					[attributeName]: [
-						...getSignalsToWatch(),
-						process
-					]
-				});
+				/* $.bind($el, {
+					[attributeName]: [...trackedSignals, { get, set: trackedSignals[trackedSignals.length - 1] ?? null }]
+				}); */
 			}
 		});
 
@@ -347,7 +350,7 @@ export default (pluginOptions) => {
 			matcher: new RegExp(`(?:\\@|${$.attributePrefix}on${$.attributeSeparator})(\\S+)`),
 			callback: async ({ matches, scope, attribute }) => {
 				$.on(matches[1], scope.$el, async (event) => {
-					const result = $.evaluate(attribute.value, {
+					const { result } = $.evaluate(attribute.value, {
 						...scope,
 						$event: event
 					});

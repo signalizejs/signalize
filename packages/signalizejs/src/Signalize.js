@@ -5,7 +5,6 @@ import mutationsObserver from './plugins/mutation-observer.js';
 import on from './plugins/on.js';
 import component from './plugins/component.js';
 import dashCase from './plugins/dash-case.js';
-import select from './plugins/select.js';
 import signal from './plugins/signal.js';
 import scope from './plugins/scope.js';
 
@@ -89,7 +88,6 @@ export class Signalize {
 				readyListeners.push(listener);
 			});
 			domReady(this);
-			select(this);
 			scope(this);
 			signal(this);
 			bind(this);
@@ -135,7 +133,7 @@ export class Signalize {
 
 		this.#plugins.add(pluginCacheName);
 		plugin(this);
-	}
+	};
 }
 
 export default Signalize;

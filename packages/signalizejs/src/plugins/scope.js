@@ -26,7 +26,6 @@
  * @returns {void}
  */
 export default ($) => {
-	const { selectAll } = $;
 	const scopeKey = '__signalizeScope';
 	const refAttribute = `${$.attributePrefix}ref`;
 	const componentAttribute = $.componentAttribute;
@@ -138,7 +137,7 @@ export default ($) => {
 		 * @returns {Element[]}
 		 */
 		$refs = (name) => {
-			return [...selectAll(`[${refAttribute}=${name}]`, this.$el)].filter((element) => {
+			return [...this.$el.querySelectorAll(`[${refAttribute}=${name}]`)].filter((element) => {
 				return element.closest(`[${componentAttribute}]`) !== this.$el;
 			});
 		};

@@ -52,28 +52,20 @@ export default () => {
 				let inited = false;
 				let loopSignalsToWatch = [];
 
-				const processValue = async () => {
-					const result = $.evaluate(argumentsMatch[3], scope.$data);
-					return typeof result === 'function' ? result() : result;
-				};
-
 				/**
 				 * @returns {Promise<void>}
 				 */
 				const process = async () => {
-					let stack;
+					let { result, signalsToWatch } = $.evaluate(argumentsMatch[3], scope.$data, !inited);
+					result = typeof result === 'function' ? result() : result;
 
 					if (!inited) {
-						const getSignalsToWatch = $.observeSignals(scope.$data);
-						stack = await processValue();
-						loopSignalsToWatch = getSignalsToWatch();
+						loopSignalsToWatch = signalsToWatch;
 						inited = true;
 
 						if (prerendered) {
 							return;
 						}
-					} else {
-						stack = await processValue();
 					}
 
 					if (prerendered) {
@@ -81,13 +73,11 @@ export default () => {
 						prerendered = false;
 					}
 
-					inited = true;
-
-					if (typeof stack === 'number') {
-						stack = [...Array(stack).keys()];
+					if (typeof result === 'number') {
+						result = [...Array(result).keys()];
 					}
 
-					const totalCount = stack.length ?? stack.size;
+					const totalCount = result.length ?? result.size;
 					let counter = 0;
 					let lastInsertPoint = currentState[currentState.length - 1] ?? $el;
 
@@ -112,15 +102,15 @@ export default () => {
 						if (newContextVariables.length > 1) {
 							if (isArrayDestruct) {
 								for (const key of Object.keys(context)) {
-									destruct[newContextVariables[key]] = $.signal(context[key]);
+									destruct[newContextVariables[key]] = context[key];
 								}
 							} else {
 								for (const key of newContextVariables) {
-									destruct[key] = $.signal(context[key]);
+									destruct[key] = context[key];
 								}
 							}
 						} else {
-							destruct[newContextVariables] = $.signal(context);
+							destruct[newContextVariables] = context;
 						}
 
 						/**
@@ -215,11 +205,11 @@ export default () => {
 
 					const iterationPromises = [];
 					if (argumentsMatch[2] === 'in') {
-						for (let stackItem in stack) {
+						for (const stackItem in result) {
 							iterationPromises.push(iterate(stackItem, counter++));
 						}
 					} else {
-						for (let stackItem of stack) {
+						for (let stackItem of result) {
 							iterationPromises.push(iterate(stackItem, counter++));
 						}
 					}

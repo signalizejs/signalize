@@ -28,62 +28,46 @@
 	],
 	"exports": {
 		".": {
-			"import": "./dist/signalize.js",
-			"require": "./dist/signalize.cjs",
-			"types": "./dist/index.d.ts"
+			"import": "./src/index.js"
 		},
-		"./dist/*": "./dist/*",
 		"./fetch": {
-			"import": "./dist/plugins/fetch.js",
-			"require": "./dist/plugins/fetch.cjs",
-			"types": "./fetch/dist/fetch.d.ts"
+			"import": "./src/plugins/fetch.js"
 		},
 		"./dialog": {
-			"import": "./dist/plugins/dialog.js",
-			"require": "./dist/plugins/dialog.cjs",
-			"types": "./dist/plugins/dialog.d.ts"
+			"import": "./src/plugins/dialog.js"
 		},
 		"./directives": {
-			"import": "./dist/plugins/directives.js",
-			"require": "./dist/plugins/directives.cjs",
-			"types": "./dist/plugins/directives.d.ts"
+			"import": "./src/plugins/directives.js"
 		},
 		"./directives/for": {
-			"import": "./dist/plugins/directives/for.js",
-			"require": "./dist/plugins/directives/for.cjs",
-			"types": "./dist/plugins/directives/for.d.ts"
+			"import": "./src/plugins/directives/for.js"
 		},
 		"./directives/if": {
-			"import": "./dist/plugins/directives/if.js",
-			"require": "./dist/plugins/directives/if.cjs",
-			"types": "./dist/plugins/directives/if.d.ts"
+			"import": "./src/plugins/directives/if.js"
+		},
+		"./evaluator": {
+			"import": "./src/plugins/evaluator.js"
 		},
 		"./h": {
-			"import": "./dist/plugins/h.js",
-			"require": "./dist/plugins/h.cjs",
-			"types": "./dist/plugins/h.d.ts"
+			"import": "./src/plugins/h.js"
 		},
 		"./asset-loader": {
-			"import": "./dist/plugins/asset-loader.js",
-			"require": "./dist/plugins/asset-loader.cjs",
-			"types": "./dist/plugins/asset-loader.d.ts"
+			"import": "./src/plugins/asset-loader.js"
 		},
 		"./snippets": {
-			"import": "./dist/plugins/snippets.js",
-			"require": "./dist/plugins/snippets.cjs",
-			"types": "./dist/plugins/snippets.d.ts"
+			"import": "./src/plugins/snippets.js"
 		},
 		"./spa": {
-			"import": "./dist/plugins/spa.js",
-			"require": "./dist/plugins/spa.cjs",
-			"types": "./dist/plugins/spa.d.ts"
+			"import": "./src/plugins/spa.js"
+		},
+		"./traverse-dom": {
+			"import": "./src/plugins/traverse-dom.js"
 		},
 		"./package.json": "./package.json"
 	},
-	"main": "dist/signalize.cjs",
-	"jsdelivr": "dist/signalize.global.js",
-	"unpkg": "dist/signalize.global.js",
-	"module": "dist/signalize.js",
-	"types": "dist/index.d.ts",
+	"main": "src/index.js",
+	"jsdelivr": "src/index.js",
+	"unpkg": "src/index.js",
+	"module": "src/index.js",
 	"license": "MIT"
 }

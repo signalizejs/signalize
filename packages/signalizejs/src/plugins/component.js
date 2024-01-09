@@ -119,7 +119,7 @@ export default ($) => {
 						await customElements.whenDefined(name);
 					}
 
-					const childComponents = $.selectAll(name, this.#scope.$el);
+					const childComponents = this.#scope.$el.querySelectorAll(name);
 					const initPromises = [];
 					for (const childComponent of childComponents) {
 						const componentScope = scope(childComponent);

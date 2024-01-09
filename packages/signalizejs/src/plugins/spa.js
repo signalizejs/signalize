@@ -86,7 +86,7 @@ export default (options) => {
 	 * @returns {void}
 	 */
 	return ($) => {
-		const { dispatch, fetch, redrawSnippet, select, on } = $;
+		const { dispatch, fetch, redrawSnippet, on, root } = $;
 
 		const spaAttribute = `${$.attributePrefix}spa`;
 		const spaUrlAttribute = `${spaAttribute}${$.attributeSeparator}url`;
@@ -243,7 +243,7 @@ export default (options) => {
 				}
 
 				if (shouldCacheResponse === null) {
-					const metaCacheControlElement = select(`meta[name="${spaMetaCacheNameAttribute}"]`);
+					const metaCacheControlElement = root.querySelector(`meta[name="${spaMetaCacheNameAttribute}"]`);
 					shouldCacheResponse = !urlIsCached && (
 						metaCacheControlElement === null || metaCacheControlElement.getAttribute('content') !== 'no-cache'
 					);
@@ -281,7 +281,7 @@ export default (options) => {
 				if (!navigationScrollStopped) {
 					if (urlHash !== null && urlHash.trim().length > 2) {
 						urlHash = urlHash.slice(1);
-						const element = select(`#${urlHash}`);
+						const element = root.querySelector(`#${urlHash}`);
 						if (element !== null) {
 							element.scrollIntoView({
 								block: 'start',

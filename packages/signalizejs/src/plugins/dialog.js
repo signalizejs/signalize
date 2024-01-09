@@ -21,7 +21,7 @@ export default () => {
 	 * @returns {void}
 	 */
 	return ($) => {
-		const { dispatch, attributePrefix, attributeSeparator, select, on } = $;
+		const { dispatch, attributePrefix, attributeSeparator, on, root } = $;
 		const dialogAttribute = `${attributePrefix}dialog`;
 		const dialogModelessAttribute = `${dialogAttribute}${attributeSeparator}modeless`;
 		const dialogCloseButtonAttribute = `${dialogAttribute}${attributeSeparator}close`;
@@ -34,7 +34,7 @@ export default () => {
 		 * @param {string} id - The ID of the dialog element to retrieve.
 		 * @returns {HTMLDialogElement | null} The dialog element with the specified ID, or null if not found.
 		 */
-		const getDialog = (id) => select(`[${dialogAttribute}=${id}]`);
+		const getDialog = (id) => root.querySelector(`[${dialogAttribute}=${id}]`);
 
 		/**
 		 * Opens a dialog identified by either its ID or the dialog element itself.

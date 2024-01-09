@@ -54,7 +54,6 @@ export default ($) => {
 			let previousValue;
 
 			/**
-			 *
 			 * @param {string} attribute
 			 * @param {string|number} value
 			 * @returns {Promise<void>}

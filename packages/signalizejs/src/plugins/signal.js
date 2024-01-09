@@ -2,7 +2,6 @@
 	interface Signalize {
 		Signal: Signal<any>
 		signal: <T>(defaultValue: T) => Signal<T>
-		observeSignals: (data: Record<string, any> | Array<Signal<any>>) => UnobserveSignals
 	}
 } */
 
@@ -72,12 +71,6 @@
  */
 
 /**
- * Function type for unobserving multiple signals.
- *
- * @typedef {() => Array<Signal<any>>} UnobserveSignals
- */
-
-/**
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
@@ -110,8 +103,7 @@ export default ($) => {
 		 */
 		constructor(defaultValue) {
 			super();
-			this.value = defaultValue ?? undefined;
-
+			this.value = defaultValue;
 			return new Proxy(this, {
 				apply: (target, thisArg, args) => {
 					if (args.length === 1) {
@@ -210,46 +202,6 @@ export default ($) => {
 		valueOf = () => this.#get();
 	}
 
-	/**
-	 * Observes signals based on the provided data, either a record of values or an array of Signal instances.
-	 *
-	 * @function
-	 * @param {Record<string, any> | Signal[]} data - The data to observe, which can be a record of values or an array of Signal instances.
-	 * @returns {UnobserveSignals} A function to unobserve multiple signals.
-	 */
-	const observeSignals = (data) => {
-		let keepTracking = true;
-		/** @type {Signal[]} */
-		const signalsToWatch = [];
-		/** @type {Signal[]} */
-		const detectedSignals = [];
-
-		for (const signalDataItem of Array.isArray(data) ? data : Object.values(data)) {
-			if (!(signalDataItem instanceof Signal)) {
-				continue;
-			}
-
-			const unwatch = signalDataItem.watch(() => {
-				if (!keepTracking) {
-					return;
-				}
-				signalsToWatch.push(signalDataItem);
-				unwatch();
-			}, { execution: 'onGet' });
-			detectedSignals.push(unwatch);
-		}
-
-		return () => {
-			keepTracking = false;
-
-			while (detectedSignals.length > 0) {
-				detectedSignals.shift()();
-			}
-
-			return signalsToWatch;
-		};
-	};
-
 	$.Signal = Signal;
 
 	/**
@@ -261,5 +213,4 @@ export default ($) => {
 	 * @returns {Signal<T>} A new Signal instance initialized with the default value.
 	 */
 	$.signal = (defaultValue) => new Signal(defaultValue);
-	$.observeSignals = observeSignals;
 };

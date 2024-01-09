@@ -38,33 +38,30 @@ export default () => {
 				 * @returns {Promise<void>}
 				 */
 				const render = async () => {
-					let conditionResult;
+					const { result, signalsToWatch } = $.evaluate(attribute.value, scope, !inited);
+
 					if (!inited) {
-						const getSignalsToWatch = $.observeSignals(scope);
-						conditionResult = $.evaluate(attribute.value, scope);
-						ifSignalsToWatch = getSignalsToWatch();
+						ifSignalsToWatch = signalsToWatch;
 						inited = true;
 
 						if (rendered) {
 							return;
 						}
-					} else {
-						conditionResult = await $.evaluate(attribute.value, scope);
 					}
 
-					if (conditionResult === previousResult) {
+					if (result === previousResult) {
 						return;
 					}
 
-					previousResult = conditionResult;
+					previousResult = result;
 
-					if (conditionResult !== true || prerendered) {
+					if (result !== true || prerendered) {
 						while (renderedNodes.length > 0) {
 							renderedNodes.pop().remove();
 						}
 					}
 
-					if (conditionResult !== true) {
+					if (result !== true) {
 						rendered = false;
 						return;
 					}
