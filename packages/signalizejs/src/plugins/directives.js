@@ -231,11 +231,13 @@ export default (pluginOptions) => {
 			await $.traverseDom(
 				root,
 				async (node) => {
-					if (node?.closest(`[${ignoreAttribute}]`) || scope(node)?.$directives !== undefined) {
-						return;
+					const nodeIsRoot = node === root;
+
+					if ((node.tagName.includes('-') && !nodeIsRoot) || node?.closest(`[${ignoreAttribute}]`) || scope(node)?.$directives !== undefined) {
+						return false;
 					}
 
-					if (node !== root) {
+					if (!nodeIsRoot) {
 						$.scope(node, (elScope) => {
 							elScope.$data = rootScope.$data,
 							elScope.$parentScope = rootScope;
@@ -330,19 +332,19 @@ export default (pluginOptions) => {
 				let trackedSignals;
 				const get = (trackSignals) => {
 					const { result, signalsToWatch } = $.evaluate(attributeValue, scope, trackSignals);
+
 					if (trackSignals) {
 						trackedSignals = signalsToWatch ?? [];
 					}
 
-					console.log(result);
 					return typeof result === 'function' ? result() : result;
 				};
 
 				get(true);
 
-				/* $.bind($el, {
-					[attributeName]: [...trackedSignals, { get, set: trackedSignals[trackedSignals.length - 1] ?? null }]
-				}); */
+				$.bind($el, {
+					[attributeName]: [...trackedSignals, { get, set: (value) => trackedSignals[trackedSignals.length - 1](value) ?? null }]
+				});
 			}
 		});
 

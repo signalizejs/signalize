@@ -358,7 +358,12 @@ export default () => {
 
 			// There is always only one at the end of the evaluation
 			const result = compile([...allPrecedences], parse(str))[0];
-			return { result, signalsToWatch };
+
+			if (result instanceof $.Signal) {
+				signalsToWatch.add(result);
+			}
+
+			return { result, signalsToWatch: [...signalsToWatch] };
 		};
 	};
 };
