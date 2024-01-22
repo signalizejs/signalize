@@ -83,6 +83,10 @@ export default ($) => {
 
 		set $data (data) {
 			for (const key in this.$data) {
+				if (key in data) {
+					continue;
+				}
+
 				delete this.$data[key];
 			}
 

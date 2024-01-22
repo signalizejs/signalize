@@ -221,6 +221,13 @@ root
 					return;
 				}
 
+				const valueTypeMap = {
+					null: null,
+					undefined: undefined,
+					false: false,
+					true: true
+				};
+
 				const currentProperty = this.#scope.$props[attributesPropertiesMap[name]];
 				let valueToSet = Number.isNaN(parseFloat(currentProperty())) ? newValue : parseFloat(newValue);
 
@@ -228,7 +235,7 @@ root
 					valueToSet = valueToSet.length > 0 ? !!valueToSet : this.#scope.$el.hasAttribute(name);
 				}
 
-				currentProperty(valueToSet);
+				currentProperty(valueTypeMap[valueToSet] ?? valueToSet);
 			}
 
 			/**

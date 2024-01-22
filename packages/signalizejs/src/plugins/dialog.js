@@ -21,11 +21,26 @@ export default () => {
 	 * @returns {void}
 	 */
 	return ($) => {
-		const { dispatch, attributePrefix, attributeSeparator, on, root } = $;
+		const { dispatch, attributePrefix, attributeSeparator, on, off, root } = $;
 		const dialogAttribute = `${attributePrefix}dialog`;
 		const dialogModelessAttribute = `${dialogAttribute}${attributeSeparator}modeless`;
+		const dialogClosableAttribute = `${dialogAttribute}${attributeSeparator}closable`;
 		const dialogCloseButtonAttribute = `${dialogAttribute}${attributeSeparator}close`;
 		const dialogOpenButtonAttribute = `${dialogAttribute}${attributeSeparator}open`;
+
+		const closeOnBackDropClickListener = (event) => {
+			let rect = event.target.getBoundingClientRect();
+
+			if (rect.left > event.clientX ||
+				rect.right < event.clientX ||
+				rect.top > event.clientY ||
+				rect.bottom < event.clientY
+			) {
+				const dialog = event.target.closest('dialog');
+				closeDialog(dialog);
+				off('click', dialog, closeOnBackDropClickListener);
+			}
+		};
 
 		/**
 		 * Retrieves a dialog element with the specified ID.
@@ -44,15 +59,23 @@ export default () => {
 		 * @param {boolean} [modelessly=false] - Indicates whether to open the dialog modelessly (optional, default is false).
 		 * @returns {HTMLDialogElement | null} The opened dialog element or null if not found or not opened.
 		 */
-		const openDialog = (dialogOrId, modelessly = false) => {
+		const openDialog = (dialogOrId, options = {}) => {
 			const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
+			let { modelessly = false, closable = true } = options;
 
 			if (dialog != null) {
 				modelessly = dialog.hasAttribute(dialogModelessAttribute) ?? modelessly;
 				modelessly ? dialog.show() : dialog.showModal();
-				window.location.hash = `#${dialog.getAttribute(dialogAttribute)}`;
+				const dialogId = dialog.getAttribute(dialogAttribute);
+				if (dialogId) {
+					window.location.hash = `#${dialogId}`;
+				}
 
 				dispatch('dialog:opened', dialog);
+			}
+
+			if (closable && !modelessly && dialog.getAttribute(dialogClosableAttribute) != false) {
+				on('click', dialog, closeOnBackDropClickListener);
 			}
 
 			return dialog;
@@ -75,7 +98,9 @@ export default () => {
 					window.history.replaceState(null, '', window.location.href.substring(0, window.location.href.indexOf('#')));
 				}
 
+				off('click', dialog, closeOnBackDropClickListener);
 				dispatch('dialog:closed', dialog);
+				document.body.style = 'overflow:initial!important';
 			}
 
 			return dialog;

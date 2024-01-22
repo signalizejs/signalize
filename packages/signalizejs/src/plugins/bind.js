@@ -37,6 +37,7 @@ export default ($) => {
 	$.bind = (element, attributes) => {
 		/** @type {CallableFunction[]} */
 		const unwatchSignalCallbacks = [];
+		const cleanups = [];
 
 		for (let [attr, attrOptions] of Object.entries(attributes)) {
 			if (attrOptions.length === 1) {
@@ -104,6 +105,8 @@ export default ($) => {
 			let getListener = null;
 			/** @type {CallableFunction|null} */
 			let setListener = null;
+			/** @type {any} */
+			let initValue = undefined;
 			if (attributeBinderIsSignal) {
 				getListener = () => attributeBinder();
 				setListener = (value) => attributeBinder(value);
@@ -114,6 +117,10 @@ export default ($) => {
 
 				if (typeof attributeBinder?.set === 'function') {
 					setListener = (value) => attributeBinder.set(value);
+				}
+
+				if (typeof attributeBinder?.value !== 'undefined') {
+					initValue = attributeBinder?.value;
 				}
 
 				if (getListener === null) {
@@ -129,8 +136,8 @@ export default ($) => {
 				}
 			}
 
-			if (getListener !== null) {
-				setAttribute(attr, getListener());
+			if (getListener !== null || initValue !== undefined) {
+				setAttribute(attr, initValue !== undefined ? initValue : getListener());
 			}
 
 			for (const signalToWatch of signalsToWatch) {
@@ -145,11 +152,16 @@ export default ($) => {
 				};
 
 				on('input', element, inputListener, { passive: true });
+				cleanups.push(() => $.off('input', element, inputListener));
 			}
 		}
 
 		$.scope(element, ({ $cleanup }) => {
 			$cleanup(() => {
+				for (const cleanup of cleanups) {
+					cleanup();
+				}
+
 				for (const unwatch of unwatchSignalCallbacks) {
 					unwatch();
 				}

@@ -174,13 +174,11 @@ export default (pluginOptions) => {
 							directiveName,
 							[
 								...elementScope.$directives.get(directiveName) ?? [],
-								(elementScope) => {
-									return directivesRegister[directiveName].callback({
-										scope: elementScope,
-										matches,
-										attribute
-									});
-								}
+								(elementScope) =>  directivesRegister[directiveName].callback({
+									scope: elementScope,
+									matches,
+									attribute
+								})
 							]
 						);
 					}
@@ -233,13 +231,13 @@ export default (pluginOptions) => {
 				async (node) => {
 					const nodeIsRoot = node === root;
 
-					if ((node.tagName.includes('-') && !nodeIsRoot) || node?.closest(`[${ignoreAttribute}]`) || scope(node)?.$directives !== undefined) {
+					if ((node.tagName.includes('-') && !nodeIsRoot) || node?.closest(`[${ignoreAttribute}]`) || (scope(node)?.$directives !== undefined && mode !== 'reinit')) {
 						return false;
 					}
 
 					if (!nodeIsRoot) {
 						$.scope(node, (elScope) => {
-							elScope.$data = rootScope.$data,
+							elScope.$data = {...elScope.$data,...rootScope.$data };
 							elScope.$parentScope = rootScope;
 						});
 					}
@@ -340,10 +338,10 @@ export default (pluginOptions) => {
 					return typeof result === 'function' ? result() : result;
 				};
 
-				get(true);
+				const value = get(true);
 
 				$.bind($el, {
-					[attributeName]: [...trackedSignals, { get, set: (value) => trackedSignals[trackedSignals.length - 1](value) ?? null }]
+					[attributeName]: [...trackedSignals, { get, value, set: (value) => trackedSignals[trackedSignals.length - 1](value) ?? null }]
 				});
 			}
 		});

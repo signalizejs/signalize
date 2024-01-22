@@ -71,7 +71,7 @@ export class Signalize {
 			for (const plugin of plugins) {
 				signalizeInstance.use(plugin);
 			}
-		}
+		};
 
 		if (this.root?.__signalize === undefined) {
 			this.attributePrefix = options?.attributePrefix ?? '';
@@ -110,12 +110,11 @@ export class Signalize {
 				}
 				this.dispatch(event, node);
 			});
+		} else {
+			const signalizeInstance = this.root.__signalize;
+			signalizeInstance.globals = { ...signalizeInstance.globals, ...options?.globals ?? {} };
+			usePlugins(signalizeInstance, options?.plugins ?? []);
 		}
-
-		const signalizeInstance = this.root.__signalize;
-		signalizeInstance.globals = { ...signalizeInstance.globals, ...options?.globals ?? {} };
-
-		usePlugins(signalizeInstance, options?.plugins ?? []);
 
 		return this.root.__signalize;
 	}

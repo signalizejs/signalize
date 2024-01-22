@@ -68,7 +68,7 @@ export default () => {
 
 					let fragment = $el.cloneNode(true).content;
 					$.scope(fragment, (fragmentScope) => {
-						fragmentScope.$data = scope.$parentScope.$data;
+						fragmentScope.$data = {...fragmentScope.$data, ...scope.$data};
 					});
 
 					await $.processDirectives({ root: fragment });

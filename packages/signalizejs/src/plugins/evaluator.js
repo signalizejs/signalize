@@ -18,6 +18,7 @@ export default () => {
 			String,
 			Function,
 			Array,
+			console,
 			JSON,
 			...$.globals
 		};
@@ -261,7 +262,7 @@ export default () => {
 							processedChunk = String(chunk.substring(1).substring(0, chunk.length - 2));
 						} else if (chunk in chunkKeywordMap) {
 							processedChunk = chunkKeywordMap[chunk];
-						} else if (!Array.isArray(chunk) && !Number.isNaN(parseFloat(chunk))) {
+						} else if (!Array.isArray(chunk) && /^\d+(?:\.\d+)?$/.test(chunk)) {
 							processedChunk = parseFloat(chunk);
 						} else if (chunk in context) {
 							processedChunk = context[chunk];

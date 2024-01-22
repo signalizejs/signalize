@@ -32,21 +32,29 @@ export default () => {
 				const newContextVariables = argumentsMatch[1].replace(/[[({})\]\s]/g, '').split(',').map((key) => key.trim());
 				let currentState = $.getPrerenderedNodes($el);
 				let prerendered = currentState.length > 0;
-				let nextElementSibling = $el.nextElementSibling;
-
-				while (nextElementSibling !== null) {
-					if ($.scope(nextElementSibling)?.$template !== $el) {
-						break;
-					}
-
-					currentState.push(nextElementSibling);
-					nextElementSibling = nextElementSibling.nextElementSibling;
-				}
 
 				const reduceState = (limit) => {
 					while (currentState.length > limit) {
 						currentState.pop().remove();
 					}
+				};
+
+				const evaluateKey = (node) => {
+					let generated = node.getAttribute(`${$.attributePrefix}key`);
+
+					if (generated) {
+						return generated;
+					}
+
+					let key = null;
+					const keyFnString = node.getAttribute(`:${$.attributePrefix}key`);
+
+					if (keyFnString) {
+						const { result } = $.evaluate(keyFnString, $.scope(node));
+						key = result;
+					}
+
+					return key;
 				};
 
 				let inited = false;
@@ -121,6 +129,7 @@ export default () => {
 						const processChild = async (fragment) => {
 							$.scope(fragment, (elScope) => {
 								elScope.$data = {
+									...elScope.$data,
 									...destruct,
 									...parentContext,
 									iterator
@@ -129,9 +138,8 @@ export default () => {
 								elScope.$parentScope = $parentScope;
 							});
 
-							await $.processDirectives({ root: fragment, onlyRoot: true });
-
-							const fragmentKey = fragment.getAttribute('key');
+							const fragmentKey = evaluateKey(fragment);
+							fragment.removeAttribute('key');
 
 							if (fragmentKey) {
 								let existingItemIndex = null;
@@ -160,7 +168,7 @@ export default () => {
 									lastInsertPoint = fragment;
 									for (const child of fragment.children) {
 										$.scope(child, (elScope) => {
-											elScope.$data = $.scope(fragment).$data;
+											elScope.$data = {...elScope.$data, ...$.scope(fragment).$data};
 											elScope.$parentScope = $.scope(fragment);
 										});
 										void $.processDirectives({ root: child });
@@ -170,27 +178,23 @@ export default () => {
 									void $.processDirectives({ root: fragment });
 								}
 							} else if (currentState.length > 0 && counter < currentState.length) {
-								$.scope(currentState[counter], ({ $data }) => {
-									for (const [key, value] of Object.entries({ ...destruct, iterator })) {
-										const valueToSet = value instanceof $.Signal ? value() : value;
-										if ($data[key] instanceof $.Signal) {
-											$data[key](valueToSet);
-										} else {
-											$data[key] = valueToSet;
-										}
-									}
+								$.scope(currentState[counter], (elScope) => {
+									elScope.$data = {...elScope.$data, ...destruct, iterator };
+									$.processDirectives({ root: currentState[counter], mode: 'reinit' });
 								});
 							} else if (currentState.length === 0 || counter >= currentState.length) {
 								lastInsertPoint.after(fragment);
 								currentState.push(fragment);
 								lastInsertPoint = fragment;
+
 								for (const child of fragment.children) {
 									$.scope(child, (elScope) => {
-										elScope.$data = $.scope(fragment).$data;
+										elScope.$data = {...elScope.$data, ...$.scope(fragment).$data};
 										elScope.$parentScope = $.scope(fragment);
 									});
-									void $.processDirectives({ root: child });
 								}
+
+								void $.processDirectives({ root: fragment });
 							}
 						};
 
