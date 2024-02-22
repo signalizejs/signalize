@@ -97,7 +97,6 @@ export default (options) => {
 		const spaAppVersionHeader = options?.appVersionHeader ?? 'X-Spa-App-Version';
 
 		let currentState = null;
-		let currentLocation = new URL(window.location.href);
 		/** @type {AbortController} */
 		let abortNavigationController;
 		const spaVersion = null;
@@ -207,7 +206,7 @@ export default (options) => {
 			/**
 			 * @returns {void}
 			 */
-			const updateDom = () => {
+			const updateDom = async () => {
 				/** @type {boolean|null} */
 				let shouldCacheResponse = null;
 
@@ -227,7 +226,7 @@ export default (options) => {
 				}
 
 				if (!isJson(responseData)) {
-					redrawSnippet(responseData);
+					await redrawSnippet(responseData);
 				}
 
 				if (stateAction === 'replace') {
@@ -257,17 +256,11 @@ export default (options) => {
 			if (responseData !== null) {
 				dispatch('spa:redraw:start', dispatchEventData);
 				try {
-					if (typeof document.startViewTransition === 'undefined') {
-						updateDom();
-					} else {
-						dispatch('spa:transition:start', dispatchEventData);
-						const transition = document.startViewTransition(() => updateDom());
-						await transition.ready;
-						dispatch('spa:transition:end', dispatchEventData);
-					}
+					await updateDom();
 				} catch (e) {
 					console.log(e);
 				}
+
 				dispatch('spa:redraw:end', dispatchEventData);
 
 				let urlHash = window.location.hash ?? null;
@@ -292,16 +285,16 @@ export default (options) => {
 						window.scrollTo(data.scrollX ?? 0, data.scrollY ?? 0);
 					}
 				}
-
-				currentLocation = new URL(window.location.href);
 			}
 
 			const success = responseData !== null;
 			const navigationEndData = { ...dispatchEventData, success };
 			dispatch('spa:navigation:end', navigationEndData);
+
 			if (success) {
 				dispatch('spa:page:ready', navigationEndData);
 			}
+
 			return navigationEndData;
 		};
 
@@ -317,7 +310,7 @@ export default (options) => {
 			}
 
 			const location = new URL(window.location.href);
-
+			const currentLocation = getCurrentLocation();
 			if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
 				return;
 			}
@@ -332,6 +325,10 @@ export default (options) => {
 			dispatch('spa:popstate', navigationConfig);
 
 			void navigate(navigationConfig);
+		};
+
+		const getCurrentLocation = () => {
+			return new URL(window.location.href);
 		};
 
 		/**
@@ -368,17 +365,18 @@ export default (options) => {
 
 			const hrefUrl = createUrl(`${window.location.origin}${url}`);
 
-			if (hrefUrl === null || hrefUrl.pathname === currentLocation.pathname) {
+			if (hrefUrl === null || hrefUrl.pathname === getCurrentLocation().pathname) {
+				event.preventDefault();
 				return;
 			}
-
-			event.preventDefault();
 
 			const clickCanceled = dispatch('spa:click', { element }, { cancelable: true }) === false;
 
 			if (clickCanceled) {
 				return;
 			}
+
+			event.preventDefault();
 
 			void navigate({
 				url,

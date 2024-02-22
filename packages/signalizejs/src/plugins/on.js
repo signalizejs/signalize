@@ -66,14 +66,14 @@
 export default ($) => {
 	/** @type {Record<string,CustomEventListener>} */
 	const customEventListeners = {
-		clickOutside: {
+		clickoutside: {
 			on: ({ target, listener, options }) => {
 				document.addEventListener('click', (listenerEvent) => {
 					/** @type {Element} */
 					const eventTarget = listenerEvent.target;
 
 					if ((typeof target === 'string' && (eventTarget.matches(target) || eventTarget.closest(target) !== null)) ||
-						(target instanceof Element && target === eventTarget)
+						(target instanceof Element && (target === eventTarget || target.contains(eventTarget)))
 					) {
 						return;
 					}

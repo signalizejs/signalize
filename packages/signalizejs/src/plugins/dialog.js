@@ -31,14 +31,14 @@ export default () => {
 		const closeOnBackDropClickListener = (event) => {
 			let rect = event.target.getBoundingClientRect();
 
-			if (rect.left > event.clientX ||
+			if ((rect.left > event.clientX ||
 				rect.right < event.clientX ||
 				rect.top > event.clientY ||
-				rect.bottom < event.clientY
+				rect.bottom < event.clientY) &&
+				event.target.tagName.toLowerCase() === 'dialog'
 			) {
-				const dialog = event.target.closest('dialog');
-				closeDialog(dialog);
-				off('click', dialog, closeOnBackDropClickListener);
+				closeDialog(event.target);
+				off('click', event.target, closeOnBackDropClickListener);
 			}
 		};
 
@@ -118,15 +118,20 @@ export default () => {
 		};
 
 		on('dom:ready', () => {
-			on('click', `[${dialogCloseButtonAttribute}]`, ({ target }) => {
-				const dialog = target.getAttribute[`${dialogCloseButtonAttribute}`] ?? target.closest(`[${dialogAttribute}]`);
+			on('click', `[${dialogCloseButtonAttribute}]`, (event) => {
+				event.preventDefault();
+				const { target } = event;
+				const dialogId = target.getAttribute(dialogCloseButtonAttribute);
+				let dialog = dialogId.trim().length === 0 ? target.closest('dialog') : dialogId;
 
 				if (dialog !== null) {
 					closeDialog(dialog);
 				}
 			});
 
-			on('click', `[${dialogOpenButtonAttribute}]`, ({ target }) => {
+			on('click', `[${dialogOpenButtonAttribute}]`, (event) => {
+				event.preventDefault();
+				const { target } = event;
 				const dialog = getDialog(target.getAttribute(dialogOpenButtonAttribute));
 
 				if (dialog != null) {

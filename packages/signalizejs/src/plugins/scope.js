@@ -28,7 +28,6 @@
 export default ($) => {
 	const scopeKey = '__signalizeScope';
 	const refAttribute = `${$.attributePrefix}ref`;
-	const componentAttribute = $.componentAttribute;
 
 	class Scope {
 		/**
@@ -142,7 +141,20 @@ export default ($) => {
 		 */
 		$refs = (name) => {
 			return [...this.$el.querySelectorAll(`[${refAttribute}=${name}]`)].filter((element) => {
-				return element.closest(`[${componentAttribute}]`) !== this.$el;
+				const checkParentElement = (el) => {
+					const parentElement = el.parentNode;
+					if (parentElement === this.$el) {
+						return true;
+					}
+
+					if (parentElement.tagName.toLowerCase().includes('-')) {
+						return false;
+					}
+
+					return checkParentElement(parentElement);
+				};
+				
+				return checkParentElement(element);
 			});
 		};
 	}

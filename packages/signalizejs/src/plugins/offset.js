@@ -14,24 +14,26 @@
  * @property {number} right - The right offset value.
  */
 
-/**
- * @param {import('../Signalize').Signalize} $
- * @returns {void}
- */
-export default ($) => {
+export default () => {
 	/**
-	 * @param {Element} element
-	 * @returns {Offset}
+	 * @param {import('../Signalize').Signalize} $
+	 * @returns {void}
 	 */
-	$.offset = (element) => {
-		const rect = element.getBoundingClientRect();
-		const defaultView = element.ownerDocument.defaultView;
+	return ($) => {
+		/**
+		 * @param {Element} element
+		 * @returns {Offset}
+		 */
+		$.offset = (element) => {
+			const rect = element.getBoundingClientRect();
+			const defaultView = element.ownerDocument.defaultView;
 
-		return {
-			top: rect.top + (defaultView !== null ? defaultView.scrollY : 0),
-			bottom: rect.bottom + (defaultView !== null ? defaultView.scrollY : 0),
-			left: rect.left + (defaultView !== null ? defaultView.scrollX : 0),
-			right: rect.right + (defaultView !== null ? defaultView.scrollX : 0)
+			return {
+				top: rect.top + (defaultView !== null ? defaultView.scrollY : 0),
+				bottom: rect.bottom + (defaultView !== null ? defaultView.scrollY : 0),
+				left: rect.left + (defaultView !== null ? defaultView.scrollX : 0),
+				right: rect.right + (defaultView !== null ? defaultView.scrollX : 0)
+			};
 		};
 	};
 };

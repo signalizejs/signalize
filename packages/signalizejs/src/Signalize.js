@@ -1,5 +1,5 @@
 import bind from './plugins/bind.js';
-import dispatch from './plugins/dispatch.js'
+import dispatch from './plugins/dispatch.js';
 import domReady from './plugins/dom-ready.js';
 import mutationsObserver from './plugins/mutation-observer.js';
 import on from './plugins/on.js';

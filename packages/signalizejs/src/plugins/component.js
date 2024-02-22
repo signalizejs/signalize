@@ -27,23 +27,32 @@
 export default ($) => {
 	const { signal, dispatch, scope } = $;
 
-	const componentAttribute = `${$.attributePrefix}component`;
 	const cloakAttribute = `${$.attributePrefix}cloak`;
-	$.componentAttribute = componentAttribute;
 
 	/**
-	 * Creates a custom Web Component with the specified name and options.
+	 * Creates a custom Web Component with the specified name and options
 	 *
 	 * @function
 	 * @param {string} name - The name of the component.
-	 * @param {ComponentOptions} [options] - Options for configuring the component.
+	 * @param {ComponentOptions} [optionsOrSetup] - Options for configuring the component.
 	 * @returns {typeof HTMLElement} The constructor function for the component.
 	 */
-	const component = (name, options) => {
+	const component = (name, optionsOrSetup) => {
+		let options = optionsOrSetup;
+		let setup = null;
+
+		if (typeof optionsOrSetup === 'function') {
+			options = {};
+			setup = optionsOrSetup;
+		} else {
+			setup = options?.setup;
+		}
+
 		let componentName = `${$.componentPrefix}${name}`;
 
 		if (customElements.get(componentName) !== undefined) {
-			throw new Error(`Custom element "${componentName}" already defined.`);
+			console.warn(`Custom element "${componentName}" already defined. Skipping.`);
+			return;
 		}
 
 		const properties = {};
@@ -150,8 +159,8 @@ export default ($) => {
 					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));
 				}
 
-				if (options?.setup !== undefined) {
-					const data = await options?.setup?.call(undefined, {
+				if (setup !== undefined) {
+					const data = await setup?.call(undefined, {
 						...this.#scope,
 						$connected: (listener) => {
 							this.#connected = listener;
@@ -198,8 +207,6 @@ root
 					select('slot:not([name])', template.content)?.replaceWith(currentTemplate.content);
 				} */
 
-				this.setAttribute(componentAttribute, name);
-
 				dispatch('component:setuped', this.#scope, { target: this.#scope.$el, bubbles: true });
 				this.#scope._setuped = true;
 			}
@@ -235,7 +242,7 @@ root
 					valueToSet = valueToSet.length > 0 ? !!valueToSet : this.#scope.$el.hasAttribute(name);
 				}
 
-				currentProperty(valueTypeMap[valueToSet] ?? valueToSet);
+				currentProperty(valueToSet in valueTypeMap ? valueTypeMap[valueToSet] : valueToSet);
 			}
 
 			/**

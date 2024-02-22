@@ -327,12 +327,12 @@ export default (pluginOptions) => {
 				const isShorthand = attribute.name.startsWith('{');
 				const attributeValue = isShorthand ? matches[3] : attribute.value;
 				const attributeName = isShorthand ? matches[3] : matches[1];
-				let trackedSignals;
+				let trackedSignals = [];
 				const get = (trackSignals) => {
 					const { result, signalsToWatch } = $.evaluate(attributeValue, scope, trackSignals);
 
 					if (trackSignals) {
-						trackedSignals = signalsToWatch ?? [];
+						trackedSignals = signalsToWatch;
 					}
 
 					return typeof result === 'function' ? result() : result;
