@@ -120,41 +120,6 @@ export default ($) => {
 					}
 				});
 
-				/**
-				 * @param {string} name
-				 */
-				this.#scope.$children = async (name) => {
-					if (customElements.get(name) === undefined) {
-						await customElements.whenDefined(name);
-					}
-
-					const childComponents = this.#scope.$el.querySelectorAll(name);
-					const initPromises = [];
-					for (const childComponent of childComponents) {
-						const componentScope = scope(childComponent);
-						initPromises.push(
-							componentScope?._setuped === true
-								? componentScope
-								: new Promise((resolve) => {
-									$.on('component:setuped', ({ detail }) => {
-										if (detail.$el === childComponent) {
-											resolve(detail);
-										}
-									});
-								})
-						);
-					}
-
-					return await Promise.all(initPromises);
-				};
-
-				/**
-				 * @param {string} name
-				 */
-				this.#scope.$child = async (name) => {
-					return (await this.#scope.$children(name))[0] ?? null;
-				};
-
 				for (const attr of this.#scope.$el.attributes) {
 					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));
 				}
@@ -206,9 +171,9 @@ root
 
 					select('slot:not([name])', template.content)?.replaceWith(currentTemplate.content);
 				} */
-
-				dispatch('component:setuped', this.#scope, { target: this.#scope.$el, bubbles: true });
+				dispatch('component:beforeSetuped', this.#scope, { target: this.#scope.$el, bubbles: true });
 				this.#scope._setuped = true;
+				dispatch('component:setuped', this.#scope, { target: this.#scope.$el, bubbles: true });
 			}
 
 			/**

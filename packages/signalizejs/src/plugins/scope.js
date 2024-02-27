@@ -129,34 +129,30 @@ export default ($) => {
 
 		/**
 		 * @param {string} name
-		 * @returns {Element|null}
-		 */
-		$ref = (name) => {
-			return this.$refs(name)[0] ?? null;
-		};
-
-		/**
-		 * @param {string} name
 		 * @returns {Element[]}
 		 */
-		$refs = (name) => {
-			return [...this.$el.querySelectorAll(`[${refAttribute}=${name}]`)].filter((element) => {
-				const checkParentElement = (el) => {
-					const parentElement = el.parentNode;
-					if (parentElement === this.$el) {
-						return true;
-					}
+		$refs = new Proxy({}, {
+			get: (target, key) => {
+				const refs = [...this.$el.querySelectorAll(`[${refAttribute}=${key}]`)].filter((element) => {
+					const checkParentElement = (el) => {
+						const parentElement = el.parentNode;
+						if (parentElement === this.$el) {
+							return true;
+						}
 
-					if (parentElement.tagName.toLowerCase().includes('-')) {
-						return false;
-					}
+						if (parentElement.tagName.toLowerCase().includes('-')) {
+							return false;
+						}
 
-					return checkParentElement(parentElement);
-				};
-				
-				return checkParentElement(element);
-			});
-		};
+						return checkParentElement(parentElement);
+					};
+
+					return checkParentElement(element);
+				});
+
+				return refs.length === 1 ? refs[0] : refs;
+			}
+		});
 	}
 
 	/**
