@@ -9,6 +9,19 @@
 	<title>Document</title>
 </head>
 <body>
+	<script type="importmap">
+		{
+			"imports": {
+				"signalizejs": "/packages/signalizejs/src/Signalize.js",
+				"signalizejs/traverse-dom": "/packages/signalizejs/src/plugins/traverse-dom.js",
+				"signalizejs/evaluator": "/packages/signalizejs/src/plugins/evaluator.js",
+				"signalizejs/directives": "/packages/signalizejs/src/plugins/directives.js",
+				"signalizejs/directives/for": "/packages/signalizejs/src/plugins/directives/for.js",
+				"signalizejs/directives/if": "/packages/signalizejs/src/plugins/directives/if.js"
+			}
+		}
+	</script>
+
 	<script type="module">
 		import Signalize from 'signalizejs';
 		import directives from 'signalizejs/directives';
@@ -28,17 +41,19 @@
 		});
 
 		component('todo-list', {
-			construct: () => ({
-				count: signal(1000),
-				text: signal('')
-			})
+			setup: () => {
+				return {
+					count: signal(1),
+					text: signal('')
+				}
+			}
 		})
 	</script>
 
 	<todo-list cloak>
 		<input :value="text">
 		<button @click="count(count() + 1)">Add <span :text="count"></span></button>
-		<button @click="count(count() - 1)">Remove <span :text="count"></span></button><br>
+		<button @click="count(count() - 1)">Remove <span :text="count"></span></button><br> -->
 		<ul>
 			<template :for="i of count">
 				<li>

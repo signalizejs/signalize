@@ -24,8 +24,8 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
-	const { signal, dispatch, scope } = $;
+export default async ({ $} ) => {
+	const { signal, dispatch, scope } = await $.import(['signal', 'dispatch', 'scope']);
 
 	const cloakAttribute = `${$.attributePrefix}cloak`;
 
@@ -276,5 +276,7 @@ root
 		return Component;
 	};
 
-	$.component = component;
+	return {
+		component
+	};
 };

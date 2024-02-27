@@ -19,7 +19,7 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
+export default ({ $ }) => {
 	/**
 	 * Creates a custom event with the specified name, data, and options.
 	 *
@@ -29,7 +29,7 @@ export default ($) => {
 	 * @param {Options} [options] - Options for configuring the custom event.
 	 * @returns {CustomEvent} A newly created custom event.
 	 */
-	$.customEvent = (eventName, eventData, options) => new window.CustomEvent(eventName, {
+	const customEvent = (eventName, eventData, options) => new window.CustomEvent(eventName, {
 		detail: eventData,
 		cancelable: options?.cancelable ?? false,
 		bubbles: options?.bubbles ?? false
@@ -44,7 +44,11 @@ export default ($) => {
 	 * @param {Options} [options] - Options for configuring the dispatch of the custom event.
 	 * @returns {boolean} Indicates whether the event dispatch was successful.
 	 */
-	$.dispatch = (eventName, eventData, options) => (options?.target ?? $.root).dispatchEvent(
-		$.customEvent(eventName, eventData, options)
+	const dispatch = (eventName, eventData, options) => (options?.target ?? $.root).dispatchEvent(
+		customEvent(eventName, eventData, options)
 	);
+
+	return {
+		dispatch, customEvent
+	};
 };

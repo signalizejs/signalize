@@ -8,9 +8,8 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
-	const { on, Signal } = $;
-
+export default async ({ $ }) => {
+	const { on, scope, off } = await $.import(['on', 'signal', 'scope']);
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
 	const textContentAttributes = ['value', 'innerHTML', 'textContent', 'innerText'];
@@ -29,12 +28,13 @@ export default ($) => {
 		'scoped', 'seamless', 'selected',
 		'typemustmatch'
 	];
+
 	const attributesAliases = {
 		text: 'textContent',
 		html: 'innerHTML'
 	};
 
-	$.bind = (element, attributes) => {
+	const bind = (element, attributes) => {
 		/** @type {CallableFunction[]} */
 		const unwatchSignalCallbacks = [];
 		const cleanups = [];
@@ -49,7 +49,7 @@ export default ($) => {
 			const attributeBinder = attrOptionsAsArray.pop();
 			const signalsToWatch = attrOptionsAsArray;
 			const attributeBinderType = typeof attributeBinder;
-			const attributeBinderIsSignal = attributeBinder instanceof Signal;
+			const attributeBinderIsSignal = attributeBinder.constructor.name === 'Signal';
 			let attributeInited = false;
 			let previousSettedValue;
 			let previousValue;
@@ -152,11 +152,11 @@ export default ($) => {
 				};
 
 				on('input', element, inputListener, { passive: true });
-				cleanups.push(() => $.off('input', element, inputListener));
+				cleanups.push(() => off('input', element, inputListener));
 			}
 		}
 
-		$.scope(element, ({ $cleanup }) => {
+		scope(element, ({ $cleanup }) => {
 			$cleanup(() => {
 				for (const cleanup of cleanups) {
 					cleanup();
@@ -167,5 +167,9 @@ export default ($) => {
 				}
 			});
 		});
+	};
+
+	return {
+		bind
 	};
 };

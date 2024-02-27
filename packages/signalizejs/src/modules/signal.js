@@ -74,7 +74,7 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
+export default () => {
 	/**
 	 * Represents a Signal class extending the Function class.
 	 *
@@ -202,15 +202,16 @@ export default ($) => {
 		valueOf = () => this.#get();
 	}
 
-	$.Signal = Signal;
-
-	/**
-	 * Creates a new Signal instance with the provided default value.
-	 *
-	 * @function
-	 * @template T
-	 * @param {T} defaultValue - The default value for the signal.
-	 * @returns {Signal<T>} A new Signal instance initialized with the default value.
-	 */
-	$.signal = (defaultValue) => new Signal(defaultValue);
+	return {
+		/**
+		 * Creates a new Signal instance with the provided default value.
+		 *
+		 * @function
+		 * @template T
+		 * @param {T} defaultValue - The default value for the signal.
+		 * @returns {Signal<T>} A new Signal instance initialized with the default value.
+		 */
+		signal: (defaultValue) => new Signal(defaultValue),
+		Signal
+	};
 };

@@ -9,6 +9,19 @@
 	<title>Document</title>
 </head>
 <body>
+	<script type="importmap">
+		{
+			"imports": {
+				"signalizejs": "/packages/signalizejs/src/Signalize.js",
+				"signalizejs/traverse-dom": "/packages/signalizejs/src/plugins/traverse-dom.js",
+				"signalizejs/evaluator": "/packages/signalizejs/src/plugins/evaluator.js",
+				"signalizejs/directives": "/packages/signalizejs/src/plugins/directives.js",
+				"signalizejs/directives/for": "/packages/signalizejs/src/plugins/directives/for.js",
+				"signalizejs/directives/if": "/packages/signalizejs/src/plugins/directives/if.js"
+			}
+		}
+	</script>
+
 	<script type="module">
 		import Signalize from 'signalizejs';
 		import directives from 'signalizejs/directives';
@@ -28,7 +41,7 @@
 		});
 
 		component('invite-friends', {
-			construct: () => {
+			setup: () => {
 				const items = signal([]);
 				return {
 					items,
@@ -39,12 +52,12 @@
 		})
 	</script>
 
-	<invite-friends $items="[]">
+	<invite-friends>
 		<button @click="add">Add</button>
 		<button @click="remove">Remove</button>
 
 		<template :for="item of items">
-			<div >
+			<div>
 				<input :value="item"><span :text="item"></span>
 			</div>
 		</template>

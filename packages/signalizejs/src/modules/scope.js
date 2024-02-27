@@ -25,7 +25,8 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
+export default async ({ $} ) => {
+	const { on } = await $.import('on');
 	const scopeKey = '__signalizeScope';
 	const refAttribute = `${$.attributePrefix}ref`;
 
@@ -153,7 +154,7 @@ export default ($) => {
 
 					return checkParentElement(parentElement);
 				};
-				
+
 				return checkParentElement(element);
 			});
 		};
@@ -172,9 +173,11 @@ export default ($) => {
 		return node[scopeKey] ?? undefined;
 	};
 
-	$.on('dom:mutation:node:removed', (event) => {
+	on('dom:mutation:node:removed', (event) => {
 		scope(event.detail)?.$cleanup();
 	});
 
-	$.scope = scope;
+	return {
+		scope
+	};
 };

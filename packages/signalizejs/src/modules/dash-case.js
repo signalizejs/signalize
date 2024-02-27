@@ -9,7 +9,7 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
+export default () => ({
 	/**
 	 * Converts a camelCase or PascalCase string to dash-case.
 	 *
@@ -17,7 +17,7 @@ export default ($) => {
 	 * @param {string} str - The input string in camelCase.
 	 * @returns {string} The string converted to dash-case.
 	 */
-	$.dashCase = (str) => {
+	dashCase: (str) => {
 		return str.replace(/[A-Z]/g, (token) => '-' + token.toLowerCase());
-	};
-};
+	}
+});

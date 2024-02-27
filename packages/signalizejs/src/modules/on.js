@@ -63,7 +63,7 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
+export default ({ $ }) => {
 	/** @type {Record<string,CustomEventListener>} */
 	const customEventListeners = {
 		clickoutside: {
@@ -191,11 +191,7 @@ export default ($) => {
 		}
 	};
 
-	$.customEventListener = (name, config) => {
-		customEventListeners[name] = config;
-	};
-
-	$.off = (events, element, listener, options = {}) => {
+	const off = (events, element, listener, options = {}) => {
 		const elements = selectorToIterable(element);
 
 		for (const event of events.split(' ')) {
@@ -210,5 +206,11 @@ export default ($) => {
 		}
 	};
 
-	$.on = on;
+	return {
+		on,
+		off,
+		customEventListener: (name, config) => {
+			customEventListeners[name] = config;
+		}
+	};
 };

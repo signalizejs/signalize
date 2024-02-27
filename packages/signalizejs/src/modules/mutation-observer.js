@@ -21,7 +21,7 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
+export default ({ $ }) => {
 	const event = 'dom:mutation';
 	const nodeEvent = `${event}:node`;
 
@@ -32,7 +32,7 @@ export default ($) => {
 	 * @param {MutationObserverInit} [options]
 	 * @returns
 	 */
-	$.observeMutations = (root, listener, options) => {
+	const observeMutations = (root, listener, options) => {
 		/**
 		 * Mutation observer for tracking changes in the DOM.
 		 *
@@ -78,4 +78,9 @@ export default ($) => {
 
 		return observer;
 	};
+
+	return {
+		observeMutations
+	};
+
 };

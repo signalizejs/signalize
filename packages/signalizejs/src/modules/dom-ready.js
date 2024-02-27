@@ -12,7 +12,9 @@
  * @param {import('../Signalize').Signalize} $
  * @returns {void}
  */
-export default ($) => {
+export default async ({ $} ) => {
+	const { customEventListener } = await $.import('customEventListener');
+
 	/** @type {CallableFunction[]} */
 	const domReadyListeners = [];
 
@@ -30,7 +32,7 @@ export default ($) => {
 		return documentElement.readyState !== 'loading';
 	};
 
-	$.customEventListener('dom:ready', ({
+	customEventListener('dom:ready', ({
 		on: ({ listener }) => {
 			if (isDomReady()) {
 				listener();
@@ -46,5 +48,7 @@ export default ($) => {
 		document.addEventListener('DOMContentLoaded', callOnDomReadyListeners, { once: true });
 	}
 
-	$.isDomReady = isDomReady;
+	return {
+		isDomReady
+	};
 };
