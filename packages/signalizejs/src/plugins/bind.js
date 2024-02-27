@@ -9,7 +9,7 @@
  * @returns {void}
  */
 export default ($) => {
-	const { on, Signal } = $;
+	const { on, Signal, scope } = $;
 
 	const reactiveInputAttributes = ['value', 'checked'];
 	const numericInputAttributes = ['range', 'number'];
@@ -35,6 +35,8 @@ export default ($) => {
 	};
 
 	$.bind = (element, attributes) => {
+		let componentScope = null;
+
 		const bind = () => {
 			/** @type {CallableFunction[]} */
 			const unwatchSignalCallbacks = [];
@@ -138,7 +140,15 @@ export default ($) => {
 				}
 
 				if (getListener !== null || initValue !== undefined) {
-					setAttribute(attr, initValue !== undefined ? initValue : getListener());
+					const valueToSet = initValue !== undefined ? initValue : getListener();
+					if (componentScope) {
+						if (attr in componentScope.$props) {
+							componentScope.$props[attr] = valueToSet;
+							continue;
+						}
+					} else {
+						setAttribute(attr, valueToSet);
+					}
 				}
 
 				for (const signalToWatch of signalsToWatch) {
@@ -174,9 +184,12 @@ export default ($) => {
 
 		if (tagName.split('-').length > 1 && customElements.get(tagName) === undefined) {
 			on('component:beforeSetuped', ({ target }) => {
-				if (target === element) {
-					bind();
+				if (target !== element) {
+					return;
 				}
+
+				componentScope = scope(target);
+				bind();
 			});
 		} else {
 			bind();

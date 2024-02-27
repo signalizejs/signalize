@@ -115,7 +115,7 @@ export default ($) => {
 					node.$props = {};
 
 					for (const [key, value] of Object.entries(properties)) {
-						node.$props[key] = signal(value);
+						node.$props[key] = value instanceof $.Signal ? value : signal(value);
 						node.$data[key] = node.$props[key];
 					}
 				});
@@ -123,6 +123,8 @@ export default ($) => {
 				for (const attr of this.#scope.$el.attributes) {
 					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));
 				}
+
+				dispatch('component:beforeSetuped', this.#scope, { target: this.#scope.$el, bubbles: true });
 
 				if (setup !== undefined) {
 					const data = await setup?.call(undefined, {
@@ -171,7 +173,7 @@ root
 
 					select('slot:not([name])', template.content)?.replaceWith(currentTemplate.content);
 				} */
-				dispatch('component:beforeSetuped', this.#scope, { target: this.#scope.$el, bubbles: true });
+
 				this.#scope._setuped = true;
 				dispatch('component:setuped', this.#scope, { target: this.#scope.$el, bubbles: true });
 			}

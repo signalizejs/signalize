@@ -231,9 +231,13 @@ export default (pluginOptions) => {
 				async (node) => {
 					const nodeIsRoot = node === root;
 
-					if ((node.tagName.includes('-') && !nodeIsRoot) || node?.closest(`[${ignoreAttribute}]`) || (scope(node)?.$directives !== undefined && mode !== 'reinit')) {
+					if (node?.closest(`[${ignoreAttribute}]`)) {
 						return false;
 					}
+
+					/* if (scope(node)?.$directives !== undefined && mode !== 'reinit') {
+						return false;
+					} */
 
 					if (!nodeIsRoot) {
 						$.scope(node, (elScope) => {
@@ -243,6 +247,8 @@ export default (pluginOptions) => {
 					}
 
 					await processElement({ element: node, mode, directives });
+
+					return node.tagName.includes('-') && !nodeIsRoot ? false : true;
 				},
 				[1]
 			);
@@ -335,7 +341,7 @@ export default (pluginOptions) => {
 						trackedSignals = signalsToWatch;
 					}
 
-					return typeof result === 'function' ? result() : result;
+					return result;
 				};
 
 				const value = get(true);
