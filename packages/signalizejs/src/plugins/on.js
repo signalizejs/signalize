@@ -110,10 +110,15 @@ export default ($) => {
 	 */
 	const selectorToIterable = (target, normalizeDocument = false) => {
 		/** @type {IterableElements} */
-		let elements;
+		let elements = [];
 
 		if (typeof target === 'string') {
-			elements = $.root.querySelectorAll(target);
+			for (const selector of target.split(',')) {
+				elements = [
+					...elements,
+					...$.root.querySelectorAll(selector)
+				];
+			}
 		} else {
 			const targetIsDocument = target instanceof Document;
 			if (target instanceof Element || targetIsDocument || target instanceof Window) {
@@ -138,56 +143,58 @@ export default ($) => {
 	 */
 	const on = (events, targetOrCallback, callbackOrOptions, options) => {
 		/** @type {import('./select').Selectable} */
-		let target;
+		let targetOrSelector;
 		/** @type {CallableFunction} */
 		let listener;
 		options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
 
 		if (typeof targetOrCallback === 'function') {
-			target = $.root;
+			targetOrSelector = $.root;
 			listener = targetOrCallback;
 		} else {
-			target = targetOrCallback;
+			targetOrSelector = targetOrCallback;
 			/** @type {CallableFunction} */
 			listener = callbackOrOptions;
 		}
 
-		const listenerType = typeof target === 'string' ? 'global' : 'direct';
-		/** @type {Record<string, CustomEventListener>} */
-		const handlers = {
-			global: ({ target, listener, options }) => {
-				document.addEventListener(events, (listenerEvent) => {
-					/** @type {Element} */
-					const eventTarget = listenerEvent.target;
+		const attachListeners =  (target) => {
+			for (const event of events.split(' ').map((event) => event.trim())) {
+				/** @type {CustomEventListenerArgs} */
+				const listenerData = { event, target, listener, options };
 
-					if (eventTarget.matches(target) || (eventTarget.closest(target) != null)) {
-						listener(listenerEvent);
+				if (event in customEventListeners) {
+					if (options?.once === true) {
+						listenerData.listener = (...args) => {
+							listener.apply(undefined, args);
+							customEventListeners[event]?.off(listenerData);
+						};
 					}
-				}, options);
-			},
-			direct: ({ target, listener, options }) => {
-				for (const element of selectorToIterable(target)) {
-					element.addEventListener(events, listener, options);
+					customEventListeners[event].on(listenerData);
+					continue;
 				}
+
+				target.addEventListener(events, listener, options);
 			}
 		};
 
-		for (const event of events.split(' ').map((event) => event.trim())) {
-			/** @type {CustomEventListenerArgs} */
-			const listenerData = { event, target, listener, options };
-
-			if (event in customEventListeners) {
-				if (options?.once === true) {
-					listenerData.listener = (...args) => {
-						listener.apply(undefined, args);
-						customEventListeners[event]?.off(listenerData);
-					};
-				}
-				customEventListeners[event].on(listenerData);
-				continue;
+		if (typeof targetOrSelector === 'string') {
+			for (const target of selectorToIterable(targetOrSelector)) {
+				attachListeners(target);
 			}
 
-			handlers[listenerType](listenerData);
+			on('dom:mutation:node:added', ({ detail }) => {
+				const node = detail;
+				const selectors = targetOrSelector.split(',');
+
+				while(selectors.length > 0) {
+					if (node.matches(selectors.pop())) {
+						attachListeners(detail);
+						break;
+					}
+				}
+			});
+		} else {
+			attachListeners(targetOrSelector);
 		}
 	};
 

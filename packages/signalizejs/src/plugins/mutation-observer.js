@@ -37,7 +37,6 @@ export default ($) => {
 		 * Mutation observer for tracking changes in the DOM.
 		 *
 		 * @type {MutationObserver}
-		 *
 		 * @param {MutationRecord[]} mutationRecords - An array of MutationRecord objects representing the changes in the DOM.
 		 */
 		const observer = new MutationObserver((mutationRecords) => {

@@ -29,67 +29,19 @@
 
 	<script type="module">
 		import Signalize from 'signalizejs';
-		import Evaluate from 'signalizejs/evaluator';
-		import TraverseDom from 'signalizejs/traverse-dom';
-		import Directives from 'signalizejs/directives';
 
-		const { component, bind, signal } = new Signalize({ plugins: [
-			Evaluate(),
-			TraverseDom(),
-			Directives()
+		const { on } = new Signalize({ plugins: [
 		] });
 
-		component('x-a', ({ $refs, $connected }) => {
-			/* const child = $refs.child; */
-			const number = signal(40);
-
-			number.watch(( ) => {
-				console.log('WatchA', number());
-			});
-
-			return {
-				number,
-				/* change: () => {
-					console.trace('A', event);
-				} */
-			}
+		on('click', '.fu', () => {
+			const an = document.createElement('a');
+			an.classList.add('fu');
+			an.innerHTML = 'Btn';
+			document.body.appendChild(an);
 		});
-
-		setTimeout(() => {
-			component('x-b', {
-				props: {
-					number: 0,
-					/* change: (event) => {
-						console.log('fuck', event);
-					} */
-				},
-				setup({ $props, $refs }) {
-					/* bind($refs.field, { value: $props.number }); */
-
-					$props.number.watch(({ newValue }) => {
-						console.log('WatchB', newValue);
-					});
-
-					return {
-						number: $props.number
-						/* change: () => {
-							console.log('e');
-							$props.change()(event)
-						} */
-						/* change: () => {
-							console.log('meh');
-						} */
-					}
-				}
-			});
-		}, 1000);
 	</script>
 
-	<x-a>
-		<x-b {number}>
-			<input :value="number">
-		</x-b>
-	</x-a>
+	<a href="#" class="fu">Btn</a>
 </body>
 
 </html>
