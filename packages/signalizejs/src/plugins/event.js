@@ -105,10 +105,10 @@ export default ($) => {
 	/**
 	 *
 	 * @param {Selectable} target
-	 * @param {boolean} normalizeDocument
+	 * @param {boolean} container
 	 * @returns {IterableElements}
 	 */
-	const selectorToIterable = (target, normalizeDocument = false) => {
+	const selectorToIterable = (target, container) => {
 		/** @type {IterableElements} */
 		let elements = [];
 
@@ -116,13 +116,13 @@ export default ($) => {
 			for (const selector of target.split(',')) {
 				elements = [
 					...elements,
-					...$.root.querySelectorAll(selector)
+					...(container ?? $.root).querySelectorAll(selector)
 				];
 			}
 		} else {
 			const targetIsDocument = target instanceof Document;
 			if (target instanceof Element || targetIsDocument || target instanceof Window) {
-				elements = [targetIsDocument && normalizeDocument ? target.documentElement : target];
+				elements = [target];
 			} else {
 				elements = target instanceof Array || target instanceof NodeList ? [...target] : [target];
 			}
@@ -177,28 +177,45 @@ export default ($) => {
 			}
 		};
 
-		if (typeof targetOrSelector === 'string') {
-			for (const target of selectorToIterable(targetOrSelector)) {
-				attachListeners(target);
+		if (typeof targetOrSelector !== 'string') {
+			attachListeners(targetOrSelector);
+			return;
+		}
+
+		for (const target of selectorToIterable(targetOrSelector, options?.container)) {
+			attachListeners(target);
+		}
+
+		on('dom:mutation:node:added', ({ detail }) => {
+			if (!(detail instanceof HTMLElement)) {
+				return;
 			}
 
-			on('dom:mutation:node:added', ({ detail }) => {
-				const node = detail;
-				const selectors = targetOrSelector.split(',');
+			const selectors = targetOrSelector.split(',');
+			while(selectors.length > 0) {
+				const selector = selectors.pop();
 
-				while(selectors.length > 0) {
-					if (node.matches(selectors.pop())) {
-						attachListeners(detail);
-						break;
-					}
+				for (const element of [
+					...detail.matches(selector) ? [detail] : [],
+					...detail.querySelectorAll(selector)
+				]) {
+					attachListeners(element);
 				}
-			});
-		} else {
-			attachListeners(targetOrSelector);
-		}
+			}
+		});
 	};
 
-	$.customEventListener = (name, config) => {
+	$.on = on;
+
+	$.customEventListener = (name, configOrHandler) => {
+		let config = configOrHandler;
+
+		if (typeof configOrHandler === 'function') {
+			config = {
+				on: configOrHandler
+			};
+		}
+
 		customEventListeners[name] = config;
 	};
 
@@ -217,5 +234,38 @@ export default ($) => {
 		}
 	};
 
-	$.on = on;
+	/**
+	 * Creates a custom event with the specified name, data, and options.
+	 *
+	 * @function
+	 * @param {string} eventName - The name of the custom event.
+	 * @param {*} [eventData] - Optional data to associate with the custom event.
+	 * @param {Options} [options] - Options for configuring the custom event.
+	 * @returns {CustomEvent} A newly created custom event.
+	 */
+	$.customEvent = (eventName, eventData, options) => new window.CustomEvent(eventName, {
+		detail: eventData,
+		cancelable: options?.cancelable ?? false,
+		bubbles: options?.bubbles ?? false
+	});
+
+	/**
+	 * Dispatches a custom event with the specified name, data, and options.
+	 *
+	 * @function
+	 * @param {string} eventName - The name of the custom event to dispatch.
+	 * @param {*} [eventData] - Optional data to associate with the custom event.
+	 * @param {Options} [options] - Options for configuring the dispatch of the custom event.
+	 * @returns {boolean} Indicates whether the event dispatch was successful.
+	 */
+	$.dispatch = (eventName, eventData, options) => {
+		const event = $.customEvent(eventName, eventData, options);
+
+		if (typeof customEventListeners[eventName]?.dispatch === 'function') {
+			customEventListeners[eventName].dispatch(event);
+			return;
+		}
+
+		(options?.target ?? $.root).dispatchEvent(event);
+	};
 };

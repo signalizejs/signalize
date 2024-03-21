@@ -29,19 +29,63 @@
 
 	<script type="module">
 		import Signalize from 'signalizejs';
+		import Evaluate from 'signalizejs/evaluator';
+		import TraverseDom from 'signalizejs/traverse-dom';
+		import Directives from 'signalizejs/directives';
 
-		const { on } = new Signalize({ plugins: [
+		const { component, bind, signal, Signal } = new Signalize({ plugins: [
+			Evaluate(),
+			TraverseDom(),
+			Directives()
 		] });
 
-		on('click', '.fu', () => {
-			const an = document.createElement('a');
-			an.classList.add('fu');
-			an.innerHTML = 'Btn';
-			document.body.appendChild(an);
+
+
+		component('x-a', ({ $refs, $connected }) => {
+			const number = signal(40);
+
+			number.watch(( ) => {
+				console.log('WatchA', number());
+			});
+
+			return {
+				meh: number,
+			}
+		});
+
+		component('x-b', {
+			props: {
+				number: signal(0),
+			},
+			setup({ $props, $refs }) {
+				let number = $props.number();
+				let numberProperty = $props.number();
+
+				$props.number.watch(({ newValue }) => {
+					if (!(newValue instanceof Signal)) {
+						return;
+					}
+					numberProperty = newValue;
+					number(newValue());
+				}, { immediate: true });
+
+				number.watch(({ newValue }) => {
+					numberProperty(newValue);
+					console.log('Watch B', newValue);
+				});
+
+				return {
+					number
+				}
+			}
 		});
 	</script>
 
-	<a href="#" class="fu">Btn</a>
+	<x-a>
+		<x-b :number="meh">
+			<input :value="number">
+		</x-b>
+	</x-a>
 </body>
 
 </html>

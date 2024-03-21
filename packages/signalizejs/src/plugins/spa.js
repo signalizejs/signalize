@@ -93,8 +93,10 @@ export default (options) => {
 		const spaIgnoreAttribute = `${spaAttribute}${$.attributeSeparator}ignore`;
 		const spaStateActionAttribute = `${spaAttribute}${$.attributeSeparator}state-action`;
 		const spaMetaCacheNameAttribute = `${spaAttribute}${$.attributeSeparator}cache-control`;
-		const spaCacheHeader = options?.cacheHeader ?? 'X-Spa-Cache-Control';
-		const spaAppVersionHeader = options?.appVersionHeader ?? 'X-Spa-App-Version';
+		const spaHeaderPrefix = 'X-Spa-';
+		const spaCacheHeader = options?.cacheHeader ?? `${spaHeaderPrefix}Cache-Control`;
+		const spaAppVersionHeader = options?.appVersionHeader ?? `${spaHeaderPrefix}App-Version`;
+		const spaTransitionsHeader = options?.appVersionHeader ?? `${spaHeaderPrefix}Transitions`;
 
 		let currentState = null;
 		/** @type {AbortController} */
@@ -226,7 +228,9 @@ export default (options) => {
 				}
 
 				if (!isJson(responseData)) {
-					await redrawSnippet(responseData);
+					await redrawSnippet(responseData, {
+						transitions: headers[spaTransitionsHeader] ?? 'enabled'
+					});
 				}
 
 				if (stateAction === 'replace') {

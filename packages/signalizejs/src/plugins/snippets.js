@@ -20,8 +20,9 @@ export default () => {
 	return ($) => {
 		const { dispatch, root } = $;
 		const snippetAttribute = `${$.attributePrefix}snippet`;
-		const snippetStateAttribute = `${snippetAttribute}${$.attributeSeparator}state`;
-		const snippetActionAttribute = `${snippetAttribute}${$.attributeSeparator}action`;
+		const snippetAttributeDirective = `${snippetAttribute}${$.attributeSeparator}`
+		const snippetStateAttribute = `${snippetAttributeDirective}state`;
+		const snippetActionAttribute = `${snippetAttributeDirective}action`;
 
 		/**
 		 * @param {string} html
@@ -113,7 +114,7 @@ export default () => {
 				}
 			};
 
-			if (typeof document.startViewTransition === 'undefined') {
+			if (typeof document.startViewTransition === 'undefined' || options?.transitions === 'disabled') {
 				redraw();
 			} else {
 				dispatch('snippets:redraw:transition:start');

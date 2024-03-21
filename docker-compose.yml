@@ -5,8 +5,9 @@ services:
         build: .
         working_dir: /var/www
         volumes:
-            - ./.:/var/www:delegated
+            - ./.:/usr/share/nginx/html:delegated
         ports:
+            - 3000:80
             # Http server for tests
             - 4000:4000
             # Vite Dev Server

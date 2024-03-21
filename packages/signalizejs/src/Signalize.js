@@ -1,8 +1,7 @@
 import bind from './plugins/bind.js';
-import dispatch from './plugins/dispatch.js';
 import domReady from './plugins/dom-ready.js';
 import mutationsObserver from './plugins/mutation-observer.js';
-import on from './plugins/on.js';
+import event from './plugins/event.js';
 import component from './plugins/component.js';
 import dashCase from './plugins/dash-case.js';
 import signal from './plugins/signal.js';
@@ -12,7 +11,7 @@ import scope from './plugins/scope.js';
  * Custom event listeners for the Signalize module.
  *
  * @typedef {Object} CustomEventListeners
- * @property {import('./plugins/on.js').CustomEventListener} signalize:ready - Custom event listener for the 'signalize:ready' event.
+ * @property {import('./plugins/event.js').CustomEventListener} signalize:ready - Custom event listener for the 'signalize:ready' event.
  */
 
 /**
@@ -78,8 +77,7 @@ export class Signalize {
 			this.attributeSeparator = options?.attributeSeparator ?? '-';
 			this.componentPrefix = options?.componentPrefix ?? '';
 			this.globals = { ...this.globals, ...options?.globals ?? {} };
-			dispatch(this);
-			on(this);
+			event(this);
 			this.customEventListener('signalize:ready', ({ listener }) => {
 				if (inited) {
 					listener(this);

@@ -115,7 +115,7 @@ export default ($) => {
 					node.$props = {};
 
 					for (const [key, value] of Object.entries(properties)) {
-						node.$props[key] = value instanceof $.Signal ? value : signal(value);
+						node.$props[key] = signal(value);
 						node.$data[key] = node.$props[key];
 					}
 				});
@@ -124,7 +124,7 @@ export default ($) => {
 					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));
 				}
 
-				dispatch('component:beforeSetuped', this.#scope, { target: this.#scope.$el, bubbles: true });
+				dispatch('component:beforeSetup', this.#scope, { target: this.#scope.$el, bubbles: true });
 
 				if (setup !== undefined) {
 					const data = await setup?.call(undefined, {

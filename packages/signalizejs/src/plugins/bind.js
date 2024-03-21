@@ -36,6 +36,8 @@ export default ($) => {
 
 	$.bind = (element, attributes) => {
 		let componentScope = null;
+		const tagName = element.tagName.toLowerCase();
+		const webComponentIsDefined = customElements.get(tagName) !== undefined;
 
 		const bind = () => {
 			/** @type {CallableFunction[]} */
@@ -64,9 +66,12 @@ export default ($) => {
 				 */
 				const setAttribute = async (attribute, value) => {
 					value = value instanceof Promise ? await value : value;
+					value = value instanceof $.Signal ? value() : value;
+
 					if (attributeInited && previousValue === value) {
 						return;
 					}
+
 					previousValue = value;
 					attribute = attributesAliases[attribute] ?? attribute;
 
@@ -143,7 +148,7 @@ export default ($) => {
 					const valueToSet = initValue !== undefined ? initValue : getListener();
 					if (componentScope) {
 						if (attr in componentScope.$props) {
-							componentScope.$props[attr] = valueToSet;
+							componentScope.$props[attr](valueToSet);
 							continue;
 						}
 					} else {
@@ -180,19 +185,18 @@ export default ($) => {
 			});
 		};
 
-		const tagName = element.tagName;
-
-		if (tagName.split('-').length > 1 && customElements.get(tagName) === undefined) {
-			on('component:beforeSetuped', ({ target }) => {
-				if (target !== element) {
-					return;
-				}
-
-				componentScope = scope(target);
-				bind();
-			});
-		} else {
-			bind();
+		if (tagName.split('-').length > 1) {
+			componentScope = scope(element);
+			if (customElements.get(tagName) === undefined) {
+				on('component:beforeSetup', ({ target }) => {
+					if (target === element) {
+						bind();
+					}
+				});
+				return;
+			}
 		}
+
+		bind();
 	};
 };
