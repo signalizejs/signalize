@@ -12,7 +12,7 @@ export default () => {
 				return window.innerWidth;
 			}
 
-			return element instanceof Element ? parseFloat(window.getComputedStyle(element).width) : 0;
+			return element instanceof Element ? parseFloat(element.getBoundingClientRect().width) : 0;
 		};
 	};
 };

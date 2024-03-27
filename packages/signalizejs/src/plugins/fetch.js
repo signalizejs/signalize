@@ -66,14 +66,7 @@ export default (pluginOptions) => {
 
 				if (isBodyDefined) {
 					requestOptions.method = 'POST';
-					if (options.body instanceof FormData) {
-						requestOptions.headers['Content-Type'] = pluginOptions?.forceMultipartFormData === true ||
-							Array.from(options.body.values()).some((value) => {
-								return value instanceof Blob || value instanceof File;
-							})
-							? 'multipart/form-data'
-							: 'application/x-www-form-urlencoded';
-					} else if (['string', 'number'].includes(typeof options.body)) {
+					if (['string', 'number'].includes(typeof options.body)) {
 						requestOptions.body = JSON.stringify(options.body);
 						requestOptions.headers['Content-Type'] = 'application/json';
 					}
@@ -84,7 +77,8 @@ export default (pluginOptions) => {
 					}
 				}
 
-				requestOptions = { ...requestOptions, ...customOptions };
+				requestOptions = { ...options, ...requestOptions, ...customOptions };
+
 				const request = fetch(resource, requestOptions);
 
 				dispatch('fetch:request:start', { resource, options: requestOptions, request });

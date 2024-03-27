@@ -55,21 +55,26 @@ export default ($) => {
 			return;
 		}
 
-		const properties = {};
+		let propertyKeys = [];
+		const props = options?.props;
+		let propsAreArray = false;
+		let propsAreFunction = false;
+		let propsAreObject = false;
 
-		if (Array.isArray(options?.props)) {
-			for (const property of options.props) {
-				properties[property] = undefined;
-			}
-		} else if (typeof options?.props === 'object') {
-			for (const [key, value] of Object.entries(options?.props)) {
-				properties[key] = value;
-			}
+		if (Array.isArray(props)) {
+			propertyKeys = props;
+			propsAreArray = true;
+		} else if (typeof props === 'function') {
+			propertyKeys = Object.keys(props());
+			propsAreFunction = true;
+		} else if (typeof props === 'object') {
+			propsAreObject = true;
+			propertyKeys = Object.keys(props);
 		}
 
 		const attributesPropertiesMap = {};
 
-		for (const propertyName of Object.keys(properties)) {
+		for (const propertyName of propertyKeys) {
 			attributesPropertiesMap[$.dashCase(propertyName)] = propertyName;
 		}
 
@@ -112,13 +117,37 @@ export default ($) => {
 				}
 
 				this.#scope = scope(root, (node) => {
+					node.$propsAliases = attributesPropertiesMap;
 					node.$props = {};
+
+					let properties = {};
+
+					if (propsAreArray) {
+						for (const propertyName of props) {
+							properties[propertyName] = undefined;
+						}
+					} else if (propsAreFunction) {
+						properties = props();
+					} else if (propsAreObject) {
+						properties = structuredClone(props);
+					}
 
 					for (const [key, value] of Object.entries(properties)) {
 						node.$props[key] = signal(value);
-						node.$data[key] = node.$props[key];
 					}
 				});
+
+				const dependencies = [];
+				for (const componentDependency of options?.components ?? []) {
+					if (!customElements.get(componentDependency)) {
+						dependencies = new Promise(async (resolve) => {
+							await customElements.whenDefined(componentDependency)
+							resolve();
+						});
+					}
+				}
+
+				await Promise.all(dependencies);
 
 				for (const attr of this.#scope.$el.attributes) {
 					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));

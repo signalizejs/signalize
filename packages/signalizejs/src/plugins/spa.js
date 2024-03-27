@@ -160,7 +160,7 @@ export default (options) => {
 			 */
 			const dispatchEventData = {
 				...data,
-				success: undefined
+				error: null
 			};
 
 			if (abortNavigationController !== undefined) {
@@ -171,8 +171,7 @@ export default (options) => {
 
 			dispatch('spa:navigation:start', { ...dispatchEventData });
 
-			const { url, stateAction } = data;
-
+			const { url, stateAction = 'push' } = data;
 			const urlString = url instanceof URL ? url.toString() : url;
 
 			/** @type {Promise<import('./fetch.js').FetchReturn} */
@@ -196,18 +195,17 @@ export default (options) => {
 					try {
 						responseData = request.response === null ? '' : await request.response.text();
 					} catch (error) {
+						dispatchEventData.error = e;
 						console.error(error);
 					}
 				} else {
+					dispatchEventData.error = request.error;
 					dispatch('spa:request:error', { request, ...dispatchEventData });
 				}
 
-				dispatch('spa:request:end', { request, ...dispatchEventData, success: responseData !== null });
+				dispatch('spa:request:end', { request, ...dispatchEventData });
 			}
 
-			/**
-			 * @returns {void}
-			 */
 			const updateDom = async () => {
 				/** @type {boolean|null} */
 				let shouldCacheResponse = null;
@@ -237,7 +235,7 @@ export default (options) => {
 					window.history.replaceState(window.history.state, '', urlString);
 				} else if (stateAction === 'push') {
 					currentState = {
-						url: data.url,
+						url: urlString,
 						spa: true,
 						scrollX: data.scrollX ?? window.scrollX,
 						scrollY: data.scrollY ?? window.scrollY
@@ -262,6 +260,7 @@ export default (options) => {
 				try {
 					await updateDom();
 				} catch (e) {
+					dispatchEventData.error = e;
 					console.log(e);
 				}
 
@@ -291,11 +290,11 @@ export default (options) => {
 				}
 			}
 
-			const success = responseData !== null;
-			const navigationEndData = { ...dispatchEventData, success };
+			const error = responseData === null;
+			const navigationEndData = { ...dispatchEventData, error };
 			dispatch('spa:navigation:end', navigationEndData);
 
-			if (success) {
+			if (error === false) {
 				dispatch('spa:page:ready', navigationEndData);
 			}
 
@@ -313,15 +312,13 @@ export default (options) => {
 				return;
 			}
 
-			const location = new URL(window.location.href);
-			const currentLocation = getCurrentLocation();
-			if (location === currentLocation || (location.pathname === currentLocation.pathname && location.hash !== currentLocation.hash)) {
+			if (state.url === currentState.url) {
 				return;
 			}
 
 			/** @type {NavigationData} */
 			const navigationConfig = {
-				url: location,
+				url: state.url,
 				scrollX: state.scrollX,
 				scrollY: state.scrollY
 			};
@@ -368,8 +365,11 @@ export default (options) => {
 			}
 
 			const hrefUrl = createUrl(`${window.location.origin}${url}`);
+			hrefUrl.hash = '';
+			let currentLocation = getCurrentLocation();
+			currentLocation.hash = '';
 
-			if (hrefUrl === null || hrefUrl.pathname === getCurrentLocation().pathname) {
+			if (hrefUrl === null || hrefUrl.toString() === currentLocation.toString()) {
 				event.preventDefault();
 				return;
 			}

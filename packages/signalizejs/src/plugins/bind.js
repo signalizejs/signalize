@@ -150,6 +150,9 @@ export default ($) => {
 						if (attr in componentScope.$props) {
 							componentScope.$props[attr](valueToSet);
 							continue;
+						} else if (attr in componentScope.$propsAliases) {
+							componentScope.$props[componentScope.$propsAliases[attr]](valueToSet);
+							continue;
 						}
 					} else {
 						setAttribute(attr, valueToSet);

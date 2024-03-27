@@ -150,6 +150,10 @@ export default ($) => {
 					return checkParentElement(element);
 				});
 
+				if (refs.length === 0) {
+					return null;
+				}
+
 				return refs.length === 1 ? refs[0] : refs;
 			}
 		});

@@ -75,6 +75,10 @@ export default () => {
 							newSnippet.setAttribute(snippetStateAttribute, 'redrawing');
 							existingSnippet.replaceWith(newSnippet);
 							existingSnippet = newSnippet;
+						} else if (snippetAction === 'replace-children') {
+							existingSnippet.setAttribute(snippetStateAttribute, 'redrawing');
+							existingSnippet.innerHTML = newSnippet.innerHTML;
+
 						} else if (snippetAction === 'append-children') {
 							const childrenFragment = new DocumentFragment();
 							while (newSnippet.firstChild != null) {
@@ -117,9 +121,9 @@ export default () => {
 			if (typeof document.startViewTransition === 'undefined' || options?.transitions === 'disabled') {
 				redraw();
 			} else {
-				dispatch('snippets:redraw:transition:start');
 				const transition = document.startViewTransition(() => redraw());
-				await transition.ready;
+				dispatch('snippets:redraw:transition:start', transition);
+				await transition.finished;
 				dispatch('snippets:redraw:transition:end');
 			}
 

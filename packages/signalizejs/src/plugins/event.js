@@ -173,7 +173,8 @@ export default ($) => {
 					continue;
 				}
 
-				target.addEventListener(events, listener, options);
+				target.removeEventListener(event, listener);
+				target.addEventListener(event, listener, options);
 			}
 		};
 

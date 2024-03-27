@@ -226,7 +226,6 @@ export default () => {
 				await process();
 
 				const unwatchSignalCallbacks = [];
-
 				for (const signalToWatch of loopSignalsToWatch) {
 					unwatchSignalCallbacks.push(signalToWatch.watch(process));
 				}

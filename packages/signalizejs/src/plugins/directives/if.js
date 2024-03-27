@@ -38,7 +38,8 @@ export default () => {
 				 * @returns {Promise<void>}
 				 */
 				const render = async () => {
-					const { result, signalsToWatch } = $.evaluate(attribute.value, scope, !inited);
+					let { result, signalsToWatch } = $.evaluate(attribute.value, scope, !inited);
+					result = typeof result === 'function' ? result() : result;
 
 					if (!inited) {
 						ifSignalsToWatch = signalsToWatch;

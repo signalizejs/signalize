@@ -64,7 +64,7 @@ export default () => {
 			let { modelessly = false, closable = true } = options;
 
 			if (dialog != null) {
-				modelessly = dialog.hasAttribute(dialogModelessAttribute) ?? modelessly;
+				modelessly = dialog.getAttribute(dialogModelessAttribute) ?? modelessly;
 				modelessly ? dialog.show() : dialog.showModal();
 				const dialogId = dialog.getAttribute(dialogAttribute);
 				if (dialogId) {
