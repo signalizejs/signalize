@@ -25,18 +25,11 @@
 
 ## ✨ Introduction
 
-SignalizeJS is a client-side, multipurpose, dependency-less, easily extensible, plugin based microframework that uses Signals and Events under the hood.
+SignalizeJS is a client-side, multipurpose, dependency-less, easily extensible, module based microframework that uses Signals and Events under the hood.
 - 💎 Small learning curve
 - 💎 Small size - Core 3 KB. Vue-Like Directives + Core = 5 KB
 - 💎 Plugin based - import only what you need
 - 💎 No dependencies
-
-## 🤔 Why?
-- I had enough of compilicated JS backends and frameworks (just use Astro, Go, Laravel, Symfony, Nette... I even tried Rust, because of [Prime](https://www.youtube.com/watch?v=h7UEwBaGoVo), and even that was "relief" compared to JS ecosystem).
-- I missed some features.
-- I wanted a small, dead simple library that can be easily maintainable.
-- I wrote a few utilities to reduce the boilerplate code.
-- Eventually, I composed that into a framework that is like jQuery with Signals & Directives `¯\_(ツ)_/¯`.
 
 ## 📦 Ecosystem
 The main recommended package to use is [signalizejs](). It contains core + directives plugin.

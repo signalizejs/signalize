@@ -1,31 +1,20 @@
 {
   "private": "true",
-  "description": "A functional core for SignalizeJS framework.",
-  "keywords": [
-    "signalizejs",
-    "signalize",
-    "ui",
-    "reactive",
-    "components",
-    "performance",
-    "front-end",
-    "framework",
-    "web"
-  ],
   "type": "module",
   "scripts": {
     "repo:init": "npm i -r && npm run repo:install-playwright",
     "repo:install-playwright": "npx playwright install --with-deps",
     "eslint:check": "eslint packages/signalizejs/src/**/*.js",
     "eslint:fix": "eslint packages/signalizejs/src/**/*.js --fix",
-    "tests:run": "npx playwright",
+    "tests:run": "npx playwright test",
     "tests:report": "npx playwright show-report --host 0.0.0.0",
-    "http-server:start": "http-server ./ -p 4000",
+    "http-server:start": "http-server ./packages -p 4000",
     "signalize:test": "npx --env PACKAGE=signalize playwright"
   },
   "author": "Vladimír Macháček",
   "devDependencies": {
     "@playwright/test": "^1.40.1",
+    "@types/node": "^20.12.12",
     "eslint": "^8.5",
     "http-server": "^14.1"
   },

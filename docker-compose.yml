@@ -1,9 +1,8 @@
-version: '3'
 services:
     server:
         container_name: signalize
         build: .
-        working_dir: /var/www
+        working_dir: /usr/share/nginx/html
         volumes:
             - ./.:/usr/share/nginx/html:delegated
         ports:
@@ -16,4 +15,6 @@ services:
             - 4173:4173
             # Playwright Report
             - 9323:9323
+        environment:
+            DEV: true
         tty: true

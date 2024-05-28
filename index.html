@@ -20,72 +20,33 @@
 		{
 			"imports": {
 				"signalizejs": "/packages/signalizejs/src/Signalize.js",
-				"signalizejs/directives": "/packages/signalizejs/src/plugins/directives.js",
-				"signalizejs/traverse-dom": "/packages/signalizejs/src/plugins/traverse-dom.js",
-				"signalizejs/evaluator": "/packages/signalizejs/src/plugins/evaluator.js"
+				"signalizejs/event": "/packages/signalizejs/src/modules/event.js",
+				"signalizejs/mutation-observer": "/packages/signalizejs/src/modules/mutation-observer.js",
+				"signalizejs/dom-ready": "/packages/signalizejs/src/modules/dom-ready.js"
 			}
 		}
 	</script>
 
 	<script type="module">
 		import Signalize from 'signalizejs';
-		import Evaluate from 'signalizejs/evaluator';
+		/* import Evaluate from 'signalizejs/evaluator';
 		import TraverseDom from 'signalizejs/traverse-dom';
-		import Directives from 'signalizejs/directives';
+		import Directives from 'signalizejs/directives'; */
 
-		const { component, bind, signal, Signal } = new Signalize({ plugins: [
+		/* const { component, bind, signal, Signal } = new Signalize({ plugins: [
 			Evaluate(),
 			TraverseDom(),
 			Directives()
-		] });
+		] }); */
 
+		const { resolve } = new Signalize();
+		const { on } = await resolve('event');
 
-
-		component('x-a', ({ $refs, $connected }) => {
-			const number = signal(40);
-
-			number.watch(( ) => {
-				console.log('WatchA', number());
-			});
-
-			return {
-				meh: number,
-			}
+		on('dom:ready', () => {
+			alert('fuck yeah');
 		});
 
-		component('x-b', {
-			props: {
-				number: signal(0),
-			},
-			setup({ $props, $refs }) {
-				let number = $props.number();
-				let numberProperty = $props.number();
-
-				$props.number.watch(({ newValue }) => {
-					if (!(newValue instanceof Signal)) {
-						return;
-					}
-					numberProperty = newValue;
-					number(newValue());
-				}, { immediate: true });
-
-				number.watch(({ newValue }) => {
-					numberProperty(newValue);
-					console.log('Watch B', newValue);
-				});
-
-				return {
-					number
-				}
-			}
-		});
 	</script>
-
-	<x-a>
-		<x-b :number="meh">
-			<input :value="number">
-		</x-b>
-	</x-a>
 </body>
 
 </html>

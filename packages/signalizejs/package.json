@@ -21,53 +21,97 @@
 	"sideEffects": false,
 	"author": "Vladimír Macháček",
 	"files": [
-		"dist",
+		"src",
 		"package.json",
 		"LICENSE",
 		"README.md"
 	],
 	"exports": {
 		".": {
-			"import": "./src/index.js"
+			"import": "./src/Signalize.js"
 		},
-		"./fetch": {
-			"import": "./src/plugins/fetch.js"
+		"./bind": {
+			"import": "./src/modules/bind.js"
+		},
+		"./component": {
+			"import": "./src/modules/component.js"
+		},
+		"./dash-case": {
+			"import": "./src/modules/dash-case.js"
 		},
 		"./dialog": {
-			"import": "./src/plugins/dialog.js"
+			"import": "./src/modules/dialog.js"
 		},
 		"./directives": {
-			"import": "./src/plugins/directives.js"
+			"import": "./src/modules/directives.js"
 		},
 		"./directives/for": {
-			"import": "./src/plugins/directives/for.js"
+			"import": "./src/modules/directives/for.js"
 		},
 		"./directives/if": {
-			"import": "./src/plugins/directives/if.js"
+			"import": "./src/modules/directives/if.js"
 		},
-		"./evaluator": {
-			"import": "./src/plugins/evaluator.js"
+		"./dom-ready": {
+			"import": "./src/modules/dom-ready.js"
 		},
-		"./h": {
-			"import": "./src/plugins/h.js"
+		"./evaluate": {
+			"import": "./src/modules/evaluate.js"
 		},
-		"./asset-loader": {
-			"import": "./src/plugins/asset-loader.js"
+		"./event": {
+			"import": "./src/modules/event.js"
+		},
+		"./fetch": {
+			"import": "./src/modules/fetch.js"
+		},
+		"./height": {
+			"import": "./src/modules/height.js"
+		},
+		"./hyperscript": {
+			"import": "./src/modules/hyperscript.js"
+		},
+		"./intersection-observer": {
+			"import": "./src/modules/intersection-observer.js"
+		},
+		"./is-visible": {
+			"import": "./src/modules/is-visible.js"
+		},
+		"./logger": {
+			"import": "./src/modules/logger.js"
+		},
+		"./mutation-observer": {
+			"import": "./src/modules/mutation-observer.js"
+		},
+		"./offset": {
+			"import": "./src/modules/offset.js"
+		},
+		"./scope": {
+			"import": "./src/modules/scope.js"
+		},
+		"./signal": {
+			"import": "./src/modules/signal.js"
 		},
 		"./snippets": {
-			"import": "./src/plugins/snippets.js"
+			"import": "./src/modules/snippets.js"
 		},
 		"./spa": {
-			"import": "./src/plugins/spa.js"
+			"import": "./src/modules/spa.js"
+		},
+		"./task": {
+			"import": "./src/modules/task.js"
 		},
 		"./traverse-dom": {
-			"import": "./src/plugins/traverse-dom.js"
+			"import": "./src/modules/traverse-dom.js"
 		},
-		"./package.json": "./package.json"
+		"./viewport": {
+			"import": "./src/modules/viewport.js"
+		},
+		"./width": {
+			"import": "./src/modules/width.js"
+		}
 	},
-	"main": "src/index.js",
-	"jsdelivr": "src/index.js",
-	"unpkg": "src/index.js",
-	"module": "src/index.js",
+	"main": "src/Signalize.js",
+	"jsdelivr": "src/Signalizee.js",
+	"unpkg": "src/Signalize.js",
+	"module": "src/Signalize.js",
 	"license": "MIT"
 }
