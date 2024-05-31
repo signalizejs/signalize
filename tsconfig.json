@@ -4,7 +4,7 @@
 		"target": "ESNext",
 		"newLine": "LF",
 		"checkJs": true,
-		"strict": true,
+		"strict": true
 	},
 	"exclude": [
 		"node_modules"

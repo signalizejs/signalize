@@ -1,6 +1,12 @@
 // https://nitropack.io/blog/post/improve-interaction-to-next-paint-inp
 // https://web.dev/optimize-long-tasks/
 
+/**
+ * @callback task
+ * @param {Function} callback
+ */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default () => {
 	const deadlineInterval = 50;
 
@@ -16,11 +22,8 @@ export default () => {
 
 	let processing = false;
 
-	/**
-	 * @param {CallableFunction} callback
-	 * @returns {void}
-	 */
 	return {
+		/** @type {task} */
 		task: (callback) => {
 			tasks.push(callback);
 
@@ -42,6 +45,11 @@ export default () => {
 					}
 
 					const callback = tasks.shift();
+
+					if (typeof callback !== 'function') {
+						throw new Error('Task must be a callable function.');
+					}
+
 					callback();
 				}
 				processing = false;

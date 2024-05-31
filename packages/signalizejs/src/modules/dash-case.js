@@ -1,12 +1,10 @@
-/* declare module '..' {
+/**
+ * @callback dashCase
+ * @param {string} str
+ */
 
-	interface Signalize {
-		dashCase: (str: string) => string
-	}
-} */
-
+/** @type {import('../Signalize').SignalizeModule} */
 export default () => ({
-	dashCase: (str) => {
-		return str.replace(/[A-Z]/g, (token) => '-' + token.toLowerCase());
-	}
+	/** @type {dashCase} */
+	dashCase: (str) => str.replace(/[A-Z]/g, (token) => '-' + token.toLowerCase())
 });

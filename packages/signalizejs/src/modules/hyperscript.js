@@ -1,9 +1,3 @@
-/* declare module 'signalizejs' {
-	interface Signalize {
-		h: <T extends Element>(tagName: string, ...children: Array<HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[]>) => T
-	}
-} */
-
 /**
  * Represents a child element in hyperscript, which can be a string, number, Element, Node, or Signal.
  *
@@ -18,19 +12,20 @@
  */
 
 /**
- * @returns {import('../Signalize').SignalizePlugin}
- */
+ * Creates a new HTML element using hyperscript syntax.
+ *
+ * @function
+ * @template {HTMLElement} T
+ * @param {string} tagName - The tag name of the HTML element to create.
+ * @param {...(HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[])} children - Child elements or attributes.
+ * @returns {T} - The newly created HTML element.
+*/
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve }) => {
 	const { bind, Signal } = await resolve('bind', 'Signal');
-	/**
-	 * Creates a new HTML element using hyperscript syntax.
-	 *
-	 * @function
-	 * @template T
-	 * @param {string} tagName - The tag name of the HTML element to create.
-	 * @param {...(HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[])} children - Child elements or attributes.
-	 * @returns {T} The newly created HTML element.
-	 */
+
+	/** @type {h}  */
 	const h = (tagName, ...children) => {
 		/** @type {HyperscriptChildAttrs} */
 		let attrs = {};
@@ -100,4 +95,6 @@ export default async ({ resolve }) => {
 		/** @type {T} */
 		return el;
 	};
+
+	return { h };
 };

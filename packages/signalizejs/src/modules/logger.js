@@ -1,13 +1,3 @@
-/* declare module '..' {
-
-	interface CustomEventListeners {
-		'logger:log': CustomEventListener
-		'logger:warn': CustomEventListener
-		'logger:error': CustomEventListener
-		'logger:info': CustomEventListener
-	}
-} */
-
 /**
  * Represents a log entry with information about the log type, message, and optional details.
  *
@@ -29,15 +19,12 @@
 /**
  * Options for configuring a plugin.
  *
- * @interface PluginOptions
+ * @typedef PluginOptions
  * @property {Levels[]} [levels] - An array of log levels (optional).
  * @property {string} url - The URL associated with the plugin.
  */
 
-/**
- * @param {Pluginoptions} options
- * @returns {import('../Signalize').SignalizePlugin}
- */
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve}, options) => {
 	const { fetch, dispatch } = await resolve('fetch', 'event');
 	/** @type {Levels[]} */

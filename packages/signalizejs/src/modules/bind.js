@@ -1,3 +1,17 @@
+/**
+ * @typedef AttributeConfig
+ * @property {CallableFunction} [set]
+ * @property {CallableFunction} [get]
+ */
+
+/**
+ * @callback bind
+ * @param {HTMLElement} element
+ * @param {Record<string, AttributeConfig|import('./signal.js').Signal>} attributes
+ * @returns {void}
+ */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve }) => {
 	const { on, off, Signal, scope } = await resolve('event', 'signal', 'scope');
 
@@ -24,10 +38,10 @@ export default async ({ resolve }) => {
 		html: 'innerHTML'
 	};
 
+	/** @type {bind} */
 	const bind = (element, attributes) => {
 		let componentScope = null;
 		const tagName = element.tagName.toLowerCase();
-		const webComponentIsDefined = customElements.get(tagName) !== undefined;
 
 		const bind = () => {
 			/** @type {CallableFunction[]} */

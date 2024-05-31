@@ -1,25 +1,13 @@
-/* declare module '..' {
-	interface Signalize {
-		component: (name: string, init: ComponentOptions) => typeof HTMLElement
-	}
-
-	interface CustomEventListeners {
-		'component:constructed': CustomEventListener
-		'component:connected': CustomEventListener
-		'component:disconnected': CustomEventListener
-		'component:adopted': CustomEventListener
-	}
-} */
-
 /**
  * Options for configuring a component.
  *
- * @interface ComponentOptions
+ * @typedef ComponentOptions
  * @property {Record<string, any> | string[]} [props] - Props to be used by the component (optional).
  * @property {() => void | Promise<void>} [setup] - Function for setting up the component (optional).
  * @property {ShadowRootInit} [shadow] - Configuration options for the shadow DOM (optional).
  */
 
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve, params }, config) => {
 	const { componentPrefix = '' } = config;
 	const { attributePrefix } = params;

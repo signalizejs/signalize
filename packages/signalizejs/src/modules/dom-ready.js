@@ -1,16 +1,10 @@
-/* declare module '..' {
-	interface Signalize {
-		isDomReady: () => boolean
-	}
-
-	interface CustomEventListeners {
-		'dom:ready': CustomEventListener
-	}
-} */
 
 /**
- * @param {import('../Signalize').Signalize} $
+ * @callback isDomReady
+ * @returns {boolean}
  */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve, root }) => {
 	const { customEventListener } = await resolve('event', { waitOnInit: false });
 
@@ -19,13 +13,17 @@ export default async ({ resolve, root }) => {
 
 	const callOnDomReadyListeners = () => {
 		while (domReadyListeners.length > 0) {
-			domReadyListeners.shift();
+			const listener = domReadyListeners.shift();
+
+			if (typeof listener !== 'function') {
+				throw new Error('Dom ready listener must be a function.');
+			}
+
+			listener();
 		}
 	};
 
-	/**
-	 * @returns {boolean}
-	 */
+	/** @type {isDomReady} */
 	const isDomReady = () => {
 		const documentElement = root instanceof Document ? root : root?.ownerDocument;
 		return documentElement.readyState !== 'loading';

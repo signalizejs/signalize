@@ -1,71 +1,95 @@
-/* declare module '..' {
-	interface Signalize {
-		observeMutations: (
-			root: Element | Document | DocumentFragment,
-			listener: ObserverListener,
-			options?: MutationObserverInit
-		) => MutationObserver
-	}
-} */
-
 /**
- * Represents a function that serves as an observer listener.
+ * Ads listener that will be triggered when the dom changes within the Signalize instance root dom tree.
  *
- * @typedef {function} ObserverListener
- * @param {string} event - The name of the event.
- * @param {Node} node - The Node associated with the event.
- * @returns {void}
+ * @callback observeMutations
+ * @param {mutationObserverListener} listener
+ * @param {MutationObserverInit} [options]
  */
 
 /**
- * @param {import('../Signalize').Signalize} $
+ * Represents optimized object of MutationRecords.
+ *
+ * @typedef MutationNodes
+ * @property {Node[]} addedNodes
+ * @property {Node[]} movedNodes
+ * @property {Node[]} removedNodes
  */
+
+/**
+ * @callback mutationObserverListener
+ * @param {MutationNodes} mutationNodes
+ */
+
+/**
+ * This method creates custom mutation observer.
+ *
+ * @callback createMutationObserver
+ * @param {Element} root
+ * @param {mutationObserverListener} listener
+ * @param {MutationObserverInit} [options]
+ */
+
+/**
+ * Returns mutation observer of the Signalize instance root.
+ *
+ * @callback getRootMutationObserver
+ * @returns {MutationObserver}
+ */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default ($) => {
-	const event = 'dom:mutation';
-	const nodeEvent = `${event}:node`;
+	/** @type {MutationObserver} */
+	let rootObserver;
+	const rootObserverListeners = new Set();
 
 	/**
-	 *
-	 * @param {Element|Document|DocumentFragment} root
-	 * @param {ObserverListener} listener
-	 * @param {MutationObserverInit} [options]
-	 * @returns
+	 * @param {MutationRecord[]} mutationRecords
+	 * @param {number[]} allowedNodeTypes
+	 * @returns {MutationNodes}
 	 */
-	const observeMutations = (root, listener, options) => {
+	const processMutationObserverRecords = (mutationRecords, allowedNodeTypes = []) => {
+		/** @type {Node[]} */
+		const addedNodes = [];
+		/** @type {Node[]} */
+		const removedNodes = [];
+		/** @type {Node[]} */
+		const movedNodes = [];
+
 		/**
-		 * Mutation observer for tracking changes in the DOM.
-		 *
-		 * @type {MutationObserver}
-		 * @param {MutationRecord[]} mutationRecords - An array of MutationRecord objects representing the changes in the DOM.
+		 * @param {number} nodeType
+		 * @returns {boolean}
 		 */
-		const observer = new MutationObserver((mutationRecords) => {
-			/** @type {Node[]} */
-			let removedNodes = [];
+		const isAllowedNode = (nodeType) => allowedNodeTypes.includes(nodeType);
 
-			for (const mutation of mutationRecords) {
-				listener(event, mutation);
-
-				for (const node of mutation.addedNodes) {
-					if (removedNodes.includes(node)) {
-						continue;
-					}
-					listener(`${nodeEvent}:added`, node);
-				}
-
-				if (mutation.removedNodes.length) {
-					removedNodes = [...mutation.removedNodes];
-				}
-
-				for (const node of mutation.removedNodes) {
-					listener(
-						($.root instanceof Document ? $.root.contains(node) : $.root.ownerDocument.contains(node))
-							? `${nodeEvent}:moved`
-							: `${nodeEvent}:removed`
-						,
-						node
-					);
+		for (const mutation of mutationRecords) {
+			for (const removedNode of removedNodes) {
+				if (isAllowedNode(removedNode.nodeType)) {
+					removedNodes.push(removedNode);
 				}
 			}
+			removedNodes.push(...mutation.removedNodes);
+
+			for (const addedNode of mutation.addedNodes) {
+				if (removedNodes.includes(addedNode)) {
+					movedNodes.push(addedNode);
+				} else {
+					addedNodes.push(addedNode);
+				}
+			}
+		}
+
+		return {
+			addedNodes,
+			removedNodes,
+			movedNodes
+		};
+	};
+
+	/** @type {createMutationObserver} */
+	const createMutationObserver = (root, listener, options)  => {
+		const observer = new MutationObserver((mutationRecords) => {
+			const nodes = processMutationObserverRecords(mutationRecords);
+			listener(nodes);
 		});
 
 		observer.observe(root, {
@@ -77,7 +101,36 @@ export default ($) => {
 		return observer;
 	};
 
+	/** @type {observeMutations} */
+	const observeMutations = (listener) => {
+		if (rootObserver === undefined) {
+			rootObserver = new MutationObserver((mutationRecords) => {
+				const nodes = processMutationObserverRecords(mutationRecords, [1]);
+
+				for (const listener of rootObserverListeners) {
+					listener(nodes);
+				}
+			});
+
+			rootObserver.observe($.root, {
+				childList: true,
+				subtree: true,
+			});
+		}
+
+		if (!rootObserverListeners.has(listener)) {
+			rootObserverListeners.add(listener);
+		}
+
+		return () => rootObserverListeners.delete(listener);
+	};
+
+	/** @type {getRootMutationObserver} */
+	const getRootMutationObserver = () => rootObserver;
+
 	return {
-		observeMutations
+		observeMutations,
+		createMutationObserver,
+		getRootMutationObserver
 	};
 };

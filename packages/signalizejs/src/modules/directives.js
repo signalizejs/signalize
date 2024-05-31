@@ -1,11 +1,3 @@
-/* declare module '..' {
-	interface Signalize {
-		directive: (name: string, data: Directive) => void
-		getPrerenderedNodes: (element: Element) => Node[]
-		processDirectives: (options?: ProcessDirectiveOptions) => Promise<void>
-	}
-} */
-
 /**
  * Represents a callback function for a directive.
  *
@@ -17,7 +9,7 @@
 /**
  * Represents data passed to a directive callback.
  *
- * @interface DirectiveCallbackData
+ * @typedef DirectiveCallbackData
  * @extends {Scope}
  * @property {RegExpMatchArray} matches - The result of matching a regular expression against an attribute value.
  * @property {Attr} attribute - The attribute associated with the directive.
@@ -26,7 +18,7 @@
 /**
  * Represents parameters for a directive matcher.
  *
- * @interface DirectiveMatcherParameters
+ * @typedef DirectiveMatcherParameters
  * @property {Element} element - The HTML element associated with the directive.
  * @property {Attr} attribute - The attribute associated with the directive.
  */
@@ -48,7 +40,7 @@
 /**
  * Represents options for processing an HTML element in the context of directives.
  *
- * @interface ProcessElementOptions
+ * @typedef ProcessElementOptions
  * @property {Element} element - The HTML element to be processed.
  * @property {'init' | 'reinit'} mode - The mode of processing (init or reinit).
  */
@@ -56,7 +48,7 @@
 /**
  * Represents a directive, consisting of a matcher and a callback.
  *
- * @interface Directive
+ * @typedef Directive
  * @property {RegExp | DirectiveMatcher | undefined} [matcher] - The matcher for the directive.
  * @property {DirectiveCallback} callback - The callback function for the directive.
  */
@@ -64,7 +56,7 @@
 /**
  * Represents a registered directive, consisting of a matcher and a callback.
  *
- * @interface RegisteredDirective
+ * @typedef RegisteredDirective
  * @extends {Directive}
  * @property {DirectiveMatcher} [matcher] - The matcher function for the directive.
  */
@@ -72,7 +64,7 @@
 /**
  * Represents options for processing directives within a DOM tree.
  *
- * @interface ProcessDirectiveOptions
+ * @typedef ProcessDirectiveOptions
  * @property {Element} root - The root element of the DOM tree to process.
  * @property {string[]} [directives] - An array of directive names to process (optional).
  * @property {'init' | 'reinit'} [mode] - The mode of processing (init or reinit, optional).
@@ -82,11 +74,12 @@
 /**
  * Represents options for configuring a plugin related to directives.
  *
- * @interface PluginOptions
+ * @typedef PluginOptions
  * @property {string} [prerenderedBlockStart] - The start marker for prerendered blocks (optional).
  * @property {string} [prerenderedBlockEnd] - The end marker for prerendered blocks (optional).
  */
 
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ($, pluginOptions) => {
 	const { resolve, params } = $;
 	const signalizeRoot = $.root;

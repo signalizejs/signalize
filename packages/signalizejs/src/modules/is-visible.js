@@ -1,10 +1,11 @@
-/* declare module '..' {
-	interface Signalize {
-		isVisible: (element: Element) => boolean
-	}
-} */
+/**
+ * @callback isVisible
+ * @param {HTMLElement} elemnent
+ */
 
+/** @type {import('../Signalize').SignalizeModule} */
 export default () => ({
+	/** @type {isVisible} */
 	isVisible: (element) => {
 		if (element.getClientRects().length !== 0) {
 			return true;

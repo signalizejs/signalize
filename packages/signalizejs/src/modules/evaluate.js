@@ -1,6 +1,4 @@
-/**
- * @returns {import('../Signalize').SignalizePlugin}
- */
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve, globals }) => {
 	const { Signal } = await resolve('signal');
 	const chunkKeywordMap = {

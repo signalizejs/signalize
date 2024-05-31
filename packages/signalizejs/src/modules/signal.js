@@ -1,10 +1,3 @@
-/* declare module '..' {
-	interface Signalize {
-		Signal: Signal<any>
-		signal: <T>(defaultValue: T) => Signal<T>
-	}
-} */
-
 /**
  * Represents a function to be called before setting a signal watcher.
  *
@@ -60,24 +53,32 @@
 /**
  * Represents a signal with a specific value and associated watchers.
  *
- * @interface Signal
  * @template T
+ * @typedef {CallableFunction} Signal
+ * @constructor
  * @property {T} value - The current value of the signal.
  * @property {SignalWatchers} watchers - Collection of watchers associated with the signal.
  * @property {(listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options?: SignalWatcherOptions) => SignalUnwatch} watch - Adds a watcher function to the signal.
  * @property {() => string} toString - Converts the signal to a string.
  * @property {() => T} valueOf - Returns the underlying value of the signal.
  * @property {() => T} toJSON - Converts the signal to a JSON-compatible representation.
+ * @returns {void}
  */
 
+/**
+ * Creates a new Signal instance with the provided default value.
+ * @template T
+ * @callback signal
+ * @param {T} defaultValue - The default value for the signal.
+ * @returns {Signal<T>} A new Signal instance initialized with the default value.
+ */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default () => {
 	/**
-	 * Represents a Signal class extending the Function class.
-	 *
-	 * @class
-	 * @extends {Function}
 	 * @template T
-	 */
+	 * @type {Signal<T>}
+	*/
 	class Signal extends Function {
 		/** @type {T} */
 		value;
@@ -89,23 +90,21 @@ export default () => {
 			onGet: new Set()
 		};
 
-		/** @type {number} */
+		/** @type {number|undefined} */
 		#setWatchersTimeout;
 
-		/**
-		 * @constructor
-		 * @param {T} defaultValue
-		 * @returns {void}
-		 */
+
 		constructor(defaultValue) {
 			super();
 			this.value = defaultValue;
+
 			return new Proxy(this, {
 				apply: (target, thisArg, args) => {
 					if (args.length === 1) {
 						this.#set(args[0]);
 						return this.value;
 					}
+
 					return this.#get();
 				}
 			});
@@ -150,6 +149,7 @@ export default () => {
 			this.value = newValue;
 
 			clearTimeout(this.#setWatchersTimeout);
+
 			this.#setWatchersTimeout = setTimeout(() => {
 				for (const watcher of this.watchers.afterSet) {
 					watcher({ newValue, oldValue });
@@ -199,13 +199,9 @@ export default () => {
 	}
 
 	/**
-	 * Creates a new Signal instance with the provided default value.
-	 *
-	 * @function
 	 * @template T
-	 * @param {T} defaultValue - The default value for the signal.
-	 * @returns {Signal<T>} A new Signal instance initialized with the default value.
-	 */
+	 * @type {signal<T>}
+	*/
 	const signal = (defaultValue) => new Signal(defaultValue);
 
 	return { signal, Signal };

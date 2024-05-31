@@ -1,20 +1,35 @@
-/* declare module '..' {
-
-	interface Signalize {
-		dialog: (dialogOrId: string | HTMLDialogElement) => HTMLDialogElement | null
-		closeDialog: (dialogOrId: string | HTMLDialogElement) => HTMLDialogElement | null
-		openDialog: (dialogOrId: string | HTMLDialogElement, modelessly?: boolean) => HTMLDialogElement | null
-	}
-
-	interface CustomEventListeners {
-		'dialog:open': CustomEventListener
-		'dialog:close': CustomEventListener
-	}
-} */
+/**
+ * Retrieves a dialog element with the specified ID.
+ *
+ * @callback getDialog
+ * @param {string} id - The ID of the dialog element to retrieve.
+ * @returns {HTMLDialogElement|null} The dialog element with the specified ID, or null if not found.
+ */
 
 /**
- * @returns {import('../Signalize').SignalizePlugin}
+ * @typedef OpenDialogOptions
+ * @property {boolean} [modelessly=false]
+ * @property {boolean} [closable=true]
  */
+
+/**
+ * Opens a dialog identified by either its ID or the dialog element itself.
+ *
+ * @callback openDialog
+ * @param {string|HTMLDialogElement} dialogOrId - The ID or HTMLDialogElement of the dialog to open.
+ * @param {OpenDialogOptions} [options] - Indicates whether to open the dialog modelessly (optional, default is false).
+ * @returns {HTMLDialogElement|null} The opened dialog element or null if not found or not opened.
+ */
+
+/**
+ * Closes a dialog identified by either its ID or the dialog element itself.
+ *
+ * @callback closeDialog
+ * @param {string | HTMLDialogElement} dialogOrId - The ID or HTMLDialogElement of the dialog to close.
+ * @returns {HTMLDialogElement | null} The closed dialog element or null if not found or not closed.
+ */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve, root, params }) => {
 	const { attributePrefix, attributeSeparator } = params;
 	const { dispatch, on, off } = await resolve('event');
@@ -25,66 +40,57 @@ export default async ({ resolve, root, params }) => {
 	const dialogCloseButtonAttribute = `${dialogAttribute}${attributeSeparator}close`;
 	const dialogOpenButtonAttribute = `${dialogAttribute}${attributeSeparator}open`;
 
+	/**
+	 * @param {MouseEvent} event
+	 */
 	const closeOnBackDropClickListener = (event) => {
-		let rect = event.target.getBoundingClientRect();
+		const { target, clientX, clientY } = event;
+		let rect = target?.getBoundingClientRect();
 
-		if ((rect.left > event.clientX ||
-			rect.right < event.clientX ||
-			rect.top > event.clientY ||
-			rect.bottom < event.clientY) &&
-			event.target.tagName.toLowerCase() === 'dialog'
+		if (target && (rect.left > clientX ||
+			rect.right < clientX ||
+			rect.top > clientY ||
+			rect.bottom < clientY) &&
+			target.tagName.toLowerCase() === 'dialog'
 		) {
-			closeDialog(event.target);
-			off('click', event.target, closeOnBackDropClickListener);
+			closeDialog(target);
+			off('click', target, closeOnBackDropClickListener);
 		}
 	};
 
-	/**
-	 * Retrieves a dialog element with the specified ID.
-	 *
-	 * @function
-	 * @param {string} id - The ID of the dialog element to retrieve.
-	 * @returns {HTMLDialogElement | null} The dialog element with the specified ID, or null if not found.
-	 */
+	/** @type {getDialog} */
 	const getDialog = (id) => root.querySelector(`[${dialogAttribute}=${id}]`);
 
-	/**
-	 * Opens a dialog identified by either its ID or the dialog element itself.
-	 *
-	 * @function
-	 * @param {string | HTMLDialogElement} dialogOrId - The ID or HTMLDialogElement of the dialog to open.
-	 * @param {boolean} [modelessly=false] - Indicates whether to open the dialog modelessly (optional, default is false).
-	 * @returns {HTMLDialogElement | null} The opened dialog element or null if not found or not opened.
-	 */
+	/** @type {openDialog} */
 	const openDialog = (dialogOrId, options = {}) => {
 		const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
-		let { modelessly = false, closable = true } = options;
 
-		if (dialog != null) {
-			modelessly = dialog.getAttribute(dialogModelessAttribute) ?? modelessly;
-			modelessly ? dialog.show() : dialog.showModal();
-			const dialogId = dialog.getAttribute(dialogAttribute);
-			if (dialogId) {
-				window.location.hash = `#${dialogId}`;
-			}
-
-			dispatch('dialog:opened', dialog);
+		if (dialog === null) {
+			throw new Error(`Dialog "${dialogOrId}" not found.`);
 		}
 
-		if (closable && !modelessly && dialog.getAttribute(dialogClosableAttribute) != false) {
+		let { modelessly = false, closable = true } = options;
+
+		if (dialog.hasAttribute(dialogModelessAttribute)) {
+			modelessly = dialog.getAttribute(dialogModelessAttribute) === 'true';
+		}
+		modelessly ? dialog.show() : dialog.showModal();
+		const dialogId = dialog.getAttribute(dialogAttribute);
+		if (dialogId) {
+			window.location.hash = `#${dialogId}`;
+		}
+
+		dispatch('dialog:opened', dialog);
+
+
+		if (closable && !modelessly && dialog.getAttribute(dialogClosableAttribute) !== 'false') {
 			on('click', dialog, closeOnBackDropClickListener);
 		}
 
 		return dialog;
 	};
 
-	/**
-	 * Closes a dialog identified by either its ID or the dialog element itself.
-	 *
-	 * @function
-	 * @param {string | HTMLDialogElement} dialogOrId - The ID or HTMLDialogElement of the dialog to close.
-	 * @returns {HTMLDialogElement | null} The closed dialog element or null if not found or not closed.
-	 */
+	/** @type {closeDialog} */
 	const closeDialog = (dialogOrId) => {
 		const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
 
@@ -115,7 +121,7 @@ export default async ({ resolve, root, params }) => {
 	};
 
 	on('dom:ready', () => {
-		on('click', `[${dialogCloseButtonAttribute}]`, (event) => {
+		on('click', `[${dialogCloseButtonAttribute}]`, (/** @type {MouseEvent} */ event) => {
 			event.preventDefault();
 			const { target } = event;
 			const dialogId = target.getAttribute(dialogCloseButtonAttribute);
@@ -126,7 +132,7 @@ export default async ({ resolve, root, params }) => {
 			}
 		});
 
-		on('click', `[${dialogOpenButtonAttribute}]`, (event) => {
+		on('click', `[${dialogOpenButtonAttribute}]`, (/** @type {MouseEvent} */ event) => {
 			event.preventDefault();
 			const { target } = event;
 			const dialog = getDialog(target.getAttribute(dialogOpenButtonAttribute));

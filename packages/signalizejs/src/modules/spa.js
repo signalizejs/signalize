@@ -1,26 +1,3 @@
-/* import { FetchReturn } from './fetch'; */
-
-/* declare module '..' {
-	interface Signalize {
-		navigate: (data: NavigationData) => Promise<SpaDispatchEventData>
-	}
-
-	interface CustomEventListeners {
-		'spa:navigation:start': CustomEventListener
-		'spa:request:start': CustomEventListener
-		'spa:request:end': CustomEventListener
-		'spa:app-version:changed': CustomEventListener
-		'spa:redraw:start': CustomEventListener
-		'spa:transition:start': CustomEventListener
-		'spa:transition:end': CustomEventListener
-		'spa:redraw:end': CustomEventListener
-		'spa:navigation:end': CustomEventListener
-		'spa:page:ready': CustomEventListener
-		'spa:popstate': CustomEventListener
-		'spa:click': CustomEventListener
-	}
-} */
-
 /**
  * Represents an action type for managing state (e.g., push or replace).
  *
@@ -52,6 +29,7 @@
  * Represents data associated with dispatching events for Single Page Application (SPA).
  *
  * @typedef {Object} SpaDispatchEventData
+ * @property {unknown|null} error - Error that occured during navigation
  * @property {string | URL} url - The URL for navigation.
  * @property {number} [scrollX] - The scroll position on the X-axis.
  * @property {number} [scrollY] - The scroll position on the Y-axis.
@@ -68,18 +46,25 @@
 /**
  * Options for configuring a plugin.
  *
- * @interface PluginOptions
+ * @typedef PluginOptions
  * @property {string} [cacheHeader] - The cache header option for the plugin.
  * @property {string} [appVersionHeader] - The app version header option for the plugin.
  */
 
 /**
- * Factory function for creating a Signalize plugin.
- *
- * @function
- * @param {PluginOptions} [options] - Options to configure the plugin.
- * @returns {import('../Signalize.js').SignalizePlugin} A Signalize plugin instance.
+ * @typedef CurrentState
+ * @property {string} url
+ * @property {boolean} spa
+ * @property {number} scrollX
+ * @property {number} scrollY
  */
+
+/**
+ * @callback navigate
+ * @param {NavigationData} data
+ */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ params, resolve, root }, options) => {
 	const { dispatch, fetch, redrawSnippet, on, customEventListener, customEvent } = await resolve('event', 'fetch', 'snippets');
 
@@ -93,7 +78,8 @@ export default async ({ params, resolve, root }, options) => {
 	const spaAppVersionHeader = options?.appVersionHeader ?? `${spaHeaderPrefix}App-Version`;
 	const spaTransitionsHeader = options?.appVersionHeader ?? `${spaHeaderPrefix}Transitions`;
 
-	let currentState = null;
+	/** @type {CurrentState|undefined} */
+	let currentState;
 	/** @type {AbortController} */
 	let abortNavigationController;
 	const spaVersion = null;
@@ -169,8 +155,8 @@ export default async ({ params, resolve, root }, options) => {
 		const { url, stateAction = 'push' } = data;
 		const urlString = url instanceof URL ? url.toString() : url;
 
-		/** @type {Promise<import('./fetch.js').FetchReturn} */
-		let request;
+		/** @type {import('./fetch.js').FetchReturn} */
+		let navigationResponse;
 		/** @type {string|null} */
 		let responseData = null;
 
@@ -181,39 +167,40 @@ export default async ({ params, resolve, root }, options) => {
 		} else {
 			dispatch('spa:request:start', { ...dispatchEventData });
 
-			request = await fetch(urlString, {
+			navigationResponse = await fetch(urlString, {
 				signal: abortNavigationController.signal
 			});
-			const requestIsWithoutErroor = request.error === null;
+			const requestIsWithoutErroor = navigationResponse.error === null;
 
 			if (requestIsWithoutErroor) {
 				try {
-					responseData = request.response === null ? '' : await request.response.text();
+					responseData = navigationResponse.response === null ? '' : await navigationResponse.response.text();
 				} catch (error) {
-					dispatchEventData.error = e;
+					dispatchEventData.error = error;
 					console.error(error);
 				}
 			} else {
-				dispatchEventData.error = request.error;
-				dispatch('spa:request:error', { request, ...dispatchEventData });
+				dispatchEventData.error = navigationResponse.error;
+				dispatch('spa:request:error', { ...navigationResponse, ...dispatchEventData });
 			}
 
-			dispatch('spa:request:end', { request, ...dispatchEventData });
+			dispatch('spa:request:end', { ...navigationResponse, ...dispatchEventData });
 		}
 
 		const updateDom = async () => {
 			/** @type {boolean|null} */
 			let shouldCacheResponse = null;
 
-			const headers = request?.response?.headers ?? {};
+			/** @type {Headers|undefined} */
+			const headers = navigationResponse?.response?.headers;
 
-			if (Object.keys(headers).length > 0) {
-				const cacheHeader = headers[spaCacheHeader] ?? null;
+			if (headers !== undefined) {
+				const cacheHeader = headers.get(spaCacheHeader) ?? null;
 				if (cacheHeader !== null) {
 					shouldCacheResponse = cacheHeader !== 'no-cache';
 				}
 
-				const spaVersionFromHeader = headers[spaAppVersionHeader] ?? null;
+				const spaVersionFromHeader = headers.get(spaAppVersionHeader) ?? null;
 
 				if (spaVersionFromHeader !== null && spaVersion !== null && spaVersion !== spaVersionFromHeader) {
 					dispatch('spa:app-version:changed');
@@ -222,7 +209,7 @@ export default async ({ params, resolve, root }, options) => {
 
 			if (!isJson(responseData)) {
 				await redrawSnippet(responseData, {
-					transitions: headers[spaTransitionsHeader] ?? 'enabled'
+					transitions: headers?.get(spaTransitionsHeader) ?? 'enabled'
 				});
 			}
 
@@ -245,7 +232,7 @@ export default async ({ params, resolve, root }, options) => {
 				);
 			}
 
-			if (shouldCacheResponse) {
+			if (shouldCacheResponse && responseData) {
 				responseCache[urlString] = responseData;
 			}
 		};
@@ -307,7 +294,7 @@ export default async ({ params, resolve, root }, options) => {
 			return;
 		}
 
-		if (state.url === currentState.url) {
+		if (state.url === undefined || state.url === currentState?.url) {
 			return;
 		}
 
@@ -328,7 +315,7 @@ export default async ({ params, resolve, root }, options) => {
 	};
 
 	/**
-	 * @param {CustomEvent} event
+	 * @param {MouseEvent} event
 	 * @returns {Promise<void>}
 	 */
 	const onClick = async (event) => {
@@ -377,10 +364,22 @@ export default async ({ params, resolve, root }, options) => {
 
 		event.preventDefault();
 
+		/** @type {StateAction} */
+		let stateAction = 'push';
+		const stateActionAttribute = element.getAttribute(spaStateActionAttribute);
+
+		if (stateActionAttribute) {
+			if (!['push', 'replace'].includes(stateActionAttribute)) {
+				throw new Error(`Unknown operation on spa action attribute "${stateAction}".`);
+			}
+
+			stateAction = stateActionAttribute;
+		}
+
+
 		void navigate({
 			url,
-			/** @type {StateAction} */
-			stateAction: (element.getAttribute(spaStateActionAttribute) ?? 'push')
+			stateAction
 		});
 	};
 

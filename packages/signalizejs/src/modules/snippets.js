@@ -1,17 +1,23 @@
-/* declare module '..' {
-	interface Signalize {
-		redrawSnippet: (content: string) => void
-	}
-
-	interface CustomEventListeners {
-		'snippets:redraw:start': CustomEventListener
-		'snippets:redraw:end': CustomEventListener
-	}
-} */
+/**
+ * @typedef SnippetOptions
+ * @property {string[]} [snippetActions]
+ * @property {HTMLElement|DocumentFragment} [newSnippet]
+ * @property {HTMLElement} [existingSnippet]
+ */
 
 /**
- * @returns {import('../Signalize').SignalizePlugin}
+ * @typedef RedrawSnippetOptions
+ * @property {Record<string, SnippetOptions>} [snippets]
+ * @property {boolean} [transitionsEnabled]
  */
+
+/**
+ * @callback redrawSnippet
+ * @param {string} content
+ * @param {RedrawSnippetOptions} [options]
+ */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ params, resolve, root }) => {
 	const { dispatch } = await resolve('event');
 	const snippetAttribute = `${params.attributePrefix}snippet`;
@@ -26,10 +32,7 @@ export default async ({ params, resolve, root }) => {
 	 */
 	const parseHtml = (html, type = 'text/html') => (new DOMParser()).parseFromString(html, type);
 
-	/**
-	 * @param {string} content
-	 * @returns {void}
-	 */
+	/** @type {redrawSnippet} */
 	const redrawSnippet = async (content, options = {}) => {
 		const fragment = parseHtml(content);
 		const snippets = [...fragment.querySelectorAll(`[${snippetAttribute}]`)];
@@ -49,12 +52,12 @@ export default async ({ params, resolve, root }) => {
 					continue;
 				}
 
-				const snippetConfig = {
+				let snippetConfig = {
 					snippetId,
 					snippetActions: newSnippet.getAttribute(`${snippetActionAttribute}`)?.split(' ') ?? ['replace'],
 					newSnippet,
 					existingSnippet,
-					...options?.snippets?.[snippetId] ?? {}
+					...snippetId  ? (options?.snippets?.[snippetId] ?? {}) : {}
 				};
 
 				const { snippetActions } = snippetConfig;
@@ -112,7 +115,7 @@ export default async ({ params, resolve, root }) => {
 			}
 		};
 
-		if (typeof document.startViewTransition === 'undefined' || options?.transitions === 'disabled') {
+		if (document?.startViewTransition === undefined || options?.transitionsEnabled === false) {
 			redraw();
 		} else {
 			const transition = document.startViewTransition(() => redraw());

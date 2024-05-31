@@ -1,22 +1,3 @@
-/* declare module '..' {
-	interface Signalize {
-		on: (
-			event: keyof CustomEventListeners,
-			targetOrCallback: EventTarget | CallableFunction,
-			callbackOrOptions?: CallableFunction | AddEventListenerOptions,
-			options?: AddEventListenerOptions
-		) => void
-		off: (type: string, element: Element | Document, listener: EventListenerOrEventListenerObject, options?: Record<string, any>) => void
-		customEventListener: (name: string, listener: CustomEventListener) => void
-	}
-
-	interface CustomEventListeners extends HTMLElementEventMap {
-		remove: CustomEventListener
-		clickOutside: CustomEventListener
-	}
-}
- */
-
 /**
  * Represents a type that can be used as an event target, which may be a string,
  * a NodeList of elements, an array of elements, a single element, or a Window.
@@ -25,11 +6,18 @@
  */
 
 /**
- * Represents a custom event listener with on and optional off methods.
+ * Represents a custom event listener.
  *
- * @typedef {Object} CustomEventListener
- * @property {(args: CustomEventListenerArgs) => void} on - Method to add an event listener.
+ * @typedef {Object} CustomEventListenerConfig
+ * @property {CustomEventListenerOnHandler} on - Method to add an event listener.
  * @property {(args: CustomEventListenerArgs) => void} [off] - Optional method to remove an event listener.
+ * @property {(args: CustomEvent) => void} [dispatch] - Optional method for dispatching global event.
+ */
+
+/**
+ * @callback CustomEventListenerOnHandler
+ * @param {CustomEventListenerArgs} args
+ * @returns {void}
  */
 
 /**
@@ -46,24 +34,53 @@
 /**
  * Represents a set of custom event listeners associated with specific events.
  *
- * @interface CustomEventListeners
+ * @typedef CustomEventListeners
  * @extends ElementEventMap
  * @property {CustomEventListener} clickOutside - Custom event listener for the 'clickOutside' event.
  * @property {CustomEventListener} remove - Custom event listener for the 'remove' event.
  */
 
 /**
- * Represents options for configuring a plugin, including custom event listeners.
+ * Dispatches a custom event with the specified name, data, and options.
  *
- * @interface PluginOptions
- * @property {Record<string, CustomEventListener>} customEventListeners - Custom event listeners for the plugin.
+ * @callback dispatch
+ * @param {string} eventName - The name of the custom event to dispatch.
+ * @param {*} [eventData] - Optional data to associate with the custom event.
+ * @param {Record<string, any>} [options] - Options for configuring the dispatch of the custom event.
+ * @returns {boolean} Indicates whether the event dispatch was successful.
  */
 
 /**
- * @param {import('../Signalize').Signalize} $
+ * Creates a custom event with the specified name, data, and options.
+ *
+ * @callback customEvent
+ * @param {string} eventName - The name of the custom event.
+ * @param {*} [eventData] - Optional data to associate with the custom event.
+ * @param {CustomEventInit} [options] - Options for configuring the custom event.
+ * @returns {CustomEvent} A newly created custom event.
  */
-export default ($) => {
-	/** @type {Record<string,CustomEventListener>} */
+
+/**
+ * Creates a custom event listener.
+ *
+ * @callback customEventListener
+ * @param {string} eventName - The name of the custom event.
+ * @param {CustomEventListenerConfig|CustomEventListenerOnHandler} configOrHandler
+ * @returns {void}
+ */
+
+/**
+ * Represents options for configuring a plugin, including custom event listeners.
+ *
+ * @typedef PluginOptions
+ * @property {Record<string, CustomEventListener>} customEventListeners - Custom event listeners for the plugin.
+ */
+
+/** @type {import('../Signalize').SignalizeModule} */
+export default async ({ root, resolve }) => {
+	const { observeMutations } = await resolve('mutation-observer');
+
+	/** @type {Record<string,CustomEventListenerConfig>} */
 	const customEventListeners = {
 		clickoutside: {
 			on: ({ target, listener, options }) => {
@@ -89,20 +106,18 @@ export default ($) => {
 		},
 		remove: {
 			on: ({ target, listener }) => {
-				const callback = (event) => {
-					if (event.detail === target) {
+				/** @type {CallableFunction} */
+				const unobserve = observeMutations(({ removedNodes }) => {
+					if (removedNodes.includes(target)) {
 						listener();
-						off('dom:mutation:node:removed', $.root, callback);
+						unobserve();
 					}
-				};
-
-				on('dom:mutation:node:removed', callback, { passive: true });
+				});
 			}
 		}
 	};
 
 	/**
-	 *
 	 * @param {Selectable} target
 	 * @param {boolean} container
 	 * @returns {IterableElements}
@@ -115,7 +130,7 @@ export default ($) => {
 			for (const selector of target.split(',')) {
 				elements = [
 					...elements,
-					...(container ?? $.root).querySelectorAll(selector)
+					...(container ?? root).querySelectorAll(selector)
 				];
 			}
 		} else {
@@ -148,11 +163,10 @@ export default ($) => {
 		options = typeof callbackOrOptions === 'function' ? options : callbackOrOptions;
 
 		if (typeof targetOrCallback === 'function') {
-			targetOrSelector = $.root;
+			targetOrSelector = root;
 			listener = targetOrCallback;
 		} else {
 			targetOrSelector = targetOrCallback;
-			/** @type {CallableFunction} */
 			listener = callbackOrOptions;
 		}
 
@@ -186,37 +200,31 @@ export default ($) => {
 			attachListeners(target);
 		}
 
-		on('dom:mutation:node:added', ({ detail }) => {
-			if (!(detail instanceof HTMLElement)) {
-				return;
-			}
+		observeMutations(({ addedNodes }) => {
+			for (const addedNode of addedNodes) {
+				const selectors = targetOrSelector.split(',');
+				while(selectors.length > 0) {
+					const selector = selectors.pop();
 
-			const selectors = targetOrSelector.split(',');
-			while(selectors.length > 0) {
-				const selector = selectors.pop();
-
-				for (const element of [
-					...detail.matches(selector) ? [detail] : [],
-					...detail.querySelectorAll(selector)
-				]) {
-					attachListeners(element);
+					for (const element of [
+						...addedNode.matches(selector) ? [addedNode] : [],
+						...addedNode.querySelectorAll(selector)
+					]) {
+						attachListeners(element);
+					}
 				}
 			}
 		});
 	};
 
-	const customEventListener = (name, configOrHandler) => {
-		let config = configOrHandler;
-
-		if (typeof configOrHandler === 'function') {
-			config = {
-				on: configOrHandler
-			};
-		}
-
-		customEventListeners[name] = config;
+	/** @type {customEventListener} */
+	const customEventListener = (eventName, configOrHandler) => {
+		customEventListeners[eventName] = typeof configOrHandler === 'function'
+			? { on: configOrHandler }
+			: configOrHandler;
 	};
 
+	/** @type {off} */
 	const off = (events, element, listener, options = {}) => {
 		const elements = selectorToIterable(element);
 
@@ -232,30 +240,14 @@ export default ($) => {
 		}
 	};
 
-	/**
-	 * Creates a custom event with the specified name, data, and options.
-	 *
-	 * @function
-	 * @param {string} eventName - The name of the custom event.
-	 * @param {*} [eventData] - Optional data to associate with the custom event.
-	 * @param {Options} [options] - Options for configuring the custom event.
-	 * @returns {CustomEvent} A newly created custom event.
-	 */
+	/** @type {customEvent} */
 	const customEvent = (eventName, eventData, options) => new window.CustomEvent(eventName, {
 		detail: eventData,
 		cancelable: options?.cancelable ?? false,
 		bubbles: options?.bubbles ?? false
 	});
 
-	/**
-	 * Dispatches a custom event with the specified name, data, and options.
-	 *
-	 * @function
-	 * @param {string} eventName - The name of the custom event to dispatch.
-	 * @param {*} [eventData] - Optional data to associate with the custom event.
-	 * @param {Options} [options] - Options for configuring the dispatch of the custom event.
-	 * @returns {boolean} Indicates whether the event dispatch was successful.
-	 */
+	/** @type {dispatch} */
 	const dispatch = (eventName, eventData, options) => {
 		const event = customEvent(eventName, eventData, options);
 
@@ -264,7 +256,7 @@ export default ($) => {
 			return false;
 		}
 
-		return (options?.target ?? $.root).dispatchEvent(event);
+		return (options?.target ?? root).dispatchEvent(event);
 	};
 
 	return {

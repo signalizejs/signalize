@@ -1,15 +1,16 @@
 /**
- * @returns {import('../Signalize').SignalizePlugin}
+ * Asynchronously traverses the DOM starting from a given root node and invokes a callback on each node.
+ *
+ * @callback traverseDom
+ * @param {Element} root
+ * @param {(node: Node) => Promise<false|void>} callback
+ * @param {number[]} [nodeTypes=[]]
+ * @returns {Promise<void>}
  */
+
+/** @type {import('../Signalize').SignalizeModule} */
 export default () => ({
-	/**
-	 * Asynchronously traverses the DOM starting from a given root node and invokes a callback on each node.
-	 *
-	 * @param {Node} root - The root node from which to start the traversal.
-	 * @param {(node: Node) => Promise<void>} callback - The asynchronous callback function to be invoked on each node.
-	 * @param {number[]} [nodeTypes=[]] - An optional array of node types to limit the traversal to.
-	 * @returns {Promise<void>} A promise that resolves when the traversal is complete.
-	 */
+	/** @type {traverseDom} */
 	traverseDom: async (root, callback, nodeTypes = []) => {
 		/**
 		 * @param {Node} node

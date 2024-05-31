@@ -1,33 +1,21 @@
-/* declare module '..' {
-	interface Signalize {
-		fetch: <T>(rresource: RequestInfo | URL, options?: RequestInit | undefined) => Promise<FetchReturn<T>>
-	}
-
-	interface CustomEventListeners {
-		'fetch:request:start': CustomEventListener
-		'fetch:request:success': CustomEventListener
-		'fetch:request:error': CustomEventListener
-		'fetch:request:end': CustomEventListener
-	}
-} */
-
 /**
  * Represents the result of a fetch operation, containing the response and any potential error.
  *
- * @interface FetchReturn
+ * @typedef FetchReturn
  * @property {Response | null} response - The response from the fetch operation (or null if an error occurred).
- * @property {any} error - Any error that occurred during the fetch operation.
+ * @property {Error|null} error - Any error that occurred during the fetch operation.
  */
 
 /**
  * Options for configuring a plugin related to fetch operations.
  *
- * @interface PluginOptions
+ * @typedef PluginOptions
  * @property {string} [requestedWithHeader] - The value for the 'Requested-With' header (optional).
  * @property {string} [acceptHeader] - The value for the 'Accept' header (optional).
  * @property {boolean} [forceMultipartFormData] - Indicates whether to force using multipart/form-data (optional).
  */
 
+/** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve }, pluginOptions) => {
 	const { dispatch } = await resolve('event');
 	/**
