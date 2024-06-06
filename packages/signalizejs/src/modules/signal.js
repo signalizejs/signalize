@@ -148,12 +148,16 @@ export default () => {
 
 			this.value = newValue;
 
-			clearTimeout(this.#setWatchersTimeout);
+			if (this.#setWatchersTimeout) {
+				this.#setWatchersTimeout = undefined;
+			}
 
 			this.#setWatchersTimeout = setTimeout(() => {
 				for (const watcher of this.watchers.afterSet) {
 					watcher({ newValue, oldValue });
 				}
+
+				this.#setWatchersTimeout = undefined;
 			});
 		};
 

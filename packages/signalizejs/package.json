@@ -60,8 +60,8 @@
 		"./event": {
 			"import": "./src/modules/event.js"
 		},
-		"./fetch": {
-			"import": "./src/modules/fetch.js"
+		"./ajax": {
+			"import": "./src/modules/ajax.js"
 		},
 		"./height": {
 			"import": "./src/modules/height.js"

@@ -76,6 +76,17 @@
  * @property {Record<string, CustomEventListener>} customEventListeners - Custom event listeners for the plugin.
  */
 
+/**
+ * Adds an event listener to the specified target or invokes a callback for the given events.
+ *
+ * @callback on
+ * @param {keyof CustomEventListeners} events - The name of the event or events to listen for.
+ * @param {EventTarget | CallableFunction} targetOrCallback - The target element, or a callback function if no target is specified.
+ * @param {CallableFunction | AddEventListenerOptions} [callbackOrOptions] - The callback function or options for the event listener.
+ * @param {AddEventListenerOptions} [options] - Options for the event listener.
+ * @returns {void}
+ */
+
 /** @type {import('../Signalize').SignalizeModule} */
 export default async ({ root, resolve }) => {
 	const { observeMutations } = await resolve('mutation-observer');
@@ -146,14 +157,7 @@ export default async ({ root, resolve }) => {
 	};
 
 	/**
-	 * Adds an event listener to the specified target or invokes a callback for the given events.
-	 *
-	 * @function
-	 * @param {keyof CustomEventListeners} events - The name of the event or events to listen for.
-	 * @param {EventTarget | CallableFunction} targetOrCallback - The target element, or a callback function if no target is specified.
-	 * @param {CallableFunction | AddEventListenerOptions} [callbackOrOptions] - The callback function or options for the event listener.
-	 * @param {AddEventListenerOptions} [options] - Options for the event listener.
-	 * @returns {void}
+	 * @type {on}
 	 */
 	const on = (events, targetOrCallback, callbackOrOptions, options) => {
 		/** @type {import('./select').Selectable} */
@@ -191,9 +195,13 @@ export default async ({ root, resolve }) => {
 			}
 		};
 
+		const offCallback = () => {
+			return off(events, targetOrSelector, listener, options)
+		};
+
 		if (typeof targetOrSelector !== 'string') {
 			attachListeners(targetOrSelector);
-			return;
+			return offCallback;
 		}
 
 		for (const target of selectorToIterable(targetOrSelector, options?.container)) {
@@ -215,6 +223,8 @@ export default async ({ root, resolve }) => {
 				}
 			}
 		});
+
+		return offCallback;
 	};
 
 	/** @type {customEventListener} */

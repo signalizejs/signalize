@@ -35,11 +35,11 @@ export default async ({ resolve, params }) => {
 			 * @returns {Promise<void>}
 			 */
 			const render = async () => {
-				let { result, signalsToWatch } = evaluate(attribute.value, scope, !inited);
+				let { result, detectedSignals } = evaluate(attribute.value, scope, !inited);
 				result = typeof result === 'function' ? result() : result;
 
 				if (!inited) {
-					ifSignalsToWatch = signalsToWatch;
+					ifSignalsToWatch = detectedSignals;
 					inited = true;
 
 					if (rendered) {

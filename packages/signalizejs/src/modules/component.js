@@ -11,7 +11,7 @@
 export default async ({ resolve, params }, config) => {
 	const { componentPrefix = '' } = config;
 	const { attributePrefix } = params;
-	const { signal, dispatch, scope } = await resolve('signal', 'event', 'scope', 'dash-case');
+	const { signal, dispatch, scope, dashCase } = await resolve('signal', 'event', 'scope', 'dash-case');
 
 	const cloakAttribute = `${attributePrefix}cloak`;
 
@@ -35,10 +35,11 @@ export default async ({ resolve, params }, config) => {
 		}
 
 		let componentName = `${componentPrefix}${name}`;
+		const definedElement = customElements.get(componentName);
 
-		if (customElements.get(componentName) !== undefined) {
+		if (definedElement !== undefined) {
 			console.warn(`Custom element "${componentName}" already defined. Skipping.`);
-			return;
+			return definedElement;
 		}
 
 		let propertyKeys = [];
@@ -58,6 +59,7 @@ export default async ({ resolve, params }, config) => {
 			propertyKeys = Object.keys(props);
 		}
 
+		/** @type {Record<string, string>} */
 		const attributesPropertiesMap = {};
 
 		for (const propertyName of propertyKeys) {
@@ -69,6 +71,12 @@ export default async ({ resolve, params }, config) => {
 		class Component extends HTMLElement {
 			/**
 			 * @readonly
+			 * @type {string[]}
+			 */
+			static observedAttributes = observableAttributes;
+
+			/**
+			 * @readonly
 			 * @type {Promise<void>}
 			 */
 			#constructPromise;
@@ -78,11 +86,8 @@ export default async ({ resolve, params }, config) => {
 			 * @type {import('./scope').Scope}
 			 */
 			#scope;
-			/** @readonly */
 			#connected = async () => {};
-			/** @readonly */
 			#disconnected = async () => {};
-			/** @readonly */
 			#adopted = async () => {};
 
 			constructor () {
@@ -121,16 +126,17 @@ export default async ({ resolve, params }, config) => {
 
 					for (const [key, value] of Object.entries(properties)) {
 						node.$props[key] = signal(value);
+						node.$data[key] = node.$props[key];
 					}
 				});
 
 				let dependencies = [];
 				for (const componentDependency of options?.components ?? []) {
 					if (!customElements.get(componentDependency)) {
-						dependencies = new Promise(async (resolve) => {
+						dependencies.push(new Promise(async (resolve) => {
 							await customElements.whenDefined(componentDependency)
 							resolve();
-						});
+						}));
 					}
 				}
 
@@ -140,7 +146,7 @@ export default async ({ resolve, params }, config) => {
 					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));
 				}
 
-				dispatch('component:beforeSetup', this.#scope, { target: this.#scope.$el, bubbles: true });
+				await dispatch('component:beforeSetup', this.#scope, { target: this.#scope.$el, bubbles: true });
 
 				if (setup !== undefined) {
 					const data = await setup?.call(undefined, {
@@ -192,13 +198,6 @@ root
 
 				this.#scope._setuped = true;
 				dispatch('component:setuped', this.#scope, { target: this.#scope.$el, bubbles: true });
-			}
-
-			/**
-			 * @returns {string[]}
-			 */
-			static get observedAttributes () {
-				return observableAttributes;
 			}
 
 			/**

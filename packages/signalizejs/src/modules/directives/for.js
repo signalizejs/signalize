@@ -62,11 +62,11 @@ export default async ({ resolve, params }) => {
 			 * @returns {Promise<void>}
 			 */
 			const process = async () => {
-				let { result, signalsToWatch } = evaluate(argumentsMatch[3], scope.$data, !inited);
+				let { result, detectedSignals } = evaluate(argumentsMatch[3], scope.$data, !inited);
 				result = typeof result === 'function' ? result() : result;
 
 				if (!inited) {
-					loopSignalsToWatch = signalsToWatch;
+					loopSignalsToWatch = detectedSignals;
 					inited = true;
 
 					if (prerendered) {

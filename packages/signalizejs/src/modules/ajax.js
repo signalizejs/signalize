@@ -12,7 +12,6 @@
  * @typedef PluginOptions
  * @property {string} [requestedWithHeader] - The value for the 'Requested-With' header (optional).
  * @property {string} [acceptHeader] - The value for the 'Accept' header (optional).
- * @property {boolean} [forceMultipartFormData] - Indicates whether to force using multipart/form-data (optional).
  */
 
 /** @type {import('../Signalize').SignalizeModule} */
@@ -26,7 +25,7 @@ export default async ({ resolve }, pluginOptions) => {
 	 * @param {RequestInit | undefined} [options={}] - Optional configuration for the fetch operation.
 	 * @returns {Promise<FetchReturn>} A promise that resolves to the result of the fetch operation.
 	 */
-	const fetch = async (resource, options = {}) => {
+	const ajax = async (resource, options = {}) => {
 		const customOptions = {...options };
 		/** @type {Response|null} */
 		let response = null;
@@ -60,7 +59,7 @@ export default async ({ resolve }, pluginOptions) => {
 
 			const request = fetch(resource, requestOptions);
 
-			dispatch('fetch:request:start', { resource, options: requestOptions, request });
+			dispatch('ajax:request:start', { resource, options: requestOptions, request });
 
 			response = await request;
 
@@ -72,15 +71,15 @@ export default async ({ resolve }, pluginOptions) => {
 				});
 			}
 
-			dispatch('fetch:request:success', { resource, options: requestOptions, request });
+			dispatch('ajax:request:success', { resource, options: requestOptions, request });
 		} catch (requestError) {
 			response = requestError.cause?.response ?? undefined;
 			error = requestError;
 			console.error(error);
-			dispatch('fetch:request:error', { resource, options: requestOptions, response, error });
+			dispatch('ajax:request:error', { resource, options: requestOptions, response, error });
 		}
 
-		dispatch('fetch:request:end', { resource, options: requestOptions, response, error });
+		dispatch('ajax:request:end', { resource, options: requestOptions, response, error });
 
 		return {
 			response,
@@ -88,5 +87,5 @@ export default async ({ resolve }, pluginOptions) => {
 		};
 	};
 
-	return { fetch };
+	return { ajax };
 };

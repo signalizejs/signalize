@@ -29,13 +29,6 @@
  * @param {MutationObserverInit} [options]
  */
 
-/**
- * Returns mutation observer of the Signalize instance root.
- *
- * @callback getRootMutationObserver
- * @returns {MutationObserver}
- */
-
 /** @type {import('../Signalize').SignalizeModule} */
 export default ($) => {
 	/** @type {MutationObserver} */
@@ -67,9 +60,12 @@ export default ($) => {
 					removedNodes.push(removedNode);
 				}
 			}
-			removedNodes.push(...mutation.removedNodes);
 
 			for (const addedNode of mutation.addedNodes) {
+				if (!isAllowedNode(addedNode.nodeType)) {
+					continue;
+				}
+
 				if (removedNodes.includes(addedNode)) {
 					movedNodes.push(addedNode);
 				} else {
@@ -125,12 +121,8 @@ export default ($) => {
 		return () => rootObserverListeners.delete(listener);
 	};
 
-	/** @type {getRootMutationObserver} */
-	const getRootMutationObserver = () => rootObserver;
-
 	return {
 		observeMutations,
-		createMutationObserver,
-		getRootMutationObserver
+		createMutationObserver
 	};
 };

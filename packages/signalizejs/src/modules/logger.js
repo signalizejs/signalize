@@ -26,7 +26,8 @@
 
 /** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve}, options) => {
-	const { fetch, dispatch } = await resolve('fetch', 'event');
+	const { ajax, dispatch } = await resolve('ajax', 'event');
+
 	/** @type {Levels[]} */
 	const enabledLevels = options?.levels ?? ['error'];
 
@@ -38,7 +39,7 @@ export default async ({ resolve}, options) => {
 		const body = { log, url: window.location.href };
 		const logStopped = !dispatch(`logger:${log.type}`, body);
 		if (!logStopped) {
-			void fetch(options.url, { body });
+			void ajax(options.url, { body });
 		}
 	};
 

@@ -33,6 +33,7 @@
  * @property {SignalizeParams} [params] - The separator used in attribute names for component customization.
  * @property {SignalizeGlobals} [globals] - Optional global settings for Signalize.
  * @property {SignalizeModules} [modules] - Optional array of modules to be applied to Signalize.
+ * @property {string} [instanceId] - The id of the Signalize instance for imports to prevent collisions.
  * @property {SignalizeModulesResolver<unknown>} [resolver] - Modules resolver
  */
 
@@ -42,7 +43,7 @@
  * @callback SignalizeModule
  * @param {Signalize} signalize - The Signalize instance to which the module will be applied.
  * @param {C} config - Module config. Direct from init function or from params.
- * @returns {F|Promise<F>}
+ * @returns {F|Promise<F>}attributePrefix
  */
 export class Signalize {
 	/**
@@ -54,13 +55,13 @@ export class Signalize {
 		'component',
 		'dash-case', 'dialog', 'dom-ready', 'directives',
 		'evaluate', 'event',
-		'fetch',
+		'ajax',
 		'height', 'hyperscript',
 		'intersection-observer', 'is-visible',
 		'mutation-observer',
 		'scope', 'signal', 'snippets', 'spa',
 		'task',
-		'traverser-dom',
+		'traverse-dom',
 		'viewport',
 	];
 	/**
@@ -77,6 +78,7 @@ export class Signalize {
 	 * @type {SignalizeModulesResolver<T>}
 	 */
 	#resolver = (moduleName) => import(moduleName);
+	#instanceId = 'signalizejs';
 	/** @type {Element|Document} */
 	root;
 	/** @type {SignalizeGlobals} */
@@ -101,13 +103,15 @@ export class Signalize {
 				if ('resolver' in options) {
 					this.#resolver = options.resolver;
 				}
-				this.globals = options.globals ?? {};
-				this.params = options.params ?? {};
+
+				this.#instanceId = options?.instanceId ?? this.#instanceId;
+				this.globals = options?.globals ?? this.globals;
+				this.params = options?.params ?? this.params;
 
 				this.root.__signalize = this;
 
 				if (options?.modules) {
-					await this.resolve(...options.modules);
+					await this.resolve(...options.modules, { waitOnInit: false });
 				}
 
 				this.#inited = true;
@@ -127,7 +131,9 @@ export class Signalize {
 	 * @returns {Promise<void>}
 	 */
 	inited = async (callback) => {
-		await this.#initPromise;
+		if (!this.#inited) {
+			await this.#initPromise;
+		}
 
 		if (callback) {
 			callback();
@@ -151,7 +157,7 @@ export class Signalize {
 			modules.pop();
 		}
 
-		if (resolveConfig.waitOnInit === true && !this.#inited) {
+		if (resolveConfig.waitOnInit === true) {
 			await this.inited();
 		}
 
@@ -177,18 +183,21 @@ export class Signalize {
 					moduleConfig = moduleToImport[1];
 				}
 			} else {
-				throw new Error(`The "import" method expects module to be a name or array with config [name, config]. Got ${JSON.stringify(moduleToImport)}.`);
+				throw new Error(`The "import" for "${moduleName}" method expects module to be a name or array with config [name, config]. Got ${JSON.stringify(moduleToImport)}.`);
 			}
 
-			if (Object.keys(moduleConfig).length === 0 && moduleName in this.params) {
-				moduleConfig = this.params[moduleName];
+			moduleConfig = {
+				...this.params[moduleName] ?? {},
+				...moduleConfig
 			}
 
 			if (this.#internalModules.includes(moduleName)) {
-				moduleName = `signalizejs/${moduleName}`;
+				moduleName = `${this.#instanceId}/${moduleName}`;
 			}
 
-			if (moduleName in this.#modules && Object.keys(moduleConfig).length === 0) {
+			const moduleConfigIsEmpty = Object.keys(moduleConfig).length === 0;
+
+			if (moduleName in this.#modules && moduleConfigIsEmpty) {
 				resolved = {
 					...resolved,
 					...this.#modules[moduleName]
@@ -198,7 +207,7 @@ export class Signalize {
 
 			let modulePromise;
 
-			const canBeCached = !(moduleName in this.#modules) && (moduleConfig === null || !this.#inited);
+			const canBeCached = !(moduleName in this.#modules) && (moduleConfigIsEmpty || !this.#inited);
 
 			if (canBeCached && !(moduleName in this.#currentlyResolvedModules)) {
 				// eslint-disable-next-line no-async-promise-executor
@@ -207,12 +216,12 @@ export class Signalize {
 						let moduleFunctionality;
 						if (moduleInitFunction === null) {
 							const module = await this.#resolver(moduleName);
-							moduleFunctionality = (module[moduleName] ?? module.default)(this, moduleConfig);
+							moduleFunctionality = await (module[moduleName] ?? module.default)(this, moduleConfig);
 						} else {
 							moduleFunctionality = await moduleInitFunction(this, moduleConfig);
 						}
 
-						if (!(moduleName in this.#modules) && (moduleConfig === null || !this.#inited)) {
+						if (!(moduleName in this.#modules) && (moduleConfigIsEmpty || !this.#inited)) {
 							this.#modules[moduleName] = moduleFunctionality;
 						}
 

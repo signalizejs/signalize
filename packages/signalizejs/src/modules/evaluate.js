@@ -184,7 +184,7 @@ export default async ({ resolve, globals }) => {
 	const parseCache = {};
 
 	const evaluate = (str, context = {}, trackSignals = false) => {
-		const signalsToWatch = new Set();
+		const detectedSignals = new Set();
 		const signalsUnwatchCallbacks = new Set();
 
 		const parse = (str) => {
@@ -265,7 +265,7 @@ export default async ({ resolve, globals }) => {
 
 				if (trackSignals && processedChunk instanceof Signal) {
 					const unwatch = processedChunk.watch(() => {
-						signalsToWatch.add(processedChunk);
+						detectedSignals.add(processedChunk);
 					}, { execution: 'onGet' });
 
 					signalsUnwatchCallbacks.add(unwatch);
@@ -355,10 +355,10 @@ export default async ({ resolve, globals }) => {
 		const result = compile([...allPrecedences], parse(str))[0];
 
 		if (result instanceof Signal) {
-			signalsToWatch.add(result);
+			detectedSignals.add(result);
 		}
 
-		return { result, signalsToWatch: [...signalsToWatch] };
+		return { result, detectedSignals: [...detectedSignals] };
 	};
 
 	return { evaluate };

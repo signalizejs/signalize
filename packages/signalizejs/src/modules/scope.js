@@ -17,7 +17,7 @@
 /** @type {import('../Signalize').SignalizeModule} */
 export default async ($) => {
 	const { params, resolve } = $;
-	const { on, observeMutations } = await resolve('event', 'mutation-observer');
+	const { observeMutations } = await resolve('mutation-observer');
 	const scopeKey = '__signalizeScope';
 	const refAttribute = `${params.attributePrefix}ref`;
 
@@ -29,7 +29,6 @@ export default async ($) => {
 		#cleanups = new Set();
 
 		/**
-		 * @readonly
 		 * @type {Record<string, any>}
 		 */
 		#data = {};
@@ -47,6 +46,11 @@ export default async ($) => {
 		$el;
 
 		/**
+		 * @type {Scope|null}
+		 */
+		$parentScope = null;
+
+		/**
 		 * @constructor
 		 * @param {Object} options - The options object for initializing the instance.
 		 * @param {Node} options.node - The Node associated with the instance.
@@ -58,32 +62,35 @@ export default async ($) => {
 
 		get $data() {
 			return new Proxy(this.#data, {
-				get: (target, key) => target[key],
+				/**
+				 * @param {Record<string, any>} target
+				 * @param {string} key
+				 */
+				get: (target, key) => {
+					return target[key] ?? this.$parentScope?.$data[key];
+				},
+				/**
+				 * @param {Record<string, any>} target
+				 * @param {string} key
+				 * @param {any} val
+				 */
 				set: (target, key, val) => {
 					target[key] = val;
-					this[key] = val;
 					return true;
 				},
+				/**
+				 * @param {Record<string, any>} target
+				 * @param {string} key
+				 */
 				deleteProperty: (target, key) => {
 					delete target[key];
-					delete this[key];
 					return true;
 				}
 			});
 		}
 
 		set $data (data) {
-			for (const key in this.$data) {
-				if (key in data) {
-					continue;
-				}
-
-				delete this.$data[key];
-			}
-
-			for (const key in data) {
-				this.$data[key] = data[key];
-			}
+			this.#data = data;
 		}
 
 		/**
