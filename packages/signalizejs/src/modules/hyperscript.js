@@ -23,7 +23,7 @@
 
 /** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve }) => {
-	const { bind, Signal } = await resolve('bind', 'Signal');
+	const { bind, Signal } = await resolve('bind', 'signal');
 
 	/** @type {h}  */
 	const h = (tagName, ...children) => {

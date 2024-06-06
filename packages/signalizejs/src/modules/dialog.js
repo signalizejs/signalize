@@ -32,7 +32,7 @@
 /** @type {import('../Signalize').SignalizeModule} */
 export default async ({ resolve, root, params }) => {
 	const { attributePrefix, attributeSeparator } = params;
-	const { dispatch, on, off } = await resolve('event');
+	const { dispatch, on, off } = await resolve('event', 'dom-ready');
 
 	const dialogAttribute = `${attributePrefix}dialog`;
 	const dialogModelessAttribute = `${dialogAttribute}${attributeSeparator}modeless`;
@@ -120,30 +120,30 @@ export default async ({ resolve, root, params }) => {
 		openDialog(id);
 	};
 
+
+	on('click', `[${dialogCloseButtonAttribute}]`, (/** @type {MouseEvent} */ event) => {
+		event.preventDefault();
+		const { target } = event;
+		const dialogId = target.getAttribute(dialogCloseButtonAttribute);
+		let dialog = dialogId.trim().length === 0 ? target.closest('dialog') : dialogId;
+
+		if (dialog !== null) {
+			closeDialog(dialog);
+		}
+	});
+
+	on('click', `[${dialogOpenButtonAttribute}]`, (/** @type {MouseEvent} */ event) => {
+		event.preventDefault();
+		const { target } = event;
+		const dialog = getDialog(target.getAttribute(dialogOpenButtonAttribute));
+
+		if (dialog != null) {
+			openDialog(dialog);
+		}
+	});
+
 	on('dom:ready', () => {
-		on('click', `[${dialogCloseButtonAttribute}]`, (/** @type {MouseEvent} */ event) => {
-			event.preventDefault();
-			const { target } = event;
-			const dialogId = target.getAttribute(dialogCloseButtonAttribute);
-			let dialog = dialogId.trim().length === 0 ? target.closest('dialog') : dialogId;
-
-			if (dialog !== null) {
-				closeDialog(dialog);
-			}
-		});
-
-		on('click', `[${dialogOpenButtonAttribute}]`, (/** @type {MouseEvent} */ event) => {
-			event.preventDefault();
-			const { target } = event;
-			const dialog = getDialog(target.getAttribute(dialogOpenButtonAttribute));
-
-			if (dialog != null) {
-				openDialog(dialog);
-			}
-		});
-
 		on('locationchange', window, openDialogByUrlHash);
-
 		openDialogByUrlHash();
 	});
 

@@ -348,7 +348,6 @@ export default async ($, pluginOptions) => {
 			return new RegExp(`(?::|${attributePrefix}bind${attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`);
 		},
 		callback: async ({ matches, scope, attribute }) => {
-			if (typeof scope.code() !== 'string' ) console.trace(scope.code);
 			const { $el } = scope;
 			const isShorthand = attribute.name.startsWith('{');
 			const attributeValue = isShorthand ? matches[3] : attribute.value;

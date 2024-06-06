@@ -167,9 +167,10 @@ export default async ({ resolve }) => {
 
 						if (attr in componentScope.$props) {
 							binded = true;
-							componentScope.$props[attr](valueToSet());
+							const valueToSetIsSignal = valueToSet instanceof Signal;
+							componentScope.$props[attr](valueToSetIsSignal ? valueToSet() : valueToSet);
 
-							if (valueToSet instanceof Signal && valueToSet !== componentScope.$props[attr]) {
+							if (valueToSetIsSignal && valueToSet !== componentScope.$props[attr]) {
 								componentScope.$props[attr].watch(({ newValue }) => {
 									valueToSet(newValue);
 								});
