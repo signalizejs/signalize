@@ -250,7 +250,6 @@ export default async ($, pluginOptions) => {
 				const isNestedWebComponent = isElementWebComponent(node);
 
 				if (!nodeIsRoot) {
-					console.log('attaching', node);
 					scope(node, (elScope) => {
 						elScope.$parentScope = rootScope;
 					});
@@ -260,7 +259,7 @@ export default async ($, pluginOptions) => {
 					element: node,
 					mode,
 					directives,
-					mergingDataFromParentComponent: nodeIsRoot ? {} : rootScope.$data
+					mergingDataFromParentComponent: nodeIsRoot || !isNestedWebComponent ? {} : rootScope.$data
 				});
 
 				// Detect, if node is custom element.
