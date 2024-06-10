@@ -91,7 +91,13 @@ export default async ({ resolve, params }) => {
 			const isArrayDestruct = argumentsMatch[0].trim().startsWith('[');
 
 			for (const index in currentState) {
-				const key = currentState[index].getAttribute('key');
+				const node = currentState[index];
+
+				if (!(node instanceof Element)) {
+					continue;
+				}
+
+				const key = node.getAttribute('key');
 
 				if (key) {
 					currentStateKeys[key] = currentState[index];

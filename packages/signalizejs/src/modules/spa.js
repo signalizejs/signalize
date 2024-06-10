@@ -305,7 +305,8 @@ export default async ({ params, resolve, root }, options) => {
 		const navigationConfig = {
 			url: state.url,
 			scrollX: state.scrollX,
-			scrollY: state.scrollY
+			scrollY: state.scrollY,
+			stateAction: 'replace'
 		};
 
 		dispatch('spa:popstate', navigationConfig);
