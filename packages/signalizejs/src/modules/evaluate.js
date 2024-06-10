@@ -22,6 +22,7 @@ export default async ({ resolve, globals }) => {
 	let operatorsKeys = [];
 
 	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
+	/** @type {Record<number, [...Array<string>, CallableFunction][]>} */
 	let precedenceOperatorsMap = {
 		18: [
 			// Groups
@@ -56,13 +57,19 @@ export default async ({ resolve, globals }) => {
 			// Function call
 			['(', ')', ({ index, a, chunks, compile, getGroupChunks }) => {
 				const args = getGroupChunks(chunks, index, '(', ')');
-				const spliceLength = args.length;
+				const argsLength = args.length;
 				const compiledArgs = compile([...allPrecedences], args) ?? [];
 				const applyArgs = Array.isArray(compiledArgs) ? compiledArgs : [compiledArgs];
+
+				if (typeof a !== 'function') {
+					throw new Error(`"${a}" is not a function.`);
+				}
+
 				let applyResult = a(...applyArgs.flat());
+
 				return [
 					typeof applyResult === 'string' ? `\`${applyResult}\`` : applyResult,
-					spliceLength + 2
+					argsLength + 2
 				];
 			}]
 		],
@@ -157,7 +164,9 @@ export default async ({ resolve, globals }) => {
 		]
 	};
 
+	/** @type {Record<number, string[]>} */
 	let precedenceOperatorKeysMap = {};
+	/** @type {Record<number, Record<string, CallableFunction>>} */
 	let precedenceOperatorCompilerMap = {};
 
 	for (const precedence in precedenceOperatorsMap) {
@@ -176,51 +185,47 @@ export default async ({ resolve, globals }) => {
 
 	operatorsKeys = Object.values(precedenceOperatorKeysMap).flat();
 	operatorsRe = new RegExp(`^(${operatorsKeys
-		.map((item) => item.replace(/[|+\\/?*^.,()[\]]/g, '\\$&'))
+		.map((item) => {
+			item = item.replace(/[|+\\/?*^.,(){}$[\]]/g, '\\$&');
+
+			// When the operator is a word like "in", wrap it into the full word match to prevent matching
+			// it in words like "increment".
+			if (/[\w_]+/.test(item)) {
+				item = `\b${item}\b`;
+			}
+
+			return item;
+		})
 		.sort((a, b) => b.length - a.length)
 		.join('|')})`
 	);
+
 	const allPrecedences = Object.keys(precedenceOperatorsMap).sort((a, b) => b - a);
-	const parseCache = {};
+	const tokenizeCache = {};
 
 	const evaluate = (str, context = {}, trackSignals = false) => {
 		const detectedSignals = new Set();
 		const signalsUnwatchCallbacks = new Set();
 
-		const parse = (str) => {
+		const tokenize = (str) => {
 			const originalString = str;
 
-			if (originalString in parseCache) {
-				return [...parseCache[originalString]];
+			if (originalString in tokenizeCache) {
+				return [...tokenizeCache[originalString]];
 			}
 
 			const chunks = [];
-			let inWord = false;
 			let inString = false;
 			let tokensQueue = '';
 			let token = str[0];
 
 			while (token !== undefined) {
-				if (!inWord) {
-					inWord = tokensQueue.length === 0 && /\w/.test(token);
-				} else if (/\W/.test(token) && token !== '_') {
-					inWord = false;
-				}
-
 				if (quotes.includes(token)) {
 					inString = !inString;
 				}
 
-				inWord = false;
-				let operatorMatch = inWord || inString ? null : str.match(operatorsRe);
-				let operatorDetected = !inWord && operatorMatch !== null;
-
-				if (operatorMatch && (
-					(/^\w/.test(operatorMatch[0]) && /\w$/.test(tokensQueue))
-					|| (/^\w/.test(operatorMatch[0]) && operatorMatch[0] !== operatorMatch.input)
-				)) {
-					operatorDetected = false;
-				}
+				let operatorMatch = inString ? null : str.match(operatorsRe);
+				let operatorDetected = operatorMatch !== null;
 
 				str = str.slice(operatorDetected ? operatorMatch[0].length : 1);
 				if (operatorDetected) {
@@ -241,7 +246,7 @@ export default async ({ resolve, globals }) => {
 				token = str[0];
 			}
 
-			parseCache[originalString] = chunks;
+			tokenizeCache[originalString] = chunks;
 			return [...chunks];
 		};
 
@@ -287,6 +292,15 @@ export default async ({ resolve, globals }) => {
 			let startIndex = 0;
 			const chunksLength = chunks.length;
 
+			/**
+			 * TODO
+			 * There will have to be an array as an argument, that will tell the parser, that the token is actually nesting token.
+			 * For example. Open token for template literals is "${" and closing "}".
+			 * But if there is something lik ${ {} } in the code, then the "{" will not be matched
+			 * as an openning/nesting bracket and the "}" will be incorrectly matched as a closing bracket
+			 * of the current template literal.
+			 *
+			 */
 			const getGroupChunks = (chunks, cursorIndex, openToken, closeToken) => {
 				const groupChunks = [];
 				let closingBracesRequired = 1;
@@ -319,7 +333,13 @@ export default async ({ resolve, globals }) => {
 				const token = chunks[startIndex];
 
 				if (operators.includes(token)) {
-					const result = precedenceOperatorCompilerMap[precedence][token]({
+					const compiler = precedenceOperatorCompilerMap[precedence]?.[token];
+
+					if (compiler === undefined) {
+						throw new Error(`Unexpected token "${token}" in ${chunks.join(' ')}`);
+					}
+
+					const result = compiler({
 						a: prepareChunk(chunks[startIndex - 1]),
 						b: prepareChunk(chunks[startIndex + 1]),
 						compile,
@@ -335,9 +355,11 @@ export default async ({ resolve, globals }) => {
 					} else {
 						let resultPosition = result[2] ?? undefined;
 						const spliceLength = result[1] ?? 2;
+
 						if (resultPosition === undefined) {
 							resultPosition = chunks[startIndex - 1] === undefined ? startIndex : startIndex - 1;
 						}
+
 						chunks[resultPosition] = result[0];
 						chunks.splice(resultPosition + 1, spliceLength);
 					}
@@ -352,7 +374,8 @@ export default async ({ resolve, globals }) => {
 		};
 
 		// There is always only one at the end of the evaluation
-		const result = compile([...allPrecedences], parse(str))[0];
+		const tokens = tokenize(str);
+		const result = compile([...allPrecedences], tokens)[0];
 
 		if (result instanceof Signal) {
 			detectedSignals.add(result);

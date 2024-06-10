@@ -53,7 +53,7 @@ export class Signalize {
 	#internalModules = [
 		'bind',
 		'component',
-		'dash-case', 'dialog', 'dom-ready', 'directives',
+		'dash-case', 'dialog', 'dom-ready', 'directives', 'directives/for', 'directives/if',
 		'evaluate', 'event',
 		'ajax',
 		'height', 'hyperscript',

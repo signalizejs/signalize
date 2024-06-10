@@ -104,14 +104,7 @@ export default async ($, pluginOptions) => {
 	 */
 	const processElement = async (options) => {
 		const element = options.element;
-		const mode = options.mode ?? 'init';
-		const canExecute = ['reinit', 'init'].includes(mode);
-		const canCompile = mode === 'init';
 		let elementScope = scope(element);
-
-		if (mode === 'reinit') {
-			elementScope.$cleanup();
-		}
 
 		const compiledDirectives = elementScope?.$directives ?? new Map();
 
@@ -128,7 +121,7 @@ export default async ($, pluginOptions) => {
 		directivesQueue = directivesQueue.filter((item) => !compiledDirectives.has(item));
 		let countdown = element.attributes.length;
 
-		if (canCompile) {
+		if (elementScope.$directives === undefined) {
 			while (directivesQueue.length && countdown) {
 				const directiveName = directivesQueue.shift();
 				const matcher = directivesRegister[directiveName]?.matcher;
@@ -166,15 +159,13 @@ export default async ($, pluginOptions) => {
 						[
 							...elementScope.$directives.get(directiveName) ?? [],
 							({ elementScope, overridingData }) => {
-								const dataScope = {
-									...elementScope.$parentScope?.$data,
+								elementScope.$data = {
 									...elementScope.$data,
 									...overridingData ?? {},
-									...elementScope,
 								};
 
 								let result = directivesRegister[directiveName].callback({
-									scope: dataScope,
+									scope: elementScope,
 									matches,
 									attribute
 								});
@@ -203,7 +194,7 @@ export default async ($, pluginOptions) => {
 			await Promise.all(promises);
 		};
 
-		while (canExecute && directivesToRun.length > 0) {
+		while (directivesToRun.length) {
 			await runDirective(directivesToRun.shift());
 		}
 
@@ -238,7 +229,6 @@ export default async ($, pluginOptions) => {
 			root,
 			async (node) => {
 				const nodeIsRoot = node === root;
-
 				if (node?.closest(`[${ignoreAttribute}]`)) {
 					return false;
 				}
@@ -259,7 +249,7 @@ export default async ($, pluginOptions) => {
 					element: node,
 					mode,
 					directives,
-					mergingDataFromParentComponent: nodeIsRoot || !isNestedWebComponent ? {} : rootScope.$data
+					mergingDataFromParentComponent: nodeIsRoot ? {} : rootScope.$data
 				});
 
 				// Detect, if node is custom element.
@@ -345,7 +335,7 @@ export default async ($, pluginOptions) => {
 				return;
 			}
 
-			return new RegExp(`(?::|${attributePrefix}bind${attributeSeparator})(\\S+)|(\\{([^{}]+)\\})`);
+			return new RegExp(`(?::|${attributePrefix}bind${attributeSeparator})([\\S-]+)|(\\{([^{}]+)\\})`);
 		},
 		callback: async ({ matches, scope, attribute }) => {
 			const { $el } = scope;
@@ -355,7 +345,6 @@ export default async ($, pluginOptions) => {
 			let trackedSignals = [];
 			const get = (trackSignals) => {
 				const { result, detectedSignals } = evaluate(attributeValue, scope, trackSignals);
-
 				if (trackSignals) {
 					trackedSignals = detectedSignals;
 				}
@@ -386,6 +375,34 @@ export default async ($, pluginOptions) => {
 					result(event);
 				}
 			});
+		}
+	});
+
+	directive('for', {
+		matcher: ({ element }) => {
+			if (element.tagName.toLocaleLowerCase() !== 'template') {
+				return;
+			}
+
+			return new RegExp(`(?::|${attributePrefix})for`);
+		},
+		callback: async (data) => {
+			const { forDirective } = await resolve('directives/for');
+			await forDirective(data);
+		}
+	});
+
+	directive('if', {
+		matcher: ({ element }) => {
+			if (element.tagName.toLowerCase() !== 'template') {
+				return;
+			}
+
+			return new RegExp(`(?::|${attributePrefix})if`);
+		},
+		callback: async (data) => {
+			const { ifDirective } = await resolve('directives/if');
+			await ifDirective(data);
 		}
 	});
 

@@ -36,7 +36,7 @@ export default defineConfig({
 
 	use: {
 		trace: 'on-first-retry',
-		baseURL: `${devServerUrl}/${packagesDir}/`
+		baseURL: `${devServerUrl}/`
 	},
 
 	projects,

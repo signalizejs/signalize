@@ -149,6 +149,7 @@ export default () => {
 			this.value = newValue;
 
 			if (this.#setWatchersTimeout) {
+				clearTimeout(this.#setWatchersTimeout);
 				this.#setWatchersTimeout = undefined;
 			}
 

@@ -76,6 +76,7 @@ export default async ($) => {
 				 */
 				set: (target, key, val) => {
 					target[key] = val;
+					this[key] = val;
 					return true;
 				},
 				/**
@@ -84,13 +85,24 @@ export default async ($) => {
 				 */
 				deleteProperty: (target, key) => {
 					delete target[key];
+					delete this[key];
 					return true;
 				}
 			});
 		}
 
 		set $data (data) {
-			this.#data = data;
+			for (const key in this.$data) {
+				if (key in data) {
+					continue;
+				}
+
+				delete this.$data[key];
+			}
+
+			for (const key in data) {
+				this.$data[key] = data[key];
+			}
 		}
 
 		/**
