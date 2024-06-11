@@ -34,7 +34,7 @@ export default async ({ resolve, params }, config) => {
 			setup = options?.setup;
 		}
 
-		let componentName = `${componentPrefix}${name}`;
+		const componentName = `${componentPrefix}${name}`;
 		const definedElement = customElements.get(componentName);
 
 		if (definedElement !== undefined) {
@@ -130,7 +130,7 @@ export default async ({ resolve, params }, config) => {
 					}
 				});
 
-				let dependencies = [];
+				const dependencies = [];
 				for (const componentDependency of options?.components ?? []) {
 					if (!customElements.get(componentDependency)) {
 						dependencies.push(new Promise(async (resolve) => {

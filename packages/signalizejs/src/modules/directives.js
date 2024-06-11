@@ -80,7 +80,6 @@
 /** @type {import('../Signalize').SignalizeModule} */
 export default async ($, pluginOptions) => {
 	const { resolve, params } = $;
-	const signalizeRoot = $.root;
 	const { attributePrefix, attributeSeparator } = params;
 	const { on, scope, traverseDom, evaluate, bind, Signal } = await resolve(
 		'bind', 'event', 'evaluate', 'scope', 'signal', 'traverse-dom'
@@ -93,7 +92,6 @@ export default async ($, pluginOptions) => {
 	const orderAttribute = `${directivesAttribute}${attributeSeparator}order`;
 	const renderedTemplateStartComment = pluginOptions?.prerenderedBlockStart ?? 'prerendered';
 	const renderedTemplateEndComment = pluginOptions?.prerenderedBlockEnd ?? '/prerendered';
-	let inited = false;
 
 	/**
 	 *
@@ -157,7 +155,7 @@ export default async ($, pluginOptions) => {
 						[
 							...elementScope.$directives.get(directiveName) ?? [],
 							({ elementScope }) => {
-								let result = directivesRegister[directiveName].callback({
+								const result = directivesRegister[directiveName].callback({
 									scope: elementScope,
 									matches,
 									attribute
@@ -266,10 +264,6 @@ export default async ($, pluginOptions) => {
 			callback,
 			matcher: typeof matcher === 'function' ? matcher : () => matcher
 		};
-
-		if (inited) {
-			void processDirectives({ root: signalizeRoot, directives: [name] });
-		}
 	};
 
 	/**

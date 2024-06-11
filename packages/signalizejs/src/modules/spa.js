@@ -351,7 +351,7 @@ export default async ({ params, resolve, root }, options) => {
 		}
 
 		const hrefUrl = createUrl(`${window.location.origin}${url}`);
-		let currentLocation = getCurrentLocation();
+		const currentLocation = getCurrentLocation();
 
 		if (hrefUrl === null || hrefUrl.toString() === currentLocation.toString()) {
 			event.preventDefault();

@@ -45,7 +45,7 @@ export default async ({ resolve, root, params }) => {
 	 */
 	const closeOnBackDropClickListener = (event) => {
 		const { target, clientX, clientY } = event;
-		let rect = target?.getBoundingClientRect();
+		const rect = target?.getBoundingClientRect();
 
 		if (target && (rect.left > clientX ||
 			rect.right < clientX ||
@@ -125,7 +125,7 @@ export default async ({ resolve, root, params }) => {
 		event.preventDefault();
 		const { target } = event;
 		const dialogId = target.getAttribute(dialogCloseButtonAttribute);
-		let dialog = dialogId.trim().length === 0 ? target.closest('dialog') : dialogId;
+		const dialog = dialogId.trim().length === 0 ? target.closest('dialog') : dialogId;
 
 		if (dialog !== null) {
 			closeDialog(dialog);

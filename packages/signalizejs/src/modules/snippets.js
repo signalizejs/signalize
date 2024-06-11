@@ -52,7 +52,7 @@ export default async ({ params, resolve, root }) => {
 					continue;
 				}
 
-				let snippetConfig = {
+				const snippetConfig = {
 					snippetId,
 					snippetActions: newSnippet.getAttribute(`${snippetActionAttribute}`)?.split(' ') ?? ['replace'],
 					newSnippet,

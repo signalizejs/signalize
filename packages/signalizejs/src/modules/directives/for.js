@@ -112,7 +112,7 @@ export default async ({ resolve, params }) => {
 			 */
 			const iterate = (context, counter) => {
 				const iterator = signal({
-					count: counter,
+					counter,
 					first: counter === 0,
 					last: counter === totalCount - 1,
 					odd: counter % 2 !== 0,

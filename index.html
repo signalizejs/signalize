@@ -7,19 +7,11 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta snippet="spa-cache-control" name="spa-cache-control" content="cache">
 	<title snippet="title">Index page</title>
-</head>
-
-<body>
-	<style>
-		[cloak] {
-			visibility: hidden;
-		}
-	</style>
-
 	<script type="importmap">
 		{
 			"imports": {
 				"signalizejs": "/packages/signalizejs/src/Signalize.js",
+				"signalizejs/ajax": "/packages/signalizejs/src/modules/ajax.js",
 				"signalizejs/bind": "/packages/signalizejs/src/modules/bind.js",
 				"signalizejs/component": "/packages/signalizejs/src/modules/component.js",
 				"signalizejs/dash-case": "/packages/signalizejs/src/modules/dash-case.js",
@@ -47,27 +39,19 @@
 			}
 		}
 	</script>
-
 	<script type="module">
 		import Signalize from 'signalizejs';
-		/* import Evaluate from 'signalizejs/evaluator';
-		import TraverseDom from 'signalizejs/traverse-dom';
-		import Directives from 'signalizejs/directives'; */
-
-		/* const { component, bind, signal, Signal } = new Signalize({ plugins: [
-			Evaluate(),
-			TraverseDom(),
-			Directives()
-		] }); */
-
-		const { resolve } = new Signalize();
-		const { on } = await resolve('event');
-
-		on('dom:ready', () => {
-			alert('fuck yeah');
-		});
 
 	</script>
+
+</head>
+
+<body>
+	<style>
+		[cloak] {
+			visibility: hidden;
+		}
+	</style>
 </body>
 
 </html>

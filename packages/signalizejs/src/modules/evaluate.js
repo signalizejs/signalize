@@ -23,7 +23,7 @@ export default async ({ resolve, globals }) => {
 
 	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
 	/** @type {Record<number, [...Array<string>, CallableFunction][]>} */
-	let precedenceOperatorsMap = {
+	const precedenceOperatorsMap = {
 		18: [
 			// Groups
 			['(', ')', ({ a, chunks, getGroupChunks, index, compile }) => {
@@ -65,7 +65,7 @@ export default async ({ resolve, globals }) => {
 					throw new Error(`"${a}" is not a function.`);
 				}
 
-				let applyResult = a(...applyArgs.flat());
+				const applyResult = a(...applyArgs.flat());
 
 				return [
 					typeof applyResult === 'string' ? `\`${applyResult}\`` : applyResult,
@@ -128,8 +128,8 @@ export default async ({ resolve, globals }) => {
 		],
 		2: [
 			['?', ':', ({ a, chunks, prepareChunk }) => {
-				let b = [];
-				let c = [];
+				const b = [];
+				const c = [];
 				let startIndex = 1;
 				let colonFound = false;
 				const chunksLength = chunks.length - 1;
@@ -165,9 +165,9 @@ export default async ({ resolve, globals }) => {
 	};
 
 	/** @type {Record<number, string[]>} */
-	let precedenceOperatorKeysMap = {};
+	const precedenceOperatorKeysMap = {};
 	/** @type {Record<number, Record<string, CallableFunction>>} */
-	let precedenceOperatorCompilerMap = {};
+	const precedenceOperatorCompilerMap = {};
 
 	for (const precedence in precedenceOperatorsMap) {
 		for (const operatorDefinition of precedenceOperatorsMap[precedence]) {
@@ -224,8 +224,8 @@ export default async ({ resolve, globals }) => {
 					inString = !inString;
 				}
 
-				let operatorMatch = inString ? null : str.match(operatorsRe);
-				let operatorDetected = operatorMatch !== null;
+				const operatorMatch = inString ? null : str.match(operatorsRe);
+				const operatorDetected = operatorMatch !== null;
 
 				str = str.slice(operatorDetected ? operatorMatch[0].length : 1);
 				if (operatorDetected) {
