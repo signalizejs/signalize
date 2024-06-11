@@ -51,11 +51,11 @@ export class Signalize {
 	 * so they can be resolved without full package name like signalizejs/something
 	 */
 	#internalModules = [
+		'ajax',
 		'bind',
 		'component',
 		'dash-case', 'dialog', 'dom-ready', 'directives', 'directives/for', 'directives/if',
 		'evaluate', 'event',
-		'ajax',
 		'height', 'hyperscript',
 		'intersection-observer', 'is-visible',
 		'mutation-observer',
