@@ -66,7 +66,7 @@
 
 /** @type {import('../Signalize').SignalizeModule} */
 export default async ({ params, resolve, root }, options) => {
-	const { dispatch, ajax, redrawSnippet, on, customEventListener, customEvent } = await resolve('event', 'ajax', 'snippets');
+	const { dispatch, ajax, redrawSnippet, on, customEventListener, customEvent } = await resolve('dom-ready', 'event', 'ajax', 'snippets');
 	const spaAttribute = `${params.attributePrefix}spa`;
 	const spaUrlAttribute = `${spaAttribute}${params.attributeSeparator}url`;
 	const spaIgnoreAttribute = `${spaAttribute}${params.attributeSeparator}ignore`;
@@ -400,7 +400,7 @@ export default async ({ params, resolve, root }, options) => {
 		};
 
 		window.history.replaceState(currentState, '', window.location.href);
-	}
+	};
 
 	on('dom:ready', () => {
 		updateCurrentState();

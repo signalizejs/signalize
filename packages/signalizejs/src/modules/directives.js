@@ -188,7 +188,7 @@ export default async ($, pluginOptions) => {
 			const promises = [];
 
 			for (const directiveFunction of elementScope.$directives.get(name)) {
-				promises.push(directiveFunction({ elementScope, overridingData: options.mergingDataFromParentComponent }));
+				promises.push(directiveFunction({ elementScope, overridingData: options.overridingData }));
 			}
 
 			await Promise.all(promises);
@@ -249,7 +249,7 @@ export default async ($, pluginOptions) => {
 					element: node,
 					mode,
 					directives,
-					mergingDataFromParentComponent: nodeIsRoot ? {} : rootScope.$data
+					overridingData: nodeIsRoot ? {} : rootScope.$data
 				});
 
 				// Detect, if node is custom element.

@@ -134,7 +134,7 @@ export default async ({ resolve, params }, config) => {
 				for (const componentDependency of options?.components ?? []) {
 					if (!customElements.get(componentDependency)) {
 						dependencies.push(new Promise(async (resolve) => {
-							await customElements.whenDefined(componentDependency)
+							await customElements.whenDefined(componentDependency);
 							resolve();
 						}));
 					}

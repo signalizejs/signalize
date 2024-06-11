@@ -46,7 +46,7 @@ export default async ({ resolve }) => {
 		let componentScope = null;
 		const tagName = element.tagName.toLowerCase();
 
-		const bind = () => {
+		const bindAttributes = () => {
 			/** @type {CallableFunction[]} */
 			const unwatchSignalCallbacks = [];
 			/** @type {CallableFunction[]} */
@@ -218,19 +218,16 @@ export default async ({ resolve }) => {
 			});
 		};
 
-		if (tagName.split('-').length > 1) {
-			componentScope = scope(element);
-			if (customElements.get(tagName) === undefined) {
-				on('component:beforeSetup', ({ target }) => {
-					if (target === element) {
-						bind();
-					}
-				});
-				return;
-			}
+		if (tagName.split('-').length > 1 && customElements.get(tagName) === undefined) {
+			on('component:beforeSetup', ({ target }) => {
+				if (target === element) {
+					bindAttributes();
+				}
+			});
+			return;
 		}
 
-		bind();
+		bindAttributes();
 	};
 
 	return { bind };
