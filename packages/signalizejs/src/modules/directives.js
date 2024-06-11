@@ -42,7 +42,6 @@
  *
  * @typedef ProcessElementOptions
  * @property {Element} element - The HTML element to be processed.
- * @property {'init' | 'reinit'} mode - The mode of processing (init or reinit).
  */
 
 /**
@@ -67,7 +66,6 @@
  * @typedef ProcessDirectiveOptions
  * @property {Element} root - The root element of the DOM tree to process.
  * @property {string[]} [directives] - An array of directive names to process (optional).
- * @property {'init' | 'reinit'} [mode] - The mode of processing (init or reinit, optional).
  * @property {boolean} [onlyRoot] - Indicates whether to process directives only within the root element (optional).
  */
 
@@ -84,8 +82,8 @@ export default async ($, pluginOptions) => {
 	const { resolve, params } = $;
 	const signalizeRoot = $.root;
 	const { attributePrefix, attributeSeparator } = params;
-	const { on, scope, traverseDom, evaluate, bind } = await resolve(
-		'event', 'scope', 'traverse-dom', 'evaluate', 'bind'
+	const { on, scope, traverseDom, evaluate, bind, Signal } = await resolve(
+		'bind', 'event', 'evaluate', 'scope', 'signal', 'traverse-dom'
 	);
 
 	/** @type {Record<string, RegisteredDirective} */
@@ -158,12 +156,7 @@ export default async ($, pluginOptions) => {
 						directiveName,
 						[
 							...elementScope.$directives.get(directiveName) ?? [],
-							({ elementScope, overridingData }) => {
-								elementScope.$data = {
-									...elementScope.$data,
-									...overridingData ?? {},
-								};
-
+							({ elementScope }) => {
 								let result = directivesRegister[directiveName].callback({
 									scope: elementScope,
 									matches,
@@ -188,7 +181,7 @@ export default async ($, pluginOptions) => {
 			const promises = [];
 
 			for (const directiveFunction of elementScope.$directives.get(name)) {
-				promises.push(directiveFunction({ elementScope, overridingData: options.overridingData }));
+				promises.push(directiveFunction({ elementScope }));
 			}
 
 			await Promise.all(promises);
@@ -215,13 +208,8 @@ export default async ($, pluginOptions) => {
 	 * @returns {Promise<void>} A promise that resolves once the directive processing is complete.
 	 */
 	const processDirectives = async (options = {}) => {
-		let { root, directives, mode = 'init', onlyRoot } = options;
+		let { root, directives } = options;
 		directives = directives ?? Object.keys(directivesRegister);
-
-		if (onlyRoot === true) {
-			await processElement({ element: root, mode, directives });
-			return;
-		}
 
 		const rootScope = scope(root);
 
@@ -233,23 +221,22 @@ export default async ($, pluginOptions) => {
 					return false;
 				}
 
-				/* if (scope(node)?.$directives !== undefined && mode !== 'reinit') {
-					return false;
-				} */
-
 				const isNestedWebComponent = isElementWebComponent(node);
 
 				if (!nodeIsRoot) {
 					scope(node, (elScope) => {
-						elScope.$parentScope = rootScope;
+						if (isNestedWebComponent) {
+							elScope._parentComponent = root;
+						} else {
+							elScope.$parentScope = rootScope;
+							elScope.$data = rootScope.$data;
+						}
 					});
 				}
 
 				await processElement({
 					element: node,
-					mode,
 					directives,
-					overridingData: nodeIsRoot ? {} : rootScope.$data
 				});
 
 				// Detect, if node is custom element.
@@ -337,14 +324,25 @@ export default async ($, pluginOptions) => {
 
 			return new RegExp(`(?::|${attributePrefix}bind${attributeSeparator})([\\S-]+)|(\\{([^{}]+)\\})`);
 		},
-		callback: async ({ matches, scope, attribute }) => {
-			const { $el } = scope;
+		callback: async (data) => {
+			const { matches, attribute } = data;
+			const elementScope = data.scope;
+			const { $el } = elementScope;
 			const isShorthand = attribute.name.startsWith('{');
 			const attributeValue = isShorthand ? matches[3] : attribute.value;
 			const attributeName = isShorthand ? matches[3] : matches[1];
+			const isProperty = elementScope?.$props?.[attributeName] !== undefined;
 			let trackedSignals = [];
 			const get = (trackSignals) => {
-				const { result, detectedSignals } = evaluate(attributeValue, scope, trackSignals);
+				const { result, detectedSignals } = evaluate(
+					attributeValue,
+					{
+						$el,
+						...isProperty && elementScope._parentComponent !== undefined ? scope(elementScope._parentComponent) : elementScope
+					},
+					trackSignals
+				);
+
 				if (trackSignals) {
 					trackedSignals = detectedSignals;
 				}
@@ -354,11 +352,50 @@ export default async ($, pluginOptions) => {
 
 			const value = get(true);
 
-			bind($el, {
-				[attributeName]: [
-					...trackedSignals,
-					{ get, value, set: (value) => trackedSignals[trackedSignals.length - 1](value) ?? null }
-				]
+			if (elementScope?.$props?.[attributeName] === undefined) {
+				bind($el, {
+					[attributeName]: [
+						...trackedSignals,
+						{
+							get, value,
+							set: (value) => trackedSignals[trackedSignals.length - 1](value) ?? null
+						}
+					]
+				});
+				return;
+			}
+
+			if (elementScope._parentComponent === undefined) {
+				return;
+			}
+
+			const valueIsSignal = value instanceof Signal;
+
+			if (!valueIsSignal) {
+				elementScope?.$props?.[attributeName](value);
+				return;
+			}
+
+			let setting = false;
+
+			value.watch(({ newValue }) => {
+				if (setting) {
+					return;
+				}
+
+				setting = true;
+				elementScope?.$props?.[attributeName](newValue);
+				setting = false;
+			}, { immediate: true });
+
+			elementScope?.$props?.[attributeName].watch(({ newValue }) => {
+				if (setting) {
+					return;
+				}
+
+				setting = true;
+				value(newValue);
+				setting = false;
 			});
 		}
 	});

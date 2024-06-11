@@ -42,10 +42,6 @@ export default async ({ resolve }) => {
 	 * @type {bind}
 	 */
 	const bind = (element, attributes) => {
-		/** @type {import('./scope.js').Scope} */
-		let componentScope = null;
-		const tagName = element.tagName.toLowerCase();
-
 		const bindAttributes = () => {
 			/** @type {CallableFunction[]} */
 			const unwatchSignalCallbacks = [];
@@ -161,32 +157,7 @@ export default async ({ resolve }) => {
 
 				if (getListener !== null || initValue !== undefined) {
 					const valueToSet = initValue !== undefined ? initValue : getListener();
-
-					if (componentScope) {
-						let binded = false;
-
-						if (attr in componentScope.$props) {
-							binded = true;
-							const valueToSetIsSignal = valueToSet instanceof Signal;
-							componentScope.$props[attr](valueToSetIsSignal ? valueToSet() : valueToSet);
-
-							if (valueToSetIsSignal && valueToSet !== componentScope.$props[attr]) {
-								componentScope.$props[attr].watch(({ newValue }) => {
-									valueToSet(newValue);
-								});
-							}
-						} else if (attr in componentScope.$propsAliases) {
-							componentScope.$props[componentScope.$propsAliases[attr]](valueToSet);
-							binded = true;
-						}
-
-						if (binded) {
-							bindedProps.push(attr);
-							continue;
-						}
-					} else {
-						setAttribute(attr, valueToSet);
-					}
+					setAttribute(attr, valueToSet);
 				}
 
 				for (const signalToWatch of signalsToWatch) {
@@ -217,15 +188,6 @@ export default async ({ resolve }) => {
 				});
 			});
 		};
-
-		if (tagName.split('-').length > 1 && customElements.get(tagName) === undefined) {
-			on('component:beforeSetup', ({ target }) => {
-				if (target === element) {
-					bindAttributes();
-				}
-			});
-			return;
-		}
 
 		bindAttributes();
 	};

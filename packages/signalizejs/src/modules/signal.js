@@ -90,10 +90,6 @@ export default () => {
 			onGet: new Set()
 		};
 
-		/** @type {number|undefined} */
-		#setWatchersTimeout;
-
-
 		constructor(defaultValue) {
 			super();
 			this.value = defaultValue;
@@ -148,18 +144,9 @@ export default () => {
 
 			this.value = newValue;
 
-			if (this.#setWatchersTimeout) {
-				clearTimeout(this.#setWatchersTimeout);
-				this.#setWatchersTimeout = undefined;
+			for (const watcher of this.watchers.afterSet) {
+				watcher({ newValue, oldValue });
 			}
-
-			this.#setWatchersTimeout = setTimeout(() => {
-				for (const watcher of this.watchers.afterSet) {
-					watcher({ newValue, oldValue });
-				}
-
-				this.#setWatchersTimeout = undefined;
-			});
 		};
 
 		/**
