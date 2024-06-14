@@ -1,10 +1,5 @@
 
-/**
- * @callback isDomReady
- * @returns {boolean}
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ resolve, root }) => {
 	const { customEventListener } = await resolve('event', { waitOnInit: false });
 
@@ -23,7 +18,7 @@ export default async ({ resolve, root }) => {
 		}
 	};
 
-	/** @type {isDomReady} */
+	/** @type {import('../../types/modules/dom-ready').isDomReady} */
 	const isDomReady = () => {
 		const documentElement = root instanceof Document ? root : root?.ownerDocument;
 		return documentElement.readyState !== 'loading';

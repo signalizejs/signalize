@@ -1,95 +1,21 @@
-/**
- * Represents a function to be called before setting a signal watcher.
- *
- * @typedef {(options: SignalWatcherArguments<T>) => { value: T, settable?: boolean } | undefined} BeforeSetSignalWatcher
- * @template T
- */
-
-/**
- * Represents a function to be called after setting a signal watcher.
- *
- * @typedef {(options: SignalWatcherArguments<T>) => void | Promise<void>} AfterSetSignalWatcher
- * @template T
- */
-
-/**
- * Represents the available execution options for a signal watcher.
- *
- * @typedef {'beforeSet' | 'afterSet' | 'onGet'} SignalWatcherExecutionOption
- */
-
-/**
- * Represents options for configuring a signal watcher.
- *
- * @typedef {Object} SignalWatcherOptions
- * @property {boolean} [immediate] - Whether the signal watcher should execute immediately.
- * @property {SignalWatcherExecutionOption} [execution] - The execution option for the signal watcher.
- */
-
-/**
- * Represents the arguments passed to a signal watcher function.
- *
- * @typedef {Object} SignalWatcherArguments
- * @property {T | undefined} newValue - The new value being set.
- * @property {T | undefined} [oldValue] - The previous value.
- * @template T
- */
-
-/**
- * Represents the function to stop watching a signal.
- *
- * @typedef {() => void} SignalUnwatch
- */
-
-/**
- * Represents a collection of signal watcher functions categorized by their execution option.
- *
- * @typedef {Object} SignalWatchers
- * @property {Set<CallableFunction>} beforeSet - Set of functions to be called before setting a signal watcher.
- * @property {Set<CallableFunction>} afterSet - Set of functions to be called after setting a signal watcher.
- * @property {Set<CallableFunction>} onGet - Set of functions to be called when getting a signal.
- */
-
-/**
- * Represents a signal with a specific value and associated watchers.
- *
- * @template T
- * @typedef {CallableFunction} Signal
- * @constructor
- * @property {T} value - The current value of the signal.
- * @property {SignalWatchers} watchers - Collection of watchers associated with the signal.
- * @property {(listener: BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>, options?: SignalWatcherOptions) => SignalUnwatch} watch - Adds a watcher function to the signal.
- * @property {() => string} toString - Converts the signal to a string.
- * @property {() => T} valueOf - Returns the underlying value of the signal.
- * @property {() => T} toJSON - Converts the signal to a JSON-compatible representation.
- * @returns {void}
- */
-
-/**
- * Creates a new Signal instance with the provided default value.
- * @template T
- * @callback signal
- * @param {T} defaultValue - The default value for the signal.
- * @returns {Signal<T>} A new Signal instance initialized with the default value.
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default () => {
 	/**
 	 * @template T
-	 * @type {Signal<T>}
+	 * @type {import('../../types/modules/signal').Signal<T>}
 	*/
 	class Signal extends Function {
 		/** @type {T} */
 		value;
 
-		/** @type {SignalWatchers} */
+		/** @type {import('../../types/modules/signal').SignalWatchers} */
 		watchers = {
 			beforeSet: new Set(),
 			afterSet: new Set(),
 			onGet: new Set()
 		};
 
+		/** @param {T} defaultValue */
 		constructor(defaultValue) {
 			super();
 			this.value = defaultValue;
@@ -149,14 +75,7 @@ export default () => {
 			}
 		};
 
-		/**
-		 * Adds a watcher function to the signal.
-		 *
-		 * @function
-		 * @param {BeforeSetSignalWatcher<T> | AfterSetSignalWatcher<T>} listener - The watcher function to be added.
-		 * @param {SignalWatcherOptions} [options={}] - Options for configuring the signal watcher.
-		 * @returns {SignalUnwatch} A function to stop watching the signal.
-		 */
+		/** @type {import('../../types/modules/signal').SetSignalWatcher<T>} */
 		watch = (listener, options = {}) => {
 			const execution = options.execution ?? 'afterSet';
 
@@ -190,10 +109,7 @@ export default () => {
 		valueOf = () => this.#get();
 	}
 
-	/**
-	 * @template T
-	 * @type {signal<T>}
-	*/
+	/** @type {import('../../types/modules/signal').signal} */
 	const signal = (defaultValue) => new Signal(defaultValue);
 
 	return { signal, Signal };

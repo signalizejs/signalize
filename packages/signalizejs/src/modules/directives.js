@@ -1,83 +1,4 @@
-/**
- * Represents a callback function for a directive.
- *
- * @typedef {function} DirectiveCallback
- * @param {DirectiveCallbackData} data - Data related to the directive callback.
- * @returns {Promise<void> | void} A promise or void representing the result of the directive callback.
- */
-
-/**
- * Represents data passed to a directive callback.
- *
- * @typedef DirectiveCallbackData
- * @extends {Scope}
- * @property {RegExpMatchArray} matches - The result of matching a regular expression against an attribute value.
- * @property {Attr} attribute - The attribute associated with the directive.
- */
-
-/**
- * Represents parameters for a directive matcher.
- *
- * @typedef DirectiveMatcherParameters
- * @property {Element} element - The HTML element associated with the directive.
- * @property {Attr} attribute - The attribute associated with the directive.
- */
-
-/**
- * Represents the return type of a directive matcher.
- *
- * @typedef {(RegExp | undefined)} DirectiveMatcherReturn
- */
-
-/**
- * Represents a directive matcher function.
- *
- * @typedef {function} DirectiveMatcher
- * @param {DirectiveMatcherParameters} params - Parameters for the directive matcher.
- * @returns {DirectiveMatcherReturn} The regular expression or undefined returned by the directive matcher.
- */
-
-/**
- * Represents options for processing an HTML element in the context of directives.
- *
- * @typedef ProcessElementOptions
- * @property {Element} element - The HTML element to be processed.
- */
-
-/**
- * Represents a directive, consisting of a matcher and a callback.
- *
- * @typedef Directive
- * @property {RegExp | DirectiveMatcher | undefined} [matcher] - The matcher for the directive.
- * @property {DirectiveCallback} callback - The callback function for the directive.
- */
-
-/**
- * Represents a registered directive, consisting of a matcher and a callback.
- *
- * @typedef RegisteredDirective
- * @extends {Directive}
- * @property {DirectiveMatcher} [matcher] - The matcher function for the directive.
- */
-
-/**
- * Represents options for processing directives within a DOM tree.
- *
- * @typedef ProcessDirectiveOptions
- * @property {Element} root - The root element of the DOM tree to process.
- * @property {string[]} [directives] - An array of directive names to process (optional).
- * @property {boolean} [onlyRoot] - Indicates whether to process directives only within the root element (optional).
- */
-
-/**
- * Represents options for configuring a plugin related to directives.
- *
- * @typedef PluginOptions
- * @property {string} [prerenderedBlockStart] - The start marker for prerendered blocks (optional).
- * @property {string} [prerenderedBlockEnd] - The end marker for prerendered blocks (optional).
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ($, pluginOptions) => {
 	const { resolve, params } = $;
 	const { attributePrefix, attributeSeparator } = params;
@@ -85,7 +6,7 @@ export default async ($, pluginOptions) => {
 		'bind', 'event', 'evaluate', 'scope', 'signal', 'traverse-dom'
 	);
 
-	/** @type {Record<string, RegisteredDirective} */
+	/** @type {Record<string, import('../../types/modules/directives').RegisteredDirective} */
 	const directivesRegister = {};
 	const directivesAttribute = `${attributePrefix}directives`;
 	const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
@@ -94,8 +15,7 @@ export default async ($, pluginOptions) => {
 	const renderedTemplateEndComment = pluginOptions?.prerenderedBlockEnd ?? '/prerendered';
 
 	/**
-	 *
-	 * @param {ProcessElementOptions} options
+	 * @param {import('../../types/modules/directives').ProcessElementOptions} options
 	 * @returns {Promise<Element>}
 	 */
 	const processElement = async (options) => {
@@ -198,15 +118,10 @@ export default async ($, pluginOptions) => {
 	 */
 	const isElementWebComponent = (element) => element.tagName.includes('-');
 
-	/**
-	 * Asynchronously processes directives within a DOM tree based on the specified options.
-	 *
-	 * @function
-	 * @param {ProcessDirectiveOptions} [options={}] - Options for processing directives within the DOM tree (optional).
-	 * @returns {Promise<void>} A promise that resolves once the directive processing is complete.
-	 */
-	const processDirectives = async (options = {}) => {
-		let { root, directives } = options;
+	/** @type {import('../../types/modules/directives').ProcessDirectives} */
+	const processDirectives = async (options) => {
+		const root = options.root;
+		let directives = options?.directives;
 		directives = directives ?? Object.keys(directivesRegister);
 
 		const rootScope = scope(root);
@@ -245,16 +160,7 @@ export default async ($, pluginOptions) => {
 		);
 	};
 
-	/**
-	 * Defines a custom directive with the specified name, matcher, and callback.
-	 *
-	 * @function
-	 * @param {string} name - The name of the custom directive.
-	 * @param {Directive} options - An object containing the matcher and callback for the directive.
-	 * @param {RegExp | DirectiveMatcher | undefined} [options.matcher] - The matcher for the directive (optional).
-	 * @param {DirectiveCallback} options.callback - The callback function for the directive.
-	 * @returns {void}
-	 */
+	/** @type {import('../../types/modules/directives').directive} */
 	const directive = (name, { matcher, callback }) => {
 		if (name in directivesRegister) {
 			throw new Error(`Directive "${name}" already defined.`);
@@ -266,13 +172,7 @@ export default async ($, pluginOptions) => {
 		};
 	};
 
-	/**
-	 * Retrieves prerendered nodes from the specified HTML element.
-	 *
-	 * @function
-	 * @param {Element} element - The HTML element to retrieve prerendered nodes from.
-	 * @returns {Node[]} An array of nodes representing the prerendered content.
-	 */
+	/** @type {import('../../types/modules/directives').getPrerenderedNodes} */
 	const getPrerenderedNodes = (element) => {
 		const renderedNodes = [];
 		let renderedTemplateSibling = element.nextSibling;

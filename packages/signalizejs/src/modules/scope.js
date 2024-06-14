@@ -1,22 +1,7 @@
-/**
- * Interface representing the scope with essential properties and methods.
- *
- * @typedef
- * @property {Element} $el - The root element associated with the scope.
- * @property {(callback?: CallableFunction) => void} $cleanup - Performs cleanup operations, optionally executing a callback.
- */
-
-/**
- * Type representing a function that initializes a scope.
- *
- * @typedef {function} ScopeInitFunction
- * @param {ScopeInterface} scope - The scope object to be initialized.
- * @returns {void}
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ($) => {
 	const { params, resolve } = $;
+	/** @type {{observeMutations: import('./mutation-observer').observeMutations}} */
 	const { observeMutations } = await resolve('mutation-observer');
 	const scopeKey = '__signalizeScope';
 	const refAttribute = `${params.attributePrefix}ref`;
@@ -35,25 +20,25 @@ export default async ($) => {
 
 		/**
 		 * @readonly
-		 * @type {import('../Signalize').Signalize}
+		 * @type {import('../../types/Signalize').Signalize}
 		 */
 		$ = $;
 
 		/**
 		 * @readonly
-		 * @type {HTMLElement}
+		 * @type {import('../../types/modules/scope').SignalizeNode}
 		 */
 		$el;
 
 		/**
-		 * @type {Scope|null}
+		 * @type {Scope|undefined}
 		 */
-		$parentScope = null;
+		$parentScope
 
 		/**
 		 * @constructor
 		 * @param {Object} options - The options object for initializing the instance.
-		 * @param {Node} options.node - The Node associated with the instance.
+		 * @param {import('../../types/modules/scope').SignalizeNode} options.node - The Node associated with the instance.
 		 */
 		constructor ({ node }) {
 			this.$el = node;
@@ -116,7 +101,7 @@ export default async ($) => {
 			}
 
 			/**
-			 * @param {Element} element
+			 * @param {import('../../types/modules/scope').SignalizeNode} element
 			 * @returns {void}
 			 */
 			const cleanChildren = (element) => {
@@ -170,11 +155,7 @@ export default async ($) => {
 		});
 	}
 
-	/**
-	 * @param {Node} node
-	 * @param {ScopeInitFunction} [init]
-	 * @returns {Scope|undefined}
-	 */
+	/** @type {import('../../types/modules/scope').ScopeCallback} */
 	const scope = (node, init) => {
 		if (typeof init === 'function') {
 			init(node[scopeKey] ?? new Scope({ node }));

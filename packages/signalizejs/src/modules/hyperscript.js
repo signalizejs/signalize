@@ -21,7 +21,7 @@
  * @returns {T} - The newly created HTML element.
 */
 
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ resolve }) => {
 	const { bind, Signal } = await resolve('bind', 'signal');
 

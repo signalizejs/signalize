@@ -1,4 +1,4 @@
-/** @type {import('../../Signalize').SignalizeModule} */
+/** @type {import('../../../types/Signalize').Module} */
 export default async ({ resolve, params }) => {
 	const { attributePrefix } = params;
 	const resolved = await resolve('directives', 'evaluate', 'scope', 'signal');

@@ -87,7 +87,7 @@
  * @returns {void}
  */
 
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ root, resolve }) => {
 	const { observeMutations } = await resolve('mutation-observer');
 

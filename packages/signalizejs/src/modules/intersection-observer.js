@@ -1,14 +1,6 @@
-/**
- * @callback observeIntersection
- * @param {Element} element
- * @param {IntersectionObserverCallback} callback
- * @param {IntersectionObserverInit} options
- * @returns {IntersectionObserver}
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default ({ params }) => ({
-	/** @type {observeIntersection} */
+	/** @type {import('../../types/modules/intersection-observer').observeIntersection} */
 	observeIntersection: (element, callback, options) => {
 		const observer = new IntersectionObserver(callback, {
 			root: element.closest(`[${params.attributePrefix}intersection-observer-root]`),

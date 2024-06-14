@@ -29,7 +29,7 @@
  * @param {MutationObserverInit} [options]
  */
 
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default ($) => {
 	/** @type {MutationObserver} */
 	let rootObserver;

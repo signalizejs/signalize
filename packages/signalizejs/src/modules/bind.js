@@ -1,17 +1,4 @@
-/**
- * @typedef AttributeConfig
- * @property {CallableFunction} [set]
- * @property {CallableFunction} [get]
- */
-
-/**
- * @callback bind
- * @param {HTMLElement} element
- * @param {Record<string, AttributeConfig|import('./signal.js').Signal>} attributes
- * @returns {void}
-*/
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ resolve }) => {
 	const { on, off, Signal, scope } = await resolve('event', 'signal', 'scope');
 
@@ -33,14 +20,13 @@ export default async ({ resolve }) => {
 		'scoped', 'seamless', 'selected',
 		'typemustmatch'
 	];
+
 	const attributesAliases = {
 		text: 'textContent',
 		html: 'innerHTML'
 	};
 
-	/**
-	 * @type {bind}
-	 */
+	/** @type {import('../../types/modules/bind').bind} */
 	const bind = (element, attributes) => {
 		const bindAttributes = () => {
 			/** @type {CallableFunction[]} */

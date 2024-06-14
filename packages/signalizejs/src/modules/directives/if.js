@@ -1,4 +1,4 @@
-/** @type {import('../../Signalize').SignalizeModule} */
+/** @type {import('../../../types/Signalize').Module} */
 export default async ({ resolve }) => {
 	const resolved = await resolve('directives', 'evaluate', 'scope');
 	const { getPrerenderedNodes, evaluate, processDirectives } = resolved;

@@ -1,13 +1,4 @@
-/**
- * Options for configuring a component.
- *
- * @typedef ComponentOptions
- * @property {Record<string, any> | string[]} [props] - Props to be used by the component (optional).
- * @property {() => void | Promise<void>} [setup] - Function for setting up the component (optional).
- * @property {ShadowRootInit} [shadow] - Configuration options for the shadow DOM (optional).
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ resolve, params }, config) => {
 	const { componentPrefix = '' } = config;
 	const { attributePrefix } = params;
@@ -15,17 +6,11 @@ export default async ({ resolve, params }, config) => {
 
 	const cloakAttribute = `${attributePrefix}cloak`;
 
-	/**
-	 * Creates a custom Web Component with the specified name and options
-	 *
-	 * @function
-	 * @param {string} name - The name of the component.
-	 * @param {ComponentOptions} [optionsOrSetup] - Options for configuring the component.
-	 * @returns {typeof HTMLElement} The constructor function for the component.
-	 */
+	/** @type {import('../../types/modules/component').component} */
 	const component = (name, optionsOrSetup) => {
 		let options = optionsOrSetup;
-		let setup = null;
+		/** @type {import('../../types/modules/component').setupCallback|undefined} */
+		let setup;
 
 		if (typeof optionsOrSetup === 'function') {
 			options = {};
@@ -83,23 +68,24 @@ export default async ({ resolve, params }, config) => {
 			#inited = false;
 			/**
 			 * @readonly
-			 * @type {import('./scope').Scope}
+			 * @type {import('../../types/modules/scope').Scope}
 			 */
 			#scope;
-			#connected = async () => {};
-			#disconnected = async () => {};
-			#adopted = async () => {};
+			/** @type {import('../../types/modules/component').LifeCycleListeners} */
+			#connected = [];
+			/** @type {import('../../types/modules/component').LifeCycleListeners} */
+			#disconnected = [];
+			/** @type {import('../../types/modules/component').LifeCycleListeners} */
+			#adopted = [];
 
 			constructor () {
 				super();
 				this.#constructPromise = this.#setup();
 			}
 
-			/**
-			 * @return {Promise<void>}
-			 */
+			/**  @return {Promise<void>} */
 			async #setup () {
-				/* const originalInnerHTML = this.innerHTML; */
+				/** @type {HTMLElement|ShadowRoot} */
 				let root = this;
 
 				if (options?.shadow) {
@@ -112,6 +98,7 @@ export default async ({ resolve, params }, config) => {
 					node.$propsAliases = attributesPropertiesMap;
 					node.$props = {};
 
+					/** @type {Record<string, any>} */
 					let properties = {};
 
 					if (propsAreArray) {
@@ -130,18 +117,6 @@ export default async ({ resolve, params }, config) => {
 					}
 				});
 
-				const dependencies = [];
-				for (const componentDependency of options?.components ?? []) {
-					if (!customElements.get(componentDependency)) {
-						dependencies.push(new Promise(async (resolve) => {
-							await customElements.whenDefined(componentDependency);
-							resolve();
-						}));
-					}
-				}
-
-				await Promise.all(dependencies);
-
 				for (const attr of this.#scope.$el.attributes) {
 					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));
 				}
@@ -149,52 +124,17 @@ export default async ({ resolve, params }, config) => {
 				await dispatch('component:beforeSetup', this.#scope, { target: this.#scope.$el, bubbles: true });
 
 				if (setup !== undefined) {
-					const data = await setup?.call(undefined, {
+					const data = await setup.call(undefined, {
 						...this.#scope,
-						$connected: (listener) => {
-							this.#connected = listener;
-						},
-						$disconnected: (listener) => {
-							this.#disconnected = listener;
-						},
-						$adopted: (listener) => {
-							this.#adopted = listener;
-						},
+						$connected: (listener) => this.#connected.push(listener),
+						$disconnected: (listener) => this.#disconnected.push(listener),
+						$adopted: (listener) => this.#adopted.push(listener),
 					});
 
 					for (const [key, value] of Object.entries(data ?? {})) {
 						this.#scope.$data[key] = value;
 					}
 				}
-
-				/* const convertInnerHtmlToFragment = () => {
-					const template = document.createElement('template');
-					template.innerHTML = this.innerHTML.trim();
-					return template;
-				} */
-
-				/* let root = this;
-root
-				if (options?.shadow) {
-					root = this.attachShadow({
-						...options?.shadow
-					});
-
-					if (template === undefined) {
-						template = convertInnerHtmlToFragment();
-						this.innerHTML = '';
-					}
-				} else if (template !== undefined) {
-					const fragment = convertInnerHtmlToFragment();
-
-					for (const slot of selectAll('[slot]', fragment)) {
-						const slotName = slot.getAttribute('slot');
-						slot.removeAttribute('slot');
-						select(`slot[name="${slotName}"]`, template.content)?.replaceWith(slot);
-					}
-
-					select('slot:not([name])', template.content)?.replaceWith(currentTemplate.content);
-				} */
 
 				this.#scope._setuped = true;
 				dispatch('component:setuped', this.#scope, { target: this.#scope.$el, bubbles: true });
@@ -203,7 +143,7 @@ root
 			/**
 			 * @param {string} name
 			 * @param {string} oldValue
-			 * @returns {void}
+			 * @param {string} newValue
 			 */
 			attributeChangedCallback(name, oldValue, newValue) {
 				if (!observableAttributes.includes(name)) {
@@ -234,32 +174,36 @@ root
 				}
 			}
 
-			/**
-			 * @returns {Promise<void>}
-			 */
 			async connectedCallback () {
 
 				await this.#constructPromise;
-				await this.#connected();
+
+				this.#callLifeCycleListeners(this.#connected);
 				this.#inited = true;
 				this.removeAttribute(cloakAttribute);
 				dispatch('component:connected', this.#scope, { target: this.#scope.$el });
 			}
 
-			/**
-			 * @returns {Promise<void>}
-			 */
 			async disconnectedCallback () {
-				await this.#disconnected();
+				this.#callLifeCycleListeners(this.#disconnected);
 				dispatch('component:disconnected', this.#scope, { target: this.#scope.$el });
 			}
 
-			/**
-			 * @returns {Promise<void>}
-			 */
 			async adoptedCallback () {
-				await this.#adopted();
+				this.#callLifeCycleListeners(this.#adopted);
 				dispatch('component:adopted', this.#scope, { target: this.#scope.$el });
+			}
+
+			/** @param {CallableFunction[]} lifeCycleListeners */
+			#callLifeCycleListeners = async (lifeCycleListeners) => {
+				/** @type {Promise<any>[]} */
+				const listeners = [];
+
+				for (const listener of lifeCycleListeners) {
+					listeners.push(listener());
+				}
+
+				await Promise.all(listeners);
 			}
 		}
 

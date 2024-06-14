@@ -1,35 +1,4 @@
-/**
- * Retrieves a dialog element with the specified ID.
- *
- * @callback getDialog
- * @param {string} id - The ID of the dialog element to retrieve.
- * @returns {HTMLDialogElement|null} The dialog element with the specified ID, or null if not found.
- */
-
-/**
- * @typedef OpenDialogOptions
- * @property {boolean} [modelessly=false]
- * @property {boolean} [closable=true]
- */
-
-/**
- * Opens a dialog identified by either its ID or the dialog element itself.
- *
- * @callback openDialog
- * @param {string|HTMLDialogElement} dialogOrId - The ID or HTMLDialogElement of the dialog to open.
- * @param {OpenDialogOptions} [options] - Indicates whether to open the dialog modelessly (optional, default is false).
- * @returns {HTMLDialogElement|null} The opened dialog element or null if not found or not opened.
- */
-
-/**
- * Closes a dialog identified by either its ID or the dialog element itself.
- *
- * @callback closeDialog
- * @param {string | HTMLDialogElement} dialogOrId - The ID or HTMLDialogElement of the dialog to close.
- * @returns {HTMLDialogElement | null} The closed dialog element or null if not found or not closed.
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ resolve, root, params }) => {
 	const { attributePrefix, attributeSeparator } = params;
 	const { dispatch, on, off } = await resolve('event', 'dom-ready');
@@ -58,10 +27,10 @@ export default async ({ resolve, root, params }) => {
 		}
 	};
 
-	/** @type {getDialog} */
+	/** @type {import('../../types/modules/dialog').getDialog} */
 	const getDialog = (id) => root.querySelector(`[${dialogAttribute}=${id}]`);
 
-	/** @type {openDialog} */
+	/** @type {import('../../types/modules/dialog').openDialog} */
 	const openDialog = (dialogOrId, options = {}) => {
 		const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
 
@@ -90,7 +59,7 @@ export default async ({ resolve, root, params }) => {
 		return dialog;
 	};
 
-	/** @type {closeDialog} */
+	/** @type {import('../../types/modules/dialog').closeDialog} */
 	const closeDialog = (dialogOrId) => {
 		const dialog = typeof dialogOrId === 'string' ? getDialog(dialogOrId) : dialogOrId;
 

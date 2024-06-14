@@ -1,12 +1,6 @@
-/**
- * @callback height
- * @param {Element|Document} element
- * @returns {number}
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default () => ({
-	/** @type {height} */
+	/** @type {import('../../types/modules/height').height} */
 	height: (element) => {
 		if (element === document) {
 			return window.innerHeight;

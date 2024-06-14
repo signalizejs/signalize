@@ -24,7 +24,7 @@
  * @property {string} url - The URL associated with the plugin.
  */
 
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ resolve}, options) => {
 	const { ajax, dispatch } = await resolve('ajax', 'event');
 

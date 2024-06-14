@@ -4,7 +4,9 @@
 		"target": "ESNext",
 		"newLine": "LF",
 		"checkJs": true,
-		"strict": true
+		"strict": true,
+		"allowJs": true,
+		"types": ["./packages/signalizejs/types/index.d.ts"],
 	},
 	"exclude": [
 		"node_modules"

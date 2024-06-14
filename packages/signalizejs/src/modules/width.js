@@ -1,12 +1,6 @@
-/**
- * @callback width
- * @param {Element|Document} element
- * @returns {number}
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default () => ({
-	/** @type {width} */
+	/** @type {import('../../types/modules/width').width} */
 	width: (element) => {
 		if (element === document) {
 			return window.innerWidth;

@@ -1,4 +1,4 @@
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ resolve, globals }) => {
 	const { Signal } = await resolve('signal');
 	const chunkKeywordMap = {
@@ -203,6 +203,7 @@ export default async ({ resolve, globals }) => {
 	const allPrecedences = Object.keys(precedenceOperatorsMap).sort((a, b) => b - a);
 	const tokenizeCache = {};
 
+	/** @type {import('../../types/modules/evaluate').evaluate} */
 	const evaluate = (str, context = {}, trackSignals = false) => {
 		const detectedSignals = new Set();
 		const signalsUnwatchCallbacks = new Set();

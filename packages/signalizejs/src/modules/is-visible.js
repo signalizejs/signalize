@@ -1,11 +1,6 @@
-/**
- * @callback isVisible
- * @param {HTMLElement} elemnent
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default () => ({
-	/** @type {isVisible} */
+	/** @type {import('../../types/modules/is-visible').isVisible} */
 	isVisible: (element) => {
 		if (element.getClientRects().length !== 0) {
 			return true;

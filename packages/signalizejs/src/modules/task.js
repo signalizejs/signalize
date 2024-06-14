@@ -1,12 +1,4 @@
-// https://nitropack.io/blog/post/improve-interaction-to-next-paint-inp
-// https://web.dev/optimize-long-tasks/
-
-/**
- * @callback task
- * @param {Function} callback
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default () => {
 	const deadlineInterval = 50;
 
@@ -23,7 +15,7 @@ export default () => {
 	let processing = false;
 
 	return {
-		/** @type {task} */
+		/** @type {import('../../types/modules/task').task} */
 		task: (callback) => {
 			tasks.push(callback);
 

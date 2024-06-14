@@ -1,10 +1,5 @@
-/**
- * @callback dashCase
- * @param {string} str
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default () => ({
-	/** @type {dashCase} */
+	/** @type {import('../../types/modules/dash-case').dashCase} */
 	dashCase: (str) => str.replace(/[A-Z]/g, (token) => '-' + token.toLowerCase())
 });

@@ -21,6 +21,7 @@
 	"sideEffects": false,
 	"author": "Vladimír Macháček",
 	"files": [
+		"types",
 		"src",
 		"package.json",
 		"LICENSE",
@@ -107,8 +108,10 @@
 		},
 		"./width": {
 			"import": "./src/modules/width.js"
-		}
+		},
+		"./types/*": "./types/*"
 	},
+	"types": "types/index.d.ts",
 	"main": "src/Signalize.js",
 	"jsdelivr": "src/Signalizee.js",
 	"unpkg": "src/Signalize.js",

@@ -1,24 +1,10 @@
-/**
- * Information about the visibility of an element within the viewport.
- *
- * @typedef ViewportInfo
- * @property {boolean} top - Indicates if the top of the element is visible in the viewport.
- * @property {boolean} bottom - Indicates if the bottom of the element is visible in the viewport.
- * @property {boolean} whole - Indicates if the entire element is visible in the viewport.
- */
-
-/**
- * @callback isInViewport
- * @param {Element} element
- * @returns {ViewportInfo}
- */
-
-/** @type {import('../Signalize').SignalizeModule} */
+/** @type {import('../../types/Signalize').Module} */
 export default async ({ resolve }) => {
+	/** @type {{ offset: import('../../types/modules/offset').offset, height: import('../../types/modules/height').height }}} */
 	const { offset, height } = await resolve('offset', 'height');
 
 	return {
-		/** @type {isInViewport} */
+		/** @type {import('../../types/modules/viewport').isInViewport} */
 		isInViewport: (element) => {
 			const windowTop = window.scrollY;
 			const windowBottom = windowTop + window.innerHeight;
