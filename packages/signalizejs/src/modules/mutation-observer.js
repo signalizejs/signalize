@@ -1,35 +1,4 @@
-/**
- * Ads listener that will be triggered when the dom changes within the Signalize instance root dom tree.
- *
- * @callback observeMutations
- * @param {mutationObserverListener} listener
- * @param {MutationObserverInit} [options]
- */
-
-/**
- * Represents optimized object of MutationRecords.
- *
- * @typedef MutationNodes
- * @property {Node[]} addedNodes
- * @property {Node[]} movedNodes
- * @property {Node[]} removedNodes
- */
-
-/**
- * @callback mutationObserverListener
- * @param {MutationNodes} mutationNodes
- */
-
-/**
- * This method creates custom mutation observer.
- *
- * @callback createMutationObserver
- * @param {Element} root
- * @param {mutationObserverListener} listener
- * @param {MutationObserverInit} [options]
- */
-
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').MutationObserverModule>} */
 export default ($) => {
 	/** @type {MutationObserver} */
 	let rootObserver;
@@ -38,7 +7,7 @@ export default ($) => {
 	/**
 	 * @param {MutationRecord[]} mutationRecords
 	 * @param {number[]} allowedNodeTypes
-	 * @returns {MutationNodes}
+	 * @returns {import('../../types/index').MutationNodes}
 	 */
 	const processMutationObserverRecords = (mutationRecords, allowedNodeTypes = []) => {
 		/** @type {Node[]} */
@@ -81,7 +50,7 @@ export default ($) => {
 		};
 	};
 
-	/** @type {createMutationObserver} */
+	/** @type {import('../../types/index').createMutationObserver} */
 	const createMutationObserver = (root, listener, options)  => {
 		const observer = new MutationObserver((mutationRecords) => {
 			const nodes = processMutationObserverRecords(mutationRecords);
@@ -97,7 +66,7 @@ export default ($) => {
 		return observer;
 	};
 
-	/** @type {observeMutations} */
+	/** @type {import('../../types/index').observeMutations} */
 	const observeMutations = (listener) => {
 		if (rootObserver === undefined) {
 			rootObserver = new MutationObserver((mutationRecords) => {

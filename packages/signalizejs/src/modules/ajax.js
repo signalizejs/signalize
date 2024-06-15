@@ -1,5 +1,15 @@
-/** @type {import('../../types/Signalize').Module} */
-export default async ({ resolve }, pluginOptions) => {
+/**
+ * @type {import('../../types/Signalize').Module<
+ *  import('../../types/index').AjaxModule,
+ *  import('../../types/modules/ajax').AjaxModuleConfig
+ * >}
+ */
+export default async ({ resolve }, config) => {
+	/**
+	 * @type {{
+	 *  dispatch: import('../../types/index').dispatch
+	 * }}
+	 */
 	const { dispatch } = await resolve('event');
 
 	/** @type {import('../../types/modules/ajax').ajax} */
@@ -13,8 +23,8 @@ export default async ({ resolve }, pluginOptions) => {
 		/** @type {RequestInit} */
 		let requestOptions = {
 			headers: {
-				'X-Requested-With': pluginOptions?.requestedWithHeader ?? 'XMLHttpRequest',
-				Accept: pluginOptions?.acceptHeader ?? '*'
+				'X-Requested-With': config?.requestedWithHeader ?? 'XMLHttpRequest',
+				Accept: config?.acceptHeader ?? '*'
 			}
 		};
 

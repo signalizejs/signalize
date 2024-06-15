@@ -1,4 +1,4 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').SignalModule>} */
 export default () => {
 	/**
 	 * @template T

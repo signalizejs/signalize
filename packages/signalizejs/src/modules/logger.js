@@ -1,38 +1,18 @@
-/**
- * Represents a log entry with information about the log type, message, and optional details.
- *
- * @typedef {Object} Log
- * @property {Levels} type - The type of log entry (log, info, warn, error).
- * @property {string} message - The log message.
- * @property {string | null} [file] - The file associated with the log entry (optional).
- * @property {number | undefined} [lineNumber] - The line number associated with the log entry (optional).
- * @property {number | undefined} [columnNumber] - The column number associated with the log entry (optional).
- * @property {string | null} [stack] - The stack trace associated with the log entry (optional).
- */
-
-/**
- * Represents different levels of log entries (log, info, warn, error).
- *
- * @typedef {('log' | 'info' | 'warn' | 'error')} Levels
- */
-
-/**
- * Options for configuring a plugin.
- *
- * @typedef PluginOptions
- * @property {Levels[]} [levels] - An array of log levels (optional).
- * @property {string} url - The URL associated with the plugin.
- */
-
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<undefined, import('../../types/modules/logger').LoggerConfig>} */
 export default async ({ resolve}, options) => {
+	/**
+	 * @type {{
+	 *  ajax: import('../../types/index').ajax,
+	 *  dispatch: import('../../types/index').dispatch
+	 * }}
+	 */
 	const { ajax, dispatch } = await resolve('ajax', 'event');
 
-	/** @type {Levels[]} */
+	/** @type {import('../../types/modules/logger').Levels[]} */
 	const enabledLevels = options?.levels ?? ['error'];
 
 	/**
-	 * @param {Log} log - The log information
+	 * @param {import('../../types/index').Log} log
 	 * @returns {void}
 	 */
 	const handler = (log) => {
@@ -57,9 +37,6 @@ export default async ({ resolve}, options) => {
 
 	if ('error' in enabledLevels) {
 		/**
-		 * Global error handler function invoked when an unhandled error occurs.
-		 *
-		 * @function
 		 * @param {Event | string} message - The error message or event object.
 		 * @param {string} [file] - The file associated with the error (optional).
 		 * @param {number} [lineNumber] - The line number associated with the error (optional).

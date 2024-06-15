@@ -1,9 +1,27 @@
-/** @type {import('../../types/Signalize').Module} */
-export default async ($, pluginOptions) => {
+/**
+ * @type {import('../../types/Signalize').Module<
+ *   import('../../types/index').DirectivesModule,
+ *   import('../../types/index').DirectivesModuleConfig
+ * >}
+ */
+export default async ($, config) => {
 	const { resolve, params } = $;
 	const { attributePrefix, attributeSeparator } = params;
+	/**
+	 * @type {{
+	 *  on: import('../../types/index').on,
+	 *  scope: import('../../types/index').scope,
+	 *  traverseDom: import('../../types/index').traverseDom,
+	 *  evaluate: import('../../types/index').evaluate,
+	 *  bind: import('../../types/index').bind,
+	 *  Signal: import('../../types/index').signal
+	 * }}
+	 */
 	const { on, scope, traverseDom, evaluate, bind, Signal } = await resolve(
-		'bind', 'event', 'evaluate', 'scope', 'signal', 'traverse-dom'
+		'bind',
+		'event', 'evaluate',
+		'scope', 'signal',
+		'traverse-dom'
 	);
 
 	/** @type {Record<string, import('../../types/modules/directives').RegisteredDirective} */
@@ -11,8 +29,8 @@ export default async ($, pluginOptions) => {
 	const directivesAttribute = `${attributePrefix}directives`;
 	const ignoreAttribute = `${directivesAttribute}${attributeSeparator}ignore`;
 	const orderAttribute = `${directivesAttribute}${attributeSeparator}order`;
-	const renderedTemplateStartComment = pluginOptions?.prerenderedBlockStart ?? 'prerendered';
-	const renderedTemplateEndComment = pluginOptions?.prerenderedBlockEnd ?? '/prerendered';
+	const renderedTemplateStartComment = config?.prerenderedBlockStart ?? 'prerendered';
+	const renderedTemplateEndComment = config?.prerenderedBlockEnd ?? '/prerendered';
 
 	/**
 	 * @param {import('../../types/modules/directives').ProcessElementOptions} options
@@ -226,7 +244,9 @@ export default async ($, pluginOptions) => {
 			const attributeValue = isShorthand ? matches[3] : attribute.value;
 			const attributeName = isShorthand ? matches[3] : matches[1];
 			const isProperty = elementScope?.$props?.[attributeName] !== undefined;
+			/** @type {Signal<any>[]} */
 			let trackedSignals = [];
+
 			const get = (trackSignals) => {
 				const { result, detectedSignals } = evaluate(
 					attributeValue,

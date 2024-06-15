@@ -37,7 +37,7 @@ export class Signalize {
 		attributeSeparator: '-'
 	};
 
-	/** @param {import('../types/Signalize').Options} options */
+	/** @param {import('../types/Signalize').SignalizeConfig} options */
 	constructor (options = {}) {
 		this.root = options?.root ?? document;
 
@@ -80,7 +80,9 @@ export class Signalize {
 	};
 
 	/**
-	 * @type {import('../types/Signalize').Resolve} */
+	 * @template T
+	 * @type {import('../types/Signalize').Resolve<T>}
+	 */
 	resolve = async (...modules) => {
 		const lastItem = modules[modules.length - 1];
 		const lastItemIsConfig = !(Array.isArray(lastItem) || typeof lastItem === 'string');

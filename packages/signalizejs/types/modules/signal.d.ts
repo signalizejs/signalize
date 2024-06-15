@@ -54,3 +54,8 @@ export declare class Signal<T> {
 
 /** Creates a new Signal instance with the provided default value. */
 export type signal = <T>(defaultValue: T) => Signal<T>;
+
+export interface SignalModule {
+	signal: signal,
+	Signal: Signal<any>
+}

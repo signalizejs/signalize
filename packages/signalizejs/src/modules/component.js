@@ -1,7 +1,21 @@
-/** @type {import('../../types/Signalize').Module} */
+/**
+ * @type {import('../../types/Signalize').Module<
+ *   import('../../types/index').ComponentModule,
+ *   import('../../types/index').ComponentModuleConfig
+ *  >}
+ */
 export default async ({ resolve, params }, config) => {
 	const { componentPrefix = '' } = config;
 	const { attributePrefix } = params;
+
+	/**
+	 * @type {{
+	 *  signal: import('../../types/index').signal,
+	 *  dispatch: import('../../types/index').dispatch,
+	 *  scope: import('../../types/index').scope,
+	 *  dashCase: import('../../types/index').dashCase
+	 * }}
+	*/
 	const { signal, dispatch, scope, dashCase } = await resolve('signal', 'event', 'scope', 'dash-case');
 
 	const cloakAttribute = `${attributePrefix}cloak`;

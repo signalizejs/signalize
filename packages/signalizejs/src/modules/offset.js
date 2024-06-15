@@ -1,4 +1,4 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').OffsetModule>} */
 export default () => {
 	return {
 		/** @type {import('../../types/modules/offset').offset} */

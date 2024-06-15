@@ -1,97 +1,18 @@
 /**
- * Represents a type that can be used as an event target, which may be a string,
- * a NodeList of elements, an array of elements, a single element, or a Window.
- *
- * @typedef {string | NodeListOf<Element> | Element[] | Element | Window} EventTarget
+ * @type {import('../../types/Signalize').Module<
+ *   import('../../types/modules/event').EventModule,
+ *   import('../../types/modules/event').EventConfig
+ * >}
  */
-
-/**
- * Represents a custom event listener.
- *
- * @typedef {Object} CustomEventListenerConfig
- * @property {CustomEventListenerOnHandler} on - Method to add an event listener.
- * @property {(args: CustomEventListenerArgs) => void} [off] - Optional method to remove an event listener.
- * @property {(args: CustomEvent) => void} [dispatch] - Optional method for dispatching global event.
- */
-
-/**
- * @callback CustomEventListenerOnHandler
- * @param {CustomEventListenerArgs} args
- * @returns {void}
- */
-
-/**
- * Represents the arguments for a custom event listener, including the target element,
- * listener function, options, and the event name.
- *
- * @typedef {Object} CustomEventListenerArgs
- * @property {Element} target - The target element for the event listener.
- * @property {CallableFunction} listener - The listener function to be added or removed.
- * @property {AddEventListenerOptions} options - Options for adding the event listener.
- * @property {string} event - The name of the event.
- */
-
-/**
- * Represents a set of custom event listeners associated with specific events.
- *
- * @typedef CustomEventListeners
- * @extends ElementEventMap
- * @property {CustomEventListener} clickOutside - Custom event listener for the 'clickOutside' event.
- * @property {CustomEventListener} remove - Custom event listener for the 'remove' event.
- */
-
-/**
- * Dispatches a custom event with the specified name, data, and options.
- *
- * @callback dispatch
- * @param {string} eventName - The name of the custom event to dispatch.
- * @param {*} [eventData] - Optional data to associate with the custom event.
- * @param {Record<string, any>} [options] - Options for configuring the dispatch of the custom event.
- * @returns {boolean} Indicates whether the event dispatch was successful.
- */
-
-/**
- * Creates a custom event with the specified name, data, and options.
- *
- * @callback customEvent
- * @param {string} eventName - The name of the custom event.
- * @param {*} [eventData] - Optional data to associate with the custom event.
- * @param {CustomEventInit} [options] - Options for configuring the custom event.
- * @returns {CustomEvent} A newly created custom event.
- */
-
-/**
- * Creates a custom event listener.
- *
- * @callback customEventListener
- * @param {string} eventName - The name of the custom event.
- * @param {CustomEventListenerConfig|CustomEventListenerOnHandler} configOrHandler
- * @returns {void}
- */
-
-/**
- * Represents options for configuring a plugin, including custom event listeners.
- *
- * @typedef PluginOptions
- * @property {Record<string, CustomEventListener>} customEventListeners - Custom event listeners for the plugin.
- */
-
-/**
- * Adds an event listener to the specified target or invokes a callback for the given events.
- *
- * @callback on
- * @param {keyof CustomEventListeners} events - The name of the event or events to listen for.
- * @param {EventTarget | CallableFunction} targetOrCallback - The target element, or a callback function if no target is specified.
- * @param {CallableFunction | AddEventListenerOptions} [callbackOrOptions] - The callback function or options for the event listener.
- * @param {AddEventListenerOptions} [options] - Options for the event listener.
- * @returns {void}
- */
-
-/** @type {import('../../types/Signalize').Module} */
 export default async ({ root, resolve }) => {
+	/**
+	 * @type {{
+	 *  observeMutations: import('../../types/index').observeMutations
+	 * }}
+	 */
 	const { observeMutations } = await resolve('mutation-observer');
 
-	/** @type {Record<string,CustomEventListenerConfig>} */
+	/** @type {Record<string, import('../../types/modules/event').CustomEventListenerConfig>} */
 	const customEventListeners = {
 		clickoutside: {
 			on: ({ target, listener, options }) => {
@@ -129,12 +50,11 @@ export default async ({ root, resolve }) => {
 	};
 
 	/**
-	 * @param {Selectable} target
+	 * @param {Element|string|Array<Element|string>|NodeList} target
 	 * @param {boolean} container
-	 * @returns {IterableElements}
+	 * @returns {Element[]}
 	 */
 	const selectorToIterable = (target, container) => {
-		/** @type {IterableElements} */
 		let elements = [];
 
 		if (typeof target === 'string') {
@@ -156,11 +76,8 @@ export default async ({ root, resolve }) => {
 		return elements.filter((element) => element !== null);
 	};
 
-	/**
-	 * @type {on}
-	 */
+	/** @type {import('../../types/index').on} */
 	const on = (events, targetOrCallback, callbackOrOptions, options) => {
-		/** @type {import('./select').Selectable} */
 		let targetOrSelector;
 		/** @type {CallableFunction} */
 		let listener;
@@ -174,6 +91,7 @@ export default async ({ root, resolve }) => {
 			listener = callbackOrOptions;
 		}
 
+		/** @param {Element|Document} target */
 		const attachListeners =  (target) => {
 			for (const event of events.split(' ').map((event) => event.trim())) {
 				/** @type {CustomEventListenerArgs} */
@@ -227,14 +145,14 @@ export default async ({ root, resolve }) => {
 		return offCallback;
 	};
 
-	/** @type {customEventListener} */
+	/** @type {import('../../types/modules/event').customEventListener} */
 	const customEventListener = (eventName, configOrHandler) => {
 		customEventListeners[eventName] = typeof configOrHandler === 'function'
 			? { on: configOrHandler }
 			: configOrHandler;
 	};
 
-	/** @type {off} */
+	/** @type {import('../../types/modules/event').off} */
 	const off = (events, element, listener, options = {}) => {
 		const elements = selectorToIterable(element);
 
@@ -250,14 +168,14 @@ export default async ({ root, resolve }) => {
 		}
 	};
 
-	/** @type {customEvent} */
+	/** @type {import('../../types/modules/event').customEvent} */
 	const customEvent = (eventName, eventData, options) => new window.CustomEvent(eventName, {
 		detail: eventData,
 		cancelable: options?.cancelable ?? false,
 		bubbles: options?.bubbles ?? false
 	});
 
-	/** @type {dispatch} */
+	/** @type {import('../../types/modules/event').dispatch} */
 	const dispatch = (eventName, eventData, options) => {
 		const event = customEvent(eventName, eventData, options);
 

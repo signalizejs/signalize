@@ -1,8 +1,11 @@
+import type { Scope } from "./scope";
+
 /** Callback function type for a directive */
 export type DirectiveCallback = (data: DirectiveCallbackData) => Promise<void> | void;
 
 /** Data passed to a directive callback */
-export interface DirectiveCallbackData extends Scope {
+export interface DirectiveCallbackData {
+	scope: Scope;
 	/** Result of matching a regular expression */
 	matches: RegExpMatchArray;
 	/** Attribute associated with the directive */
@@ -62,10 +65,21 @@ export interface PluginOptions {
 }
 
 /** Asynchronously processes directives within a DOM tree based on the specified options. */
-export type ProcessDirectives = (options?: ProcessDirectiveOptions) => Promise<void>;
+export type processDirectives = (options?: ProcessDirectiveOptions) => Promise<void>;
 
 /** Defines a custom directive with the specified name, matcher, and callback. */
 export type directive = (name: string, options: Omit<Directive, 'matcher'> & { matcher?: DirectiveMatcher }) => void;
 
 /** Retrieves prerendered nodes from the specified HTML element. */
 export type getPrerenderedNodes = (element: Element) => Node[];
+
+export interface DirectivesModule {
+	getPrerenderedNodes: getPrerenderedNodes;
+	processDirectives: processDirectives;
+	directive: directive;
+}
+
+export interface DirectivesModuleConfig {
+	prerenderedBlockStart?: string;
+	prerenderedBlockEnd?: string;
+}

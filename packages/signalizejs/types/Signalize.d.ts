@@ -9,9 +9,9 @@ export type Modules = Array<string|[string, Record<string, any>]|[string, Functi
 /** Module resolver definition */
 export type ModulesResolver = <T>(moduleName: string) => Promise<T>
 
-export type Module = (signalize: Signalize, config: Record<string, any>) => Record<string, any>|Promise<Record<string, any>>;
+export type Module<F=Record<string, any>, C=Record<string, any>|undefined> = (signalize: Signalize, config: C) => F|Promise<F>;
 
-export type ResolveModules = Array<string|[string, Record<string, any>|Function, Record<string, any>|undefined]|Record<string, any>>;
+export type ModulesToResolve = Array<string|[string, Record<string, any>|Function, Record<string, any>|undefined]|Record<string, any>>;
 
 export type InitedCallback = CallableFunction;
 
@@ -19,9 +19,12 @@ export interface Root extends Node {
 	__signalize: SignalizeInstance
 }
 
-export type Resolve = <T>(...modules: ResolveModules) => Promise<T>;
+/**
+ * Resolve functionality from modules.
+*/
+export type Resolve<T> = (...modules: ModulesToResolve) => Promise<T>;
 
-export interface Options {
+export interface SignalizeConfig {
 	/** The root element or document where Signalize will be instantiated. */
 	root?: Root;
 	/** Parameters that can be accessed by modules within Signalize */
@@ -34,12 +37,12 @@ export interface Options {
 	modules?: Modules;
 	/** The id of the Signalize instance for imports to prevent collisions. */
 	instanceId?: string;
-	/**  Modules resolver. */
+	/** Asynchronous Modules resolver. */
 	resolver?: ModulesResolver;
 }
 
 export declare class Signalize {
-	constructor(options: Options);
+	constructor(options: SignalizeConfig);
 	root: Root;
 	globals: Globals;
 	params: Params;

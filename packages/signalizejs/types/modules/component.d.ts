@@ -38,3 +38,11 @@ export interface ComponentOptions {
 
 /** Creates a custom Web Component with the specified name and options. */
 export type component = (name: string, optionsOrSetup?: ComponentOptions | setupCallback) => typeof HTMLElement;
+
+export interface ComponentModuleConfig {
+	componentPrefix?: string
+}
+
+export interface ComponentModule {
+	component: component
+}

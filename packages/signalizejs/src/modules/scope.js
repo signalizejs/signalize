@@ -1,11 +1,17 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').ScopeModule>} */
 export default async ($) => {
 	const { params, resolve } = $;
-	/** @type {{observeMutations: import('./mutation-observer').observeMutations}} */
+
+	/**
+	 * @type {{
+	 *  observeMutations: import('../../types/index').observeMutations
+	 * }}
+	 */
 	const { observeMutations } = await resolve('mutation-observer');
 	const scopeKey = '__signalizeScope';
 	const refAttribute = `${params.attributePrefix}ref`;
 
+	/** @type {import('../../types/index').Scope} */
 	class Scope {
 		/**
 		 * @readonly
@@ -45,6 +51,7 @@ export default async ($) => {
 			node[scopeKey] = this;
 		}
 
+		/** @type {import('../../types/index').$data} */
 		get $data() {
 			return new Proxy(this.#data, {
 				/**
@@ -76,6 +83,7 @@ export default async ($) => {
 			});
 		}
 
+		/** @type {import('../../types/index').$data} */
 		set $data (data) {
 			for (const key in this.$data) {
 				if (key in data) {
@@ -90,10 +98,7 @@ export default async ($) => {
 			}
 		}
 
-		/**
-		 * @param {CallableFunction} [callback]
-		 * @returns {void}
-		 */
+		/** @type {import('../../types/index').$cleanup} */
 		$cleanup = (callback) => {
 			if (callback !== undefined) {
 				this.#cleanups.add(callback);
@@ -123,10 +128,7 @@ export default async ($) => {
 			cleanChildren(this.$el);
 		};
 
-		/**
-		 * @param {string} name
-		 * @returns {Element[]}
-		 */
+		/** @type {import('../../types/index').$refs} */
 		$refs = new Proxy({}, {
 			get: (target, key) => {
 				const refs = [...this.$el.querySelectorAll(`[${refAttribute}=${key}]`)].filter((element) => {
@@ -155,7 +157,7 @@ export default async ($) => {
 		});
 	}
 
-	/** @type {import('../../types/modules/scope').ScopeCallback} */
+	/** @type {import('../../types/modules/scope').scope} */
 	const scope = (node, init) => {
 		if (typeof init === 'function') {
 			init(node[scopeKey] ?? new Scope({ node }));

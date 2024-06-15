@@ -19,3 +19,9 @@ export type openDialog = (
 
 /** Function type to close a dialog. */
 export type closeDialog = (dialogOrId: string | HTMLDialogElement) => HTMLDialogElement | null;
+
+export interface DialogModule {
+	openDialog: openDialog;
+	getDialog: getDialog;
+	closeDialog: closeDialog;
+}

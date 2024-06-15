@@ -29,7 +29,7 @@ export interface NavigationEventData {
 export type ResponseCache = Record<string, string>;
 
 /** Spa modulee options. */
-export interface Options {
+export interface SpaConfig {
 	/** The response cache header name. Used to enable/disable cache. */
 	cacheHeader?: string;
 	/** The app version header name. Used to dispatch event, that SPA version has changed. */
@@ -48,3 +48,7 @@ export interface HistoryState {
 }
 
 export type navigate = (data: NavigationData) => Promise<NavigationEventData>
+
+export interface SpaModule {
+	navigate: navigate
+}

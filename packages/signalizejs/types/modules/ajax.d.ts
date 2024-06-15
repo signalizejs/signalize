@@ -7,10 +7,10 @@ export interface AjaxReturn {
 }
 
 /** Options for configuring a fetch-related plugin. */
-export interface Options {
-	/** The value for the 'Requested-With' header (optional). */
+export interface AjaxModuleConfig {
+	/** The value for the 'Requested-With' header. */
 	requestedWithHeader?: string;
-	/** The value for the 'Accept' header (optional). */
+	/** The value for the 'Accept' header. */
 	acceptHeader?: string;
 }
 
@@ -21,3 +21,7 @@ export interface Options {
  * https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
  */
 export type ajax = (resource: RequestInfo | URL, options?: RequestInit) => Promise<AjaxReturn>;
+
+export interface AjaxModule {
+	ajax: ajax
+}

@@ -6,3 +6,7 @@ export interface IsInViewportInfo {
 
 /** Information about the visibility of an element within the viewport. */
 export type isInViewport = (element: Element) => IsInViewportInfo
+
+export interface ViewportModule {
+	isInViewport: isInViewport
+}

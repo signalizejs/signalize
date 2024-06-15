@@ -1,5 +1,10 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').EvaluateModule>} */
 export default async ({ resolve, globals }) => {
+	/**
+	 * @type {{
+	 *  Signal: import('../../types/index').signal
+	 * }}
+	 */
 	const { Signal } = await resolve('signal');
 	const chunkKeywordMap = {
 		undefined,
@@ -19,6 +24,7 @@ export default async ({ resolve, globals }) => {
 
 	const quotes = ['"', '\'', '`'];
 	let operatorsRe;
+	/** @type {string[]} */
 	let operatorsKeys = [];
 
 	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table

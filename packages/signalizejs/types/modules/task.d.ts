@@ -5,3 +5,7 @@
  * https://web.dev/optimize-long-tasks/
  */
 export type task = (callback: CallableFunction) => void;
+
+export interface TaskModule {
+	task: task
+}

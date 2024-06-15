@@ -1,6 +1,14 @@
 /** @type {import('../../../types/Signalize').Module} */
 export default async ({ resolve, params }) => {
 	const { attributePrefix } = params;
+	/** @type {{
+	 *   getPrerenderedNodes: import('../../../types/modules/directives').getPrerenderedNodes,
+	 *   processDirectives: import('../../../types/modules/directives').processDirectives,
+	 *   evaluate: import('../../../types/modules/evaluate').evaluate,
+	 *   signal: import('../../../types/modules/signal').signal,
+	 *   Signal: import('../../../types/modules/signal').Signal<any>,
+	 *   scope: import('../../../types/modules/scope').scope,
+	 * }} */
 	const resolved = await resolve('directives', 'evaluate', 'scope', 'signal');
 	const { getPrerenderedNodes, evaluate, processDirectives, signal, Signal } = resolved;
 	const _scope = resolved.scope;
@@ -42,18 +50,19 @@ export default async ({ resolve, params }) => {
 			}
 		};
 
-		const evaluateKey = (node) => {
-			let generated = node.getAttribute(`${attributePrefix}key`);
+		/** @param {Element} element */
+		const evaluateKey = (element) => {
+			let generated = element.getAttribute(`${attributePrefix}key`);
 
 			if (generated) {
 				return generated;
 			}
 
 			let key = null;
-			const keyFnString = node.getAttribute(`:${attributePrefix}key`);
+			const keyFnString = element.getAttribute(`:${attributePrefix}key`);
 
 			if (keyFnString) {
-				const { result } = evaluate(keyFnString, _scope(node));
+				const { result } = evaluate(keyFnString,_scope(element) ?? {});
 				key = result;
 			}
 
@@ -61,13 +70,14 @@ export default async ({ resolve, params }) => {
 		};
 
 		let inited = false;
-		/** @type {import('../signal.js').Signal} */
+		/** @type {import('../../../types/modules/signal').Signal<any>[]} */
 		let loopSignalsToWatch = [];
 
 		/**
 		 * @returns {void}
 		 */
 		const process = () => {
+			// eslint-disable-next-line prefer-const
 			let { result, detectedSignals } = evaluate(argumentsMatch[3], scope, !inited);
 
 			result = result instanceof Signal ? result() : result;
@@ -118,7 +128,8 @@ export default async ({ resolve, params }) => {
 					odd: counter % 2 !== 0,
 					even: counter % 2 === 0
 				});
-				let destruct = {};
+				/** @type {Record<string, any>} */
+				const destruct = {};
 
 				if (newContextVariables.length > 1) {
 					if (isArrayDestruct) {

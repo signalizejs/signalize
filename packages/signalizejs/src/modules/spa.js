@@ -1,15 +1,30 @@
-/** @type {import('../../types/Signalize').Module} */
-export default async ({ params, resolve, root }, options) => {
-	const { dispatch, ajax, redrawSnippet, on, customEventListener, customEvent } = await resolve('dom-ready', 'event', 'ajax', 'snippets');
+/** @type {import('../../types/Signalize').Module<import('../../types/index').SpaModule, import('../../types/index').SpaConfig>} */
+export default async ({ params, resolve, root }, config) => {
+	/**
+	 * @type {{
+	 *   dispatch: import('../../types/modules/event').dispatch,
+	 *   ajax: import('../../types/modules/ajax').ajax,
+	 *   redrawSnippet: import('../../types/index').redrawSnippet,
+	 *   on: import('../../types/index').on,
+	 *   customEventListener: import('../../types/index').customEventListener,
+	 *   customEvent: import('../../types/index').customEvent,
+	 * }}
+	 */
+	const { dispatch, ajax, redrawSnippet, on, customEventListener, customEvent } = await resolve(
+		'dom-ready',
+		'event',
+		'ajax',
+		'snippets'
+	);
 	const spaAttribute = `${params.attributePrefix}spa`;
 	const spaUrlAttribute = `${spaAttribute}${params.attributeSeparator}url`;
 	const spaIgnoreAttribute = `${spaAttribute}${params.attributeSeparator}ignore`;
 	const spaStateActionAttribute = `${spaAttribute}${params.attributeSeparator}state-action`;
 	const spaMetaCacheNameAttribute = `${spaAttribute}${params.attributeSeparator}cache-control`;
 	const spaHeaderPrefix = 'X-Spa-';
-	const spaCacheHeader = options?.cacheHeader ?? `${spaHeaderPrefix}Cache-Control`;
-	const spaAppVersionHeader = options?.appVersionHeader ?? `${spaHeaderPrefix}App-Version`;
-	const spaTransitionsHeader = options?.appVersionHeader ?? `${spaHeaderPrefix}Transitions`;
+	const spaCacheHeader = config?.cacheHeader ?? `${spaHeaderPrefix}Cache-Control`;
+	const spaAppVersionHeader = config?.appVersionHeader ?? `${spaHeaderPrefix}App-Version`;
+	const spaTransitionsHeader = config?.appVersionHeader ?? `${spaHeaderPrefix}Transitions`;
 	const defaultStateAction = 'push';
 
 	/** @type {import('../../types/modules/spa').HistoryState|undefined} */

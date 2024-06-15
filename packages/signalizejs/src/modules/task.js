@@ -1,13 +1,11 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').TaskModule>} */
 export default () => {
 	const deadlineInterval = 50;
 
 	/** @type {CallableFunction[]} */
 	const tasks = [];
 
-	/**
-	 * @returns {Promise<void>}
-	 */
+	/** @returns {Promise<void>} */
 	const yieldToMain = async () => {
 		await new Promise((resolve) => window.setTimeout(resolve, 0));
 	};

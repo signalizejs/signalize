@@ -1,4 +1,4 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').TraverseDomModule>} */
 export default () => ({
 	/** @type {import('../../types/modules/traverse-dom').traverseDom} */
 	traverseDom: async (root, callback, nodeTypes = []) => {

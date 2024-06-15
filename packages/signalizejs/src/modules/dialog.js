@@ -1,6 +1,13 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').DialogModule>} */
 export default async ({ resolve, root, params }) => {
 	const { attributePrefix, attributeSeparator } = params;
+	/**
+	 * @type {{
+	 *  dispatch: import('../../types/index').dispatch,
+	 *  on: import('../../types/index').on,
+	 *  off: import('../../types/index').off
+	 * }}
+	 */
 	const { dispatch, on, off } = await resolve('event', 'dom-ready');
 
 	const dialogAttribute = `${attributePrefix}dialog`;

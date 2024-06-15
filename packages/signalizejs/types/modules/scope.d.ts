@@ -1,7 +1,20 @@
+import type { Signalize } from '../../src/Signalize';
+
+export interface ScopeConstrutorParams {
+	node: Node
+}
+
+export type $refs = Record<string, Element | Element[]>;
+
+export type $cleanup = (data?: ScopeCleanupCallback) => void;
+
+export type $data = Record<string, any>;
+
 /** Interface representing a scope with essential properties and methods. */
-export interface Scope {
+export declare class Scope {
+	constructor(config: ScopeConstrutorParams);
 	/** Access to Signalize instance */
-	$: import('../Signalize').Signalize;
+	$: Signalize;
 	/** Root element associated with the scope */
 	$el: Element;
 	/** Optional parent scope (optional) */
@@ -9,9 +22,9 @@ export interface Scope {
 	/** Data associated with the scope */
 	$data: Record<string, any>;
 	/** Cleanup function initializer */
-	$cleanup: ScopeCleanupCallbackInitializer;
+	$cleanup: $cleanup;
 	/** References to elements within the scope */
-	$refs: Record<string, Element | Element[]>;
+	$refs: $refs;
 }
 
 /** Interface extending Node with a private property */
@@ -26,11 +39,12 @@ export type ScopeInitFunction = (scope: Scope) => void;
 /** Type representing a function for scope cleanup. */
 export type ScopeCleanupCallback = () => void | Promise<void>;
 
-/** Function type for initializing a scope cleanup callback. */
-export type ScopeCleanupCallbackInitializer = (data?: ScopeCleanupCallback) => void;
-
 /** Function type to create a scope. */
-export type ScopeCallback = (
+export type scope = (
 	node: SignalizeNode,
 	init?: ScopeInitFunction
 ) => Scope | undefined;
+
+export interface ScopeModule {
+	scope: scope
+}

@@ -1,4 +1,4 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').WidthModule>} */
 export default () => ({
 	/** @type {import('../../types/modules/width').width} */
 	width: (element) => {

@@ -1,6 +1,9 @@
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').ViewportModule>} */
 export default async ({ resolve }) => {
-	/** @type {{ offset: import('../../types/modules/offset').offset, height: import('../../types/modules/height').height }}} */
+	/** @type {{
+	 *   offset: import('../../types/modules/offset').offset,
+	 *   height: import('../../types/modules/height').height
+	 * }} */
 	const { offset, height } = await resolve('offset', 'height');
 
 	return {

@@ -13,3 +13,7 @@ export type bind = (
 	element: HTMLElement,
 	attributes: Record<string, AttributeConfig | Signal<any>>
 ) => void;
+
+export interface BindModule {
+	bind: bind
+}

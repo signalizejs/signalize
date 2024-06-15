@@ -1,6 +1,11 @@
 
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').DomReadyModule>} */
 export default async ({ resolve, root }) => {
+	/**
+	 * @type {{
+	 *  customEventListener: import('../../types/index').customEventListener
+	 * }}
+	 */
 	const { customEventListener } = await resolve('event', { waitOnInit: false });
 
 	/** @type {CallableFunction[]} */

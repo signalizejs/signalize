@@ -1,37 +1,22 @@
-/**
- * Represents a child element in hyperscript, which can be a string, number, Element, Node, or Signal.
- *
- * @typedef {(string | number | Element | Node | import('./signal').Signal<any>)} HyperscriptChild
- */
-
-/**
- * Represents attributes for a hyperscript child element, where each attribute is a key-value pair
- * with the key being a string and the value being either a string or a Signal.
- *
- * @typedef {Object.<string, string | import('./signal').Signal>} HyperscriptChildAttrs
- */
-
-/**
- * Creates a new HTML element using hyperscript syntax.
- *
- * @function
- * @template {HTMLElement} T
- * @param {string} tagName - The tag name of the HTML element to create.
- * @param {...(HyperscriptChildAttrs | HyperscriptChild | HyperscriptChild[])} children - Child elements or attributes.
- * @returns {T} - The newly created HTML element.
-*/
-
-/** @type {import('../../types/Signalize').Module} */
+/** @type {import('../../types/Signalize').Module<import('../../types/index').HyperscriptModule>} */
 export default async ({ resolve }) => {
+	/**
+	 * @type {{
+	 *   bind: import('../../types/modules/bind').bind,
+	 *   Signal: import('../../types/modules/signal').Signal<any>
+	 * }}
+	 */
 	const { bind, Signal } = await resolve('bind', 'signal');
 
-	/** @type {h}  */
+	/**
+	 * @template T
+	 * @type {import('../../types/index').h}
+	 */
 	const h = (tagName, ...children) => {
-		/** @type {HyperscriptChildAttrs} */
+		/** @type {import('../../types/index').HyperscriptChildAttrs} */
 		let attrs = {};
 
 		if (children[0]?.constructor?.name === 'Object') {
-			/** @type {HyperscriptChildAttrs} */
 			attrs = children.shift();
 		}
 
@@ -45,7 +30,7 @@ export default async ({ resolve }) => {
 
 		/**
 		 *
-		 * @param {string | number | Element | Node | import('./signal').Signal<any>} child
+		 * @param {string | number | Element | Node | import('../../types/modules/signal').Signal<any>} child
 		 * @returns {Array<Node | Element>}
 		 */
 		const normalizeChild = (child) => {

@@ -10,3 +10,7 @@ export interface RedrawSnippetOptions {
 
 /** Sync elements in dom with snippet="" with the new content- */
 export type redrawSnippet = (content: string, options?: RedrawSnippetOptions) => void;
+
+export interface SnippetsModule {
+	redrawSnippet: redrawSnippet
+}
