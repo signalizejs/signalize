@@ -1,13 +1,11 @@
 # Root
 /node_modules/
-*.lerna_backup
 *.tgz
 /coverage
 .idea
 /.idea
 
 #Packages
-/packages/**/*.lerna_backup
 /packages/**/node_modules
 /packages/**/dist
 /packages/**/esm

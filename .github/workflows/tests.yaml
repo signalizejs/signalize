@@ -10,7 +10,7 @@ on:
 
 jobs:
   tests:
-    name: Tests build
+    name: Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -18,7 +18,7 @@ jobs:
 
         - uses: actions/setup-node@v3
           with:
-            node-version: 16
+            node-version: 22
             cache: npm
 
         - name: Versions
@@ -26,9 +26,6 @@ jobs:
 
         - name: Install packages
           run: npm run repo:init
-
-        - name: Build
-          run: npm run build
 
         #- name: Eslint
         #  run: npm run eslint:check
