@@ -23,9 +23,7 @@ export default async ({ resolve, globals }) => {
 	};
 
 	const quotes = ['"', '\'', '`'];
-	let operatorsRe;
 	/** @type {string[]} */
-	let operatorsKeys = [];
 
 	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence#table
 	/** @type {Record<number, [...Array<string>, CallableFunction][]>} */
@@ -189,8 +187,8 @@ export default async ({ resolve, globals }) => {
 		}
 	}
 
-	operatorsKeys = Object.values(precedenceOperatorKeysMap).flat();
-	operatorsRe = new RegExp(`^(${operatorsKeys
+	const operatorsKeys = Object.values(precedenceOperatorKeysMap).flat();
+	const operatorsRe = new RegExp(`^(${operatorsKeys
 		.map((item) => {
 			item = item.replace(/[|+\\/?*^.,(){}$[\]]/g, '\\$&');
 

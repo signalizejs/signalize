@@ -44,6 +44,7 @@ export default async ({ resolve }) => {
 			/** @type {string[]} */
 			const bindedProps = [];
 
+			// eslint-disable-next-line prefer-const
 			for (let [attr, attrOptions] of Object.entries(attributes)) {
 				if (bindedProps.includes(attr)) {
 					continue;

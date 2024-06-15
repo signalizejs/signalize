@@ -27,8 +27,8 @@ jobs:
         - name: Install packages
           run: npm run repo:init
 
-        #- name: Eslint
-        #  run: npm run eslint:check
+        - name: Eslint
+          run: npm run eslint:check
 
         - name: Run Playwright Tests
           run: npm run tests:run

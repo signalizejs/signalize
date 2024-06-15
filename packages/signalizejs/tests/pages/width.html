@@ -19,9 +19,8 @@
 		import Signalize from 'signalizejs';
 		import WidthPlugin from 'signalizejs/width';
 
-		const { on, width } = new Signalize({ plugins: [
-			WidthPlugin()
-		]});
+		const { resolve } = new Signalize();
+		const { width } = await resolve('width');
 
 		const el = document.querySelector('div');
 		document.documentElement.setAttribute('result', width(el));

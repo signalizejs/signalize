@@ -19,9 +19,8 @@
 		import Signalize from 'signalizejs';
 		import HeightPlugin from 'signalizejs/height';
 
-		const { on, height } = new Signalize({ plugins: [
-			HeightPlugin()
-		]});
+		const { resolve } = new Signalize();
+		const { height } = await resolve('height');
 
 		const el = document.querySelector('div');
 		document.documentElement.setAttribute('result', height(el));

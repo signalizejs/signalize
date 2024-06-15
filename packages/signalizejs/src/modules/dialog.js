@@ -45,6 +45,7 @@ export default async ({ resolve, root, params }) => {
 			throw new Error(`Dialog "${dialogOrId}" not found.`);
 		}
 
+		// eslint-disable-next-line prefer-const
 		let { modelessly = false, closable = true } = options;
 
 		if (dialog.hasAttribute(dialogModelessAttribute)) {
