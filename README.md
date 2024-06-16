@@ -36,8 +36,7 @@ SignalizeJS is a client-side, multipurpose, dependency-less, easily extensible, 
 - 💎 No dependencies
 
 ## 📦 Ecosystem
-Signalize leverages modern ES modules and import maps.<br>
-It imports only a small 2 KB core and you decide what to import and when.<br>
+Signalize imports only a small 2 KB core and you decide what to import and when.
 This makes the framework small, scalable and flexible.
 
 | Package                |  Description                                                                                                           |

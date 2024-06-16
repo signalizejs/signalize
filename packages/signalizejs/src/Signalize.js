@@ -19,7 +19,7 @@ export class Signalize {
 	];
 	/** @type {Record<string, Promise<any>>} */
 	#currentlyResolvedModules = {};
-	/** @type {Record<string, { initFunction: CallableFunction, config: Record<string, any>|undefined}>} */
+	/** @type {Record<string, { initFunction: CallableFunction, config: Record<string, any>|undefined}} */
 	#importedModulesQueue = {};
 	/** @type {Record<string, any>} */
 	#initedModules = {};
@@ -186,7 +186,7 @@ export class Signalize {
 							moduleFunctionality = await (initFunction ?? this.#importedModulesQueue[name]?.initFunction)(this, config);
 						} else {
 							const module = await this.#resolver(name);
-							moduleFunctionality = typeof await (module[name] ?? module.default)(this, config);
+							moduleFunctionality = await (module[name] ?? module.default)(this, config);
 						}
 
 						if (!(name in this.#initedModules) && (configIsEmpty || !this.#inited)) {
