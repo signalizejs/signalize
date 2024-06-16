@@ -29,6 +29,8 @@ export interface ComponentOptions {
 	props?: Record<string, any> | string[] | ComponentProps;
 	/** Function for defining component logic. */
 	setup?: setupCallback;
+	/** List of web components, that must be defined before this component is inited */
+	components?: string[];
 	/**
 	 * Use shadow root.
 	 * https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot

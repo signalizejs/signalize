@@ -131,6 +131,21 @@ export default async ({ resolve, params }, config) => {
 					}
 				});
 
+				// Sometime, it's much nicer to wait on child components to be defined.
+				// It can save a lot of boilerplate code.
+				const dependencies = [];
+
+				for (const componentDependency of options?.components ?? []) {
+					if (!customElements.get(componentDependency)) {
+						dependencies.push(new Promise(async (resolve) => {
+							await customElements.whenDefined(componentDependency);
+							resolve(true);
+						}));
+					}
+				}
+
+				await Promise.all(dependencies);
+
 				for (const attr of this.#scope.$el.attributes) {
 					this.attributeChangedCallback(attr.name, undefined, this.#scope.$el.getAttribute(attr.name));
 				}
@@ -189,7 +204,6 @@ export default async ({ resolve, params }, config) => {
 			}
 
 			async connectedCallback () {
-
 				await this.#constructPromise;
 
 				this.#callLifeCycleListeners(this.#connected);

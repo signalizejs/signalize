@@ -19,8 +19,10 @@ export class Signalize {
 	];
 	/** @type {Record<string, Promise<any>>} */
 	#currentlyResolvedModules = {};
+	/** @type {Record<string, { initFunction: CallableFunction, config: Record<string, any>|undefined}>} */
+	#importedModulesQueue = {};
 	/** @type {Record<string, any>} */
-	#modules = {};
+	#initedModules = {};
 	/** @type {Promise<any>|null} */
 	#initPromise = null;
 	#inited = false;
@@ -106,6 +108,7 @@ export class Signalize {
 		 * @template T
 		 * @type {Promise<Record<string, any>>[]} */
 		const importsPromises = [];
+		const modulesToInit = [];
 
 		for (const moduleToImport of modules) {
 			/** @type {string} */
@@ -137,48 +140,71 @@ export class Signalize {
 				moduleName = `${this.#instanceId}/${moduleName}`;
 			}
 
-			const moduleConfigIsEmpty = Object.keys(moduleConfig).length === 0;
+			modulesToInit.push({
+				initFunction: moduleInitFunction,
+				name: moduleName,
+				config: moduleConfig
+			});
 
-			if (moduleName in this.#modules && moduleConfigIsEmpty) {
+			if (moduleInitFunction !== undefined) {
+				if (this.#importedModulesQueue[moduleName]) {
+					throw new Error(`Cannot initialize module "${moduleName}" twice with different init function.`);
+				}
+
+				this.#importedModulesQueue[moduleName] = {
+					initFunction: moduleInitFunction,
+					config: moduleConfig
+				}
+			}
+		}
+
+		for (const moduleToInit of modulesToInit) {
+			const { name, config, initFunction } = moduleToInit;
+
+			const configIsEmpty = Object.keys(config).length === 0;
+
+			if (name in this.#initedModules && configIsEmpty) {
 				resolved = {
 					...resolved,
-					...this.#modules[moduleName]
+					...this.#initedModules[name]
 				};
 				continue;
 			}
 
 			let modulePromise;
 
-			const canBeCached = !(moduleName in this.#modules) && (moduleConfigIsEmpty || !this.#inited);
+			const canBeCached = !(name in this.#initedModules) && (configIsEmpty || !this.#inited);
 
-			if (canBeCached && !(moduleName in this.#currentlyResolvedModules)) {
+			if (canBeCached && !(name in this.#currentlyResolvedModules)) {
 				// eslint-disable-next-line no-async-promise-executor
-				this.#currentlyResolvedModules[moduleName] = new Promise(async (resolve, reject) => {
+				this.#currentlyResolvedModules[name] = new Promise(async (resolve, reject) => {
 					try {
 						let moduleFunctionality;
-						if (moduleInitFunction === undefined) {
-							const module = await this.#resolver(moduleName);
-							moduleFunctionality = await (module[moduleName] ?? module.default)(this, moduleConfig);
+
+
+						if (initFunction !== undefined || this.#importedModulesQueue[name]?.initFunction !== undefined) {
+							moduleFunctionality = await (initFunction ?? this.#importedModulesQueue[name]?.initFunction)(this, config);
 						} else {
-							moduleFunctionality = await moduleInitFunction(this, moduleConfig);
+							const module = await this.#resolver(name);
+							moduleFunctionality = typeof await (module[name] ?? module.default)(this, config);
 						}
 
-						if (!(moduleName in this.#modules) && (moduleConfigIsEmpty || !this.#inited)) {
-							this.#modules[moduleName] = moduleFunctionality;
+						if (!(name in this.#initedModules) && (configIsEmpty || !this.#inited)) {
+							this.#initedModules[name] = moduleFunctionality;
 						}
 
-						delete this.#currentlyResolvedModules[moduleName];
-						resolve(this.#modules[moduleName]);
+						delete this.#currentlyResolvedModules[name];
+						resolve(this.#initedModules[name]);
 					} catch (e) {
-						reject(`Module "${moduleName}" could not be loaded from import. ${e}`);
+						reject(e);
 					}
 				});
 
-				modulePromise = this.#currentlyResolvedModules[moduleName];
+				modulePromise = this.#currentlyResolvedModules[name];
 			} else if (canBeCached) {
-				modulePromise = this.#currentlyResolvedModules[moduleName];
+				modulePromise = this.#currentlyResolvedModules[name];
 			} else {
-				throw new Error(`Module "${moduleName}" could not be loaded.`);
+				throw new Error(`Module "${name}" could not be loaded.`);
 			}
 
 			importsPromises.push(modulePromise);
