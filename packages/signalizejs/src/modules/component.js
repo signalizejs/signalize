@@ -1,7 +1,7 @@
 /**
  * @type {import('../../types/Signalize').Module<
- *   import('../../types/index').ComponentModule,
- *   import('../../types/index').ComponentModuleConfig
+ *   import('../../types/modules/component').ComponentModule,
+ *   import('../../types/modules/component').ComponentModuleConfig
  *  >}
  */
 export default async ({ resolve, params }, config) => {
@@ -10,13 +10,13 @@ export default async ({ resolve, params }, config) => {
 
 	/**
 	 * @type {{
-	 *  signal: import('../../types/index').signal,
-	 *  dispatch: import('../../types/index').dispatch,
-	 *  scope: import('../../types/index').scope,
-	 *  dashCase: import('../../types/index').dashCase
+	 *  signal: import('../../types/modules/signal').signal,
+	 *  dispatch: import('../../types/modules/event').dispatch,
+	 *  scope: import('../../types/modules/scope').scope,
+	 *  dashCase: import('../../types/modules/strings/cases').dashCase
 	 * }}
 	*/
-	const { signal, dispatch, scope, dashCase } = await resolve('signal', 'event', 'scope', 'dash-case');
+	const { dispatch, scope, signal, dashCase } = await resolve('event', 'scope', 'signal', 'strings/cases');
 
 	const cloakAttribute = `${attributePrefix}cloak`;
 

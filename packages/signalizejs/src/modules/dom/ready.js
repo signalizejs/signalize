@@ -1,9 +1,9 @@
 
-/** @type {import('../../types/Signalize').Module<import('../../types/index').DomReadyModule>} */
+/** @type {import('../../../types/Signalize').Module<import('../../../types/modules/dom/ready').DomReadyModule>} */
 export default async ({ resolve, root }) => {
 	/**
 	 * @type {{
-	 *  customEventListener: import('../../types/index').customEventListener
+	 *  customEventListener: import('../../../types/modules/event').customEventListener
 	 * }}
 	 */
 	const { customEventListener } = await resolve('event', { waitOnInit: false });
@@ -23,7 +23,7 @@ export default async ({ resolve, root }) => {
 		}
 	};
 
-	/** @type {import('../../types/modules/dom-ready').isDomReady} */
+	/** @type {import('../../../types/modules/dom/ready').isDomReady} */
 	const isDomReady = () => {
 		const documentElement = root instanceof Document ? root : root?.ownerDocument;
 		return documentElement.readyState !== 'loading';

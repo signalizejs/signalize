@@ -1,5 +1,5 @@
 export type dashCase = (string: string) => string;
 
-export interface DashCaseModule {
+export interface StringsCasesModule {
 	dashCase: dashCase
 }

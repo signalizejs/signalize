@@ -1,4 +1,4 @@
-/** @type {import('../../types/Signalize').Module<import('../../types/index').MutationObserverModule>} */
+/** @type {import('../../types/Signalize').Module<import('../../types/modules/mutation-observer').MutationObserverModule>} */
 export default ($) => {
 	/** @type {MutationObserver} */
 	let rootObserver;
@@ -7,7 +7,7 @@ export default ($) => {
 	/**
 	 * @param {MutationRecord[]} mutationRecords
 	 * @param {number[]} allowedNodeTypes
-	 * @returns {import('../../types/index').MutationNodes}
+	 * @returns {import('../../types/modules/mutation-observer').MutationNodes}
 	 */
 	const processMutationObserverRecords = (mutationRecords, allowedNodeTypes = []) => {
 		/** @type {Node[]} */
@@ -50,7 +50,7 @@ export default ($) => {
 		};
 	};
 
-	/** @type {import('../../types/index').createMutationObserver} */
+	/** @type {import('../../types/modules/mutation-observer').createMutationObserver} */
 	const createMutationObserver = (root, listener, options)  => {
 		const observer = new MutationObserver((mutationRecords) => {
 			const nodes = processMutationObserverRecords(mutationRecords);
@@ -66,7 +66,7 @@ export default ($) => {
 		return observer;
 	};
 
-	/** @type {import('../../types/index').observeMutations} */
+	/** @type {import('../../types/modules/mutation-observer').observeMutations} */
 	const observeMutations = (listener) => {
 		if (rootObserver === undefined) {
 			rootObserver = new MutationObserver((mutationRecords) => {

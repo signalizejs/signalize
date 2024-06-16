@@ -1,4 +1,4 @@
-/** @type {import('../../types/Signalize').Module<import('../../types/index').HyperscriptModule>} */
+/** @type {import('../../types/Signalize').Module<import('../../types/modules/hyperscript').HyperscriptModule>} */
 export default async ({ resolve }) => {
 	/**
 	 * @type {{
@@ -10,10 +10,10 @@ export default async ({ resolve }) => {
 
 	/**
 	 * @template T
-	 * @type {import('../../types/index').h}
+	 * @type {import('../../types/modules/hyperscript').h}
 	 */
 	const h = (tagName, ...children) => {
-		/** @type {import('../../types/index').HyperscriptChildAttrs} */
+		/** @type {import('../../types/modules/hyperscript').HyperscriptChildAttrs} */
 		let attrs = {};
 
 		if (children[0]?.constructor?.name === 'Object') {

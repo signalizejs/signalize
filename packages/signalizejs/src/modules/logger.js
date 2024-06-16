@@ -2,8 +2,8 @@
 export default async ({ resolve}, options) => {
 	/**
 	 * @type {{
-	 *  ajax: import('../../types/index').ajax,
-	 *  dispatch: import('../../types/index').dispatch
+	 *  ajax: import('../../types/modules/ajax').ajax,
+	 *  dispatch: import('../../types/modules/event').dispatch
 	 * }}
 	 */
 	const { ajax, dispatch } = await resolve('ajax', 'event');
@@ -12,7 +12,7 @@ export default async ({ resolve}, options) => {
 	const enabledLevels = options?.levels ?? ['error'];
 
 	/**
-	 * @param {import('../../types/index').Log} log
+	 * @param {import('../../types/modules/logger').Log} log
 	 * @returns {void}
 	 */
 	const handler = (log) => {

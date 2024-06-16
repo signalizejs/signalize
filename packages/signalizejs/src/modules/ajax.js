@@ -1,13 +1,13 @@
 /**
  * @type {import('../../types/Signalize').Module<
- *  import('../../types/index').AjaxModule,
+ *  import('../../types/modules/ajax').AjaxModule,
  *  import('../../types/modules/ajax').AjaxModuleConfig
  * >}
  */
 export default async ({ resolve }, config) => {
 	/**
 	 * @type {{
-	 *  dispatch: import('../../types/index').dispatch
+	 *  dispatch: import('../../types/modules/event').dispatch
 	 * }}
 	 */
 	const { dispatch } = await resolve('event');

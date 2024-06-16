@@ -1,4 +1,4 @@
-/** @type {import('../../types/Signalize').Module<import('../../types/index').HeightModule>} */
+/** @type {import('../../types/Signalize').Module<import('../../types/modules/height').HeightModule>} */
 export default () => ({
 	/** @type {import('../../types/modules/height').height} */
 	height: (element) => {

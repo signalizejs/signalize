@@ -1,8 +1,8 @@
-/** @type {import('../../types/Signalize').Module<import('../../types/index').EvaluateModule>} */
+/** @type {import('../../types/Signalize').Module<import('../../types/modules/evaluator').EvaluateModule>} */
 export default async ({ resolve, globals }) => {
 	/**
 	 * @type {{
-	 *  Signal: import('../../types/index').signal
+	 *  Signal: import('../../types/modules/signal').signal
 	 * }}
 	 */
 	const { Signal } = await resolve('signal');
@@ -207,7 +207,7 @@ export default async ({ resolve, globals }) => {
 	const allPrecedences = Object.keys(precedenceOperatorsMap).sort((a, b) => b - a);
 	const tokenizeCache = {};
 
-	/** @type {import('../../types/modules/evaluate').evaluate} */
+	/** @type {import('../../types/modules/evaluator').evaluate} */
 	const evaluate = (str, context = {}, trackSignals = false) => {
 		const detectedSignals = new Set();
 		const signalsUnwatchCallbacks = new Set();

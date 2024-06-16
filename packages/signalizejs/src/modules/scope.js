@@ -1,17 +1,17 @@
-/** @type {import('../../types/Signalize').Module<import('../../types/index').ScopeModule>} */
+/** @type {import('../../types/Signalize').Module<import('../../types/modules/scope').ScopeModule>} */
 export default async ($) => {
 	const { params, resolve } = $;
 
 	/**
 	 * @type {{
-	 *  observeMutations: import('../../types/index').observeMutations
+	 *  observeMutations: import('../../types/modules/mutation-observer').observeMutations
 	 * }}
 	 */
 	const { observeMutations } = await resolve('mutation-observer');
 	const scopeKey = '__signalizeScope';
 	const refAttribute = `${params.attributePrefix}ref`;
 
-	/** @type {import('../../types/index').Scope} */
+	/** @type {import('../../types/modules/scope').Scope} */
 	class Scope {
 		/**
 		 * @readonly
@@ -51,7 +51,7 @@ export default async ($) => {
 			node[scopeKey] = this;
 		}
 
-		/** @type {import('../../types/index').$data} */
+		/** @type {import('../../types/modules/scope').$data} */
 		get $data() {
 			return new Proxy(this.#data, {
 				/**
@@ -83,7 +83,7 @@ export default async ($) => {
 			});
 		}
 
-		/** @type {import('../../types/index').$data} */
+		/** @type {import('../../types/modules/scope').$data} */
 		set $data (data) {
 			for (const key in this.$data) {
 				if (key in data) {
@@ -98,7 +98,7 @@ export default async ($) => {
 			}
 		}
 
-		/** @type {import('../../types/index').$cleanup} */
+		/** @type {import('../../types/modules/scope').$cleanup} */
 		$cleanup = (callback) => {
 			if (callback !== undefined) {
 				this.#cleanups.add(callback);
@@ -128,7 +128,7 @@ export default async ($) => {
 			cleanChildren(this.$el);
 		};
 
-		/** @type {import('../../types/index').$refs} */
+		/** @type {import('../../types/modules/scope').$refs} */
 		$refs = new Proxy({}, {
 			get: (target, key) => {
 				const refs = [...this.$el.querySelectorAll(`[${refAttribute}=${key}]`)].filter((element) => {

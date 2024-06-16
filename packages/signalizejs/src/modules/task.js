@@ -1,4 +1,4 @@
-/** @type {import('../../types/Signalize').Module<import('../../types/index').TaskModule>} */
+/** @type {import('../../types/Signalize').Module<import('../../types/modules/task').TaskModule>} */
 export default () => {
 	const deadlineInterval = 50;
 

@@ -1,6 +1,6 @@
-/** @type {import('../../types/Signalize').Module<import('../../types/index').IsVisibleModule>} */
+/** @type {import('../../types/Signalize').Module<import('../../types/modules/visibility').VisibilityModule>} */
 export default () => ({
-	/** @type {import('../../types/modules/is-visible').isVisible} */
+	/** @type {import('../../types/modules/visibility').isVisible} */
 	isVisible: (element) => {
 		if (element.getClientRects().length !== 0) {
 			return true;

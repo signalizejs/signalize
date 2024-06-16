@@ -4,12 +4,12 @@ export default async ({ resolve, params }) => {
 	/** @type {{
 	 *   getPrerenderedNodes: import('../../../types/modules/directives').getPrerenderedNodes,
 	 *   processDirectives: import('../../../types/modules/directives').processDirectives,
-	 *   evaluate: import('../../../types/modules/evaluate').evaluate,
+	 *   evaluate: import('../../../types/modules/evaluator').evaluate,
 	 *   signal: import('../../../types/modules/signal').signal,
 	 *   Signal: import('../../../types/modules/signal').Signal<any>,
 	 *   scope: import('../../../types/modules/scope').scope,
 	 * }} */
-	const resolved = await resolve('directives', 'evaluate', 'scope', 'signal');
+	const resolved = await resolve('directives', 'evaluator', 'scope', 'signal');
 	const { getPrerenderedNodes, evaluate, processDirectives, signal, Signal } = resolved;
 	const _scope = resolved.scope;
 

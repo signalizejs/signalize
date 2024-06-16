@@ -37,9 +37,6 @@
 		"./component": {
 			"import": "./src/modules/component.js"
 		},
-		"./dash-case": {
-			"import": "./src/modules/dash-case.js"
-		},
 		"./dialog": {
 			"import": "./src/modules/dialog.js"
 		},
@@ -52,11 +49,14 @@
 		"./directives/if": {
 			"import": "./src/modules/directives/if.js"
 		},
-		"./dom-ready": {
-			"import": "./src/modules/dom-ready.js"
+		"./dom/ready": {
+			"import": "./src/modules/dom/ready.js"
 		},
-		"./evaluate": {
-			"import": "./src/modules/evaluate.js"
+		"./dom/traverser": {
+			"import": "./src/modules/dom/traverser.js"
+		},
+		"./evaluator": {
+			"import": "./src/modules/evaluator.js"
 		},
 		"./event": {
 			"import": "./src/modules/event.js"
@@ -64,17 +64,14 @@
 		"./ajax": {
 			"import": "./src/modules/ajax.js"
 		},
-		"./height": {
-			"import": "./src/modules/height.js"
-		},
 		"./hyperscript": {
 			"import": "./src/modules/hyperscript.js"
 		},
 		"./intersection-observer": {
 			"import": "./src/modules/intersection-observer.js"
 		},
-		"./is-visible": {
-			"import": "./src/modules/is-visible.js"
+		"./visibility": {
+			"import": "./src/modules/visibility.js"
 		},
 		"./logger": {
 			"import": "./src/modules/logger.js"
@@ -91,23 +88,23 @@
 		"./signal": {
 			"import": "./src/modules/signal.js"
 		},
+		"./sizes": {
+			"import": "./src/modules/sizes.js"
+		},
 		"./snippets": {
 			"import": "./src/modules/snippets.js"
 		},
 		"./spa": {
 			"import": "./src/modules/spa.js"
 		},
+		"./strings/cases": {
+			"import": "./src/modules/strings/cases.js"
+		},
 		"./task": {
 			"import": "./src/modules/task.js"
 		},
-		"./traverse-dom": {
-			"import": "./src/modules/traverse-dom.js"
-		},
 		"./viewport": {
 			"import": "./src/modules/viewport.js"
-		},
-		"./width": {
-			"import": "./src/modules/width.js"
 		},
 		"./types/*": "./types/*"
 	},

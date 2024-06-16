@@ -1,8 +1,8 @@
-/** @type {import('../../types/Signalize').Module<import('../../types/index').SnippetsModule>} */
+/** @type {import('../../types/Signalize').Module<import('../../types/modules/snippets').SnippetsModule>} */
 export default async ({ params, resolve, root }) => {
 	/**
 	 * @type {{
-	 *   dispatch: import('../../types/index').dispatch
+	 *   dispatch: import('../../types/modules/event').dispatch
 	 * }}
 	 */
 	const { dispatch } = await resolve('event');

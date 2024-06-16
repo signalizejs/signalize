@@ -11,7 +11,7 @@
 		{
 			"imports": {
 				"signalizejs": "/packages/signalizejs/src/Signalize.js",
-				"signalizejs/width": "/packages/signalizejs/src/modules/width.js"
+				"signalizejs/sizes": "/packages/signalizejs/src/modules/sizes.js"
 			}
 		}
 	</script>
@@ -19,7 +19,7 @@
 		import Signalize from 'signalizejs';
 
 		const { resolve } = new Signalize();
-		const { width } = await resolve('width');
+		const { width } = await resolve('sizes');
 
 		const el = document.querySelector('div');
 		document.documentElement.setAttribute('result', width(el));

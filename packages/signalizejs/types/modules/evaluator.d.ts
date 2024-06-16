@@ -1,4 +1,4 @@
-import type { Signal } from "../../types/modules/signal"
+import type { Signal } from "./signal"
 
 export type evaluate = (string: string, content: Record<string, any>, trackSignals?: boolean) => {
 	result: any,

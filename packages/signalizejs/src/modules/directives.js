@@ -1,7 +1,7 @@
 /**
  * @type {import('../../types/Signalize').Module<
- *   import('../../types/index').DirectivesModule,
- *   import('../../types/index').DirectivesModuleConfig
+ *   import('../../types/modules/directives').DirectivesModule,
+ *   import('../../types/modules/directives').DirectivesModuleConfig
  * >}
  */
 export default async ($, config) => {
@@ -9,19 +9,19 @@ export default async ($, config) => {
 	const { attributePrefix, attributeSeparator } = params;
 	/**
 	 * @type {{
-	 *  on: import('../../types/index').on,
-	 *  scope: import('../../types/index').scope,
-	 *  traverseDom: import('../../types/index').traverseDom,
-	 *  evaluate: import('../../types/index').evaluate,
-	 *  bind: import('../../types/index').bind,
-	 *  Signal: import('../../types/index').signal
+	 *  on: import('../../types/modules/event').on,
+	 *  scope: import('../../types/modules/scope').scope,
+	 *  traverseDom: import('../../types/modules/dom/traverser').traverseDom,
+	 *  evaluate: import('../../types/modules/evaluator').evaluate,
+	 *  bind: import('../../types/modules/bind').bind,
+	 *  Signal: import('../../types/modules/signal').signal
 	 * }}
 	 */
 	const { on, scope, traverseDom, evaluate, bind, Signal } = await resolve(
 		'bind',
-		'event', 'evaluate',
+		'dom/traverser',
+		'event', 'evaluator',
 		'scope', 'signal',
-		'traverse-dom'
 	);
 
 	/** @type {Record<string, import('../../types/modules/directives').RegisteredDirective} */

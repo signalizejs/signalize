@@ -7,7 +7,7 @@
 export default async ({ root, resolve }) => {
 	/**
 	 * @type {{
-	 *  observeMutations: import('../../types/index').observeMutations
+	 *  observeMutations: import('../../types/modules/mutation-observer').observeMutations
 	 * }}
 	 */
 	const { observeMutations } = await resolve('mutation-observer');
@@ -76,7 +76,7 @@ export default async ({ root, resolve }) => {
 		return elements.filter((element) => element !== null);
 	};
 
-	/** @type {import('../../types/index').on} */
+	/** @type {import('../../types/modules/event').on} */
 	const on = (events, targetOrCallback, callbackOrOptions, options) => {
 		let targetOrSelector;
 		/** @type {CallableFunction} */
