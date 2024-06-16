@@ -1,0 +1,14 @@
+# Root
+/node_modules/
+*.tgz
+/coverage
+.idea
+/.idea
+
+#Packages
+/packages/**/node_modules
+/packages/**/dist
+/packages/**/esm
+/packages/**/lib
+/packages/**/tmp
+/packages/**/types

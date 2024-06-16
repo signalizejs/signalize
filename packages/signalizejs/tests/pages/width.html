@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title></title>
+</head>
+<body>
+	<div style="width:200px;"></div>
+	<script type="importmap">
+		{
+			"imports": {
+				"signalizejs": "/packages/signalizejs/src/Signalize.js",
+				"signalizejs/sizes": "/packages/signalizejs/src/modules/sizes.js"
+			}
+		}
+	</script>
+	<script type="module">
+		import Signalize from 'signalizejs';
+
+		const { resolve } = new Signalize();
+		const { width } = await resolve('sizes');
+
+		const el = document.querySelector('div');
+		document.documentElement.setAttribute('result', width(el));
+	</script>
+</body>
+</html>

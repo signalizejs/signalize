@@ -1,0 +1,117 @@
+{
+	"name": "signalizejs",
+	"version": "0.1.0",
+	"description": "A microframework inspired by SolidJS and Svelte, designed to easily create optimized and interactive websites with minimal JavaScript.",
+	"keywords": [
+		"signalize",
+		"signalizejs",
+		"performance",
+		"components",
+		"reactive",
+		"signalize",
+		"ui",
+		"reactive",
+		"components",
+		"performance",
+		"front-end",
+		"framework",
+		"web"
+	],
+	"type": "module",
+	"sideEffects": false,
+	"author": "Vladimír Macháček",
+	"files": [
+		"types",
+		"src",
+		"package.json",
+		"LICENSE",
+		"README.md"
+	],
+	"exports": {
+		".": {
+			"import": "./src/Signalize.js"
+		},
+		"./bind": {
+			"import": "./src/modules/bind.js"
+		},
+		"./component": {
+			"import": "./src/modules/component.js"
+		},
+		"./dialog": {
+			"import": "./src/modules/dialog.js"
+		},
+		"./directives": {
+			"import": "./src/modules/directives.js"
+		},
+		"./directives/for": {
+			"import": "./src/modules/directives/for.js"
+		},
+		"./directives/if": {
+			"import": "./src/modules/directives/if.js"
+		},
+		"./dom/ready": {
+			"import": "./src/modules/dom/ready.js"
+		},
+		"./dom/traverser": {
+			"import": "./src/modules/dom/traverser.js"
+		},
+		"./evaluator": {
+			"import": "./src/modules/evaluator.js"
+		},
+		"./event": {
+			"import": "./src/modules/event.js"
+		},
+		"./ajax": {
+			"import": "./src/modules/ajax.js"
+		},
+		"./hyperscript": {
+			"import": "./src/modules/hyperscript.js"
+		},
+		"./intersection-observer": {
+			"import": "./src/modules/intersection-observer.js"
+		},
+		"./visibility": {
+			"import": "./src/modules/visibility.js"
+		},
+		"./logger": {
+			"import": "./src/modules/logger.js"
+		},
+		"./mutation-observer": {
+			"import": "./src/modules/mutation-observer.js"
+		},
+		"./offset": {
+			"import": "./src/modules/offset.js"
+		},
+		"./scope": {
+			"import": "./src/modules/scope.js"
+		},
+		"./signal": {
+			"import": "./src/modules/signal.js"
+		},
+		"./sizes": {
+			"import": "./src/modules/sizes.js"
+		},
+		"./snippets": {
+			"import": "./src/modules/snippets.js"
+		},
+		"./spa": {
+			"import": "./src/modules/spa.js"
+		},
+		"./strings/cases": {
+			"import": "./src/modules/strings/cases.js"
+		},
+		"./task": {
+			"import": "./src/modules/task.js"
+		},
+		"./viewport": {
+			"import": "./src/modules/viewport.js"
+		},
+		"./types/*": "./types/*"
+	},
+	"types": "types/index.d.ts",
+	"main": "src/Signalize.js",
+	"jsdelivr": "src/Signalizee.js",
+	"unpkg": "src/Signalize.js",
+	"module": "src/Signalize.js",
+	"license": "MIT"
+}

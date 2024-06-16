@@ -1,0 +1,29 @@
+{
+	"private": "true",
+	"type": "module",
+	"scripts": {
+		"repo:init": "npm i -r && npm run repo:install-playwright",
+		"repo:install-playwright": "npx playwright install --with-deps",
+		"eslint:check": "eslint eslint.config.mjs packages/signalizejs/src/**/*.js",
+		"eslint:fix": "eslint eslint.config.mjs packages/signalizejs/src/**/*.js --fix",
+		"tests:run": "npx playwright test",
+		"tests:report": "npx playwright show-report --host 0.0.0.0",
+		"http-server:start": "http-server ./packages -p 4000",
+		"signalize:test": "npx --env PACKAGE=signalize playwright"
+	},
+	"author": "Vladimír Macháček",
+	"devDependencies": {
+		"@eslint/js": "^9.4.0",
+		"@playwright/test": "^1.40.1",
+		"@types/node": "^20.12.12",
+		"eslint-plugin-compat": "^5.0.0",
+		"globals": "^15.4.0",
+		"http-server": "^14.1"
+	},
+	"workspaces": [
+		"packages/signalizejs"
+	],
+	"browserslist": [
+		"> 0.5%, not dead"
+	]
+}
