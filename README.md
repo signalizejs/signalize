@@ -2,7 +2,11 @@
 
 <p align="center">
 	<a href="https://signalizejs.com" target="_blank" rel="noopener noreferrer">
-		<img src="https://signalizejs.com/images/logo/horizontal.svg?v2" height="100" alt="SignalizeJS logo">
+		<picture>
+			<source media="(prefers-color-scheme: dark)" srcset="https://signalizejs.com/images/logo/logo-dark.svg">
+			<source media="(prefers-color-scheme: light)" srcset="https://signalizejs.com/images/logo/logo-light.svg">
+			<img alt="Hashnode logo" src="https://signalizejs.com/images/logo/logo-light.svg" height="112" width="300">
+		</picture>
 	</a>
 </p>
 
@@ -27,39 +31,68 @@
 
 SignalizeJS is a client-side, multipurpose, dependency-less, easily extensible, module based microframework that uses Signals and Events under the hood.
 - 💎 Small learning curve
-- 💎 Small size - Core 3 KB. Vue-Like Directives + Core = 5 KB
-- 💎 Plugin based - import only what you need
+- 💎 Small size - Core 2 KB
+- 💎 ES module based - import only what you need
 - 💎 No dependencies
 
 ## 📦 Ecosystem
-The main recommended package to use is [signalizejs](). It contains core + directives plugin.
-If you don't want directives, you can use signalizejs/core and import only those plugins you want.
-`signalizejs` or `signalizejs/core` must always be always the first import.
+Signalize leverages modern ES modules and import maps.<br>
+It imports only a small 2 KB core and you decide what to import and when.<br>
+This makes the framework small, scalable and flexible.
 
-| Package               |  Description                                                                            |
-| --------------------- | ----------------------------------------------------------------------------------------|
-| [ajax]                | A small wrapper around fetch.                                                           |
-| [asset-loader]        | Tool for loading CSS and JS asynchronously (on demand).                                 |
-| [core]                | The functional Corre for Signalizejs package.                                           |
-| [dialog]              | Wrapper around native dialog functionality.                                             |
-| [directives]          | Vue-like directives.                                                                    |
-| [h]                   | Hyperscript.                                                                            |
-| [logger]              | Wrapper around onerror and console.error for sending JS errors to server.               |
-| [snippets]            | Tool for redrawing elements and their attributes based on HTML input.                   |
-| [spa]                 | This package turns your website to SPA.                                                 |
+| Package                |  Description                                                                                                           |
+| --------------------- -| -----------------------------------------------------------------------------------------------------------------------|
+| [ajax]                 | A wrapper around the native JavaScript fetch API.                                                                      |
+| [bind]                 | Bind signals and values to element attributes and properties.                                                          |
+| [component]            | Create reusable web components with minimum effort.                                                                    |
+| [dialog]               | Wrapper around native JavaScript dialog functionality.                                                                 |
+| [directives]           | Attribute Directives inspired by Vue and Svelte.                                                                       |
+| [dom/ready]            | DOM ready listener.                                                                                                    |
+| [dom/traverser]        | Traverse DOM nodes asynchronously.                                                                                     |
+| [evaluator]            | Javascript evaluator without unsafe eval.                                                                              |
+| [event]                | Add event listener to an element or listen to global events.                                                           |
+| [hyperscript]          | Hyperscript: create HTML elements easily with reactive data and attributes.                                            |
+| [intersection-observer]| Observe changes in the element intersection with an ancestor element or with the document's viewport.                  |
+| [logger]               | Wrapper around console (log, info, warning, error) for sending JS log info to the server.                              |
+| [mutation-observer]    | Watch for changes being made to the DOM tree of the root or selected element.                                          |
+| [offset]               | Get element coordinates.                                                                                               |
+| [scope]                | An utility for safely attaching data to a node prototype.                                                              |
+| [signal]               | Reactive primitive that can be watched, used to create stores, or bound to element properties and attributes.          |
+| [sizes]                | Get computed element sizes.                                                                                            |
+| [snippets]             | Redraw the current DOM elements based on string input.                                                                 |
+| [spa]                  | Turn any website into a Single Page Application (SPA) in a minute.                                                     |
+| [strings/cases]        | A set of utilities for convrting strings from one case to another.                                                     |
+| [task]                 | Schedule tasks to be executed only if there is no pending user input. Used for breaking long tasks into smaller ones.  |
+| [viewport]             | Retrieve element information relative to the current viewport.                                                         |
+| [visibility]           | Retrieve information about HTML element visibility.                                                                    |
 
-[ajax]: https://signalizejs
-[asset-loader]: https://signalizejs
-[core]: https://signalizejs
-[dialog]: https://signalizejs
-[directives]: https://signalizejs
-[h]: https://signalizejs
-[logger]: https://signalizejs
-[snippets]: https://signalizejs
-[spa]: https://signalizejs
+[ajax]: https://signalizejs/docs/modules/ajax
+[bind]: https://signalizejs/docs/modules/bind
+[component]: https://signalizejs/docs/modules/component
+[dialog]: https://signalizejs/docs/modules/dialog
+[directives]: https://signalizejs/docs/modules/directives
+[dom/ready]: https://signalizejs/docs/modules/dom-ready
+[dom/traverser]: https://signalizejs/docs/modules/dom-traverser
+[evaluator]: https://signalizejs/docs/modules/evaluator
+[event]: https://signalizejs/docs/modules/event
+[hyperscript]: https://signalizejs/docs/modules/hyperscript
+[intersection-observer]: https://signalizejs/docs/modules/intersection-observer
+[logger]: https://signalizejs/docs/modules/logger
+[mutation-observer]: https://signalizejs/docs/modules/mutation-observer
+[offset]: https://signalizejs/docs/modules/offset
+[scope]: https://signalizejs/docs/modules/scope
+[signal]: https://signalizejs/docs/modules/signal
+[sizes]: https://signalizejs/docs/modules/sizes
+[snippets]: https://signalizejs/docs/modules/snippets
+[spa]: https://signalizejs/docs/modules/spa
+[strings/cases]: https://signalizejs/docs/modules/strings-cases
+[task]: https://signalizejs/docs/modules/task
+[viewport]: https://signalizejs/docs/modules/viewport
+[visibility]: https://signalizejs/docs/modules/visibility
 
-## Compatibility
-[ES5-compliant browsers](https://caniuse.com/?search=ES5)
+## Browsers Compatibility
+- 0.5%
+- Not dead
 
 ## 💡 Examples, Changelog, Issues
 - Live examples and tutorials: [documentation](https://signalizejs.com/docs/get-started)
