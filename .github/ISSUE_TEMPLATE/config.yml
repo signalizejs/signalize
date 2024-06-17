@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ❤️ Sponsor
+    url: https://github.com/sponsors/Machy8
+    about: Do you like SignalizeJS? I will be happy if you buy me a coffee once in a while ☕.
+  - name: ✉️ Discussion on Github
+    url: https://github.com/signalizejs/signalize/discussions
+    about: Ask questions and discuss with other SignalizeJS users.
+  - name: 💬 Discord Chat
+    url: https://discord.gg/V82TvAVRKY
+    about: Ask questions and discuss with other Signalize users in real time.

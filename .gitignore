@@ -1,0 +1,10 @@
+# Root
+node_modules
+*.tgz
+.idea
+/.idea
+dist
+.pnpm-store
+/playwright-report/
+/blob-report/
+/playwright/.cache/
