@@ -1,6 +1,6 @@
 {
 	"name": "signalizejs",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "A client-side JavaScript framework designed for swift web development with minimum JavaScript.",
 	"keywords": [
 		"signalize",
