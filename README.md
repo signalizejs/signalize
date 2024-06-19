@@ -65,29 +65,29 @@ This makes the framework small, scalable and flexible.
 | [viewport]             | Retrieve element information relative to the current viewport.                                                         |
 | [visibility]           | Retrieve information about HTML element visibility.                                                                    |
 
-[ajax]: https://signalizejs/docs/modules/ajax
-[bind]: https://signalizejs/docs/modules/bind
-[component]: https://signalizejs/docs/modules/component
-[dialog]: https://signalizejs/docs/modules/dialog
-[directives]: https://signalizejs/docs/modules/directives
-[dom/ready]: https://signalizejs/docs/modules/dom-ready
-[dom/traverser]: https://signalizejs/docs/modules/dom-traverser
-[evaluator]: https://signalizejs/docs/modules/evaluator
-[event]: https://signalizejs/docs/modules/event
-[hyperscript]: https://signalizejs/docs/modules/hyperscript
-[intersection-observer]: https://signalizejs/docs/modules/intersection-observer
-[logger]: https://signalizejs/docs/modules/logger
-[mutation-observer]: https://signalizejs/docs/modules/mutation-observer
-[offset]: https://signalizejs/docs/modules/offset
-[scope]: https://signalizejs/docs/modules/scope
-[signal]: https://signalizejs/docs/modules/signal
-[sizes]: https://signalizejs/docs/modules/sizes
-[snippets]: https://signalizejs/docs/modules/snippets
-[spa]: https://signalizejs/docs/modules/spa
-[strings/cases]: https://signalizejs/docs/modules/strings-cases
-[task]: https://signalizejs/docs/modules/task
-[viewport]: https://signalizejs/docs/modules/viewport
-[visibility]: https://signalizejs/docs/modules/visibility
+[ajax]: https://signalizejs.com/docs/modules/ajax
+[bind]: https://signalizejs.com/docs/modules/bind
+[component]: https://signalizejs.com/docs/modules/component
+[dialog]: https://signalizejs.com/docs/modules/dialog
+[directives]: https://signalizejs.com/docs/modules/directives
+[dom/ready]: https://signalizejs.com/docs/modules/dom-ready
+[dom/traverser]: https://signalizejs.com/docs/modules/dom-traverser
+[evaluator]: https://signalizejs.com/docs/modules/evaluator
+[event]: https://signalizejs.com/docs/modules/event
+[hyperscript]: https://signalizejs.com/docs/modules/hyperscript
+[intersection-observer]: https://signalizejs.com/docs/modules/intersection-observer
+[logger]: https://signalizejs.com/docs/modules/logger
+[mutation-observer]: https://signalizejs.com/docs/modules/mutation-observer
+[offset]: https://signalizejs.com/docs/modules/offset
+[scope]: https://signalizejs.com/docs/modules/scope
+[signal]: https://signalizejs.com/docs/modules/signal
+[sizes]: https://signalizejs.com/docs/modules/sizes
+[snippets]: https://signalizejs.com/docs/modules/snippets
+[spa]: https://signalizejs.com/docs/modules/spa
+[strings/cases]: https://signalizejs.com/docs/modules/strings-cases
+[task]: https://signalizejs.com/docs/modules/task
+[viewport]: https://signalizejs.com/docs/modules/viewport
+[visibility]: https://signalizejs.com/docs/modules/visibility
 
 ## Browsers Compatibility
 - 0.5%
