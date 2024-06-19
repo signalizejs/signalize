@@ -96,7 +96,7 @@ export default async ({ params, resolve, root }, config) => {
 		const { url, stateAction = defaultStateAction } = data;
 		const urlString = url instanceof URL ? url.toString() : url;
 
-		/** @type {import('./ajax.js').FetchReturn} */
+		/** @type {import('../../types/modules/ajax.d.ts').AjaxReturn} */
 		let navigationResponse;
 		/** @type {string|null} */
 		let responseData = null;
