@@ -10,7 +10,6 @@ export default async ({ resolve, globals }) => {
 		Boolean,
 		Number,
 		String,
-		Function,
 		Array,
 		console,
 		JSON,
