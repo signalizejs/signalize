@@ -35,9 +35,11 @@ export default async ({ params, resolve, root }, config) => {
 	 */
 	const createUrl = (urlString) => {
 		try {
-			const url = new URL(urlString);
+			const url = new URL(urlString, getCurrentLocation());
 			return url;
-		} catch (error) { /* empty */ }
+		} catch (error) {
+			console.error(error);
+		}
 
 		return null;
 	};
@@ -90,11 +92,16 @@ export default async ({ params, resolve, root }, config) => {
 		}
 
 		abortNavigationController = new AbortController();
+		const { stateAction = defaultStateAction } = data;
+		const url = data.url instanceof URL ? data.url : createUrl(data.url);
 
-		dispatch('spa:navigation:start', { ...dispatchEventData });
+		if (url === null) {
+			throw new Error('Error during navigation.');
+		}
 
-		const { url, stateAction = defaultStateAction } = data;
-		const urlString = url instanceof URL ? url.toString() : url;
+		const onlyHashChanged = url.pathname === getCurrentLocation().pathname;
+		const shouldTriggerNavigation = !onlyHashChanged;
+		const urlString = url.toString();
 
 		/** @type {import('../../types/modules/ajax.d.ts').AjaxReturn} */
 		let navigationResponse;
@@ -103,32 +110,48 @@ export default async ({ params, resolve, root }, config) => {
 
 		const urlIsCached = urlString in responseCache;
 
-		if (urlIsCached) {
-			responseData = responseCache[urlString];
-		} else {
-			dispatch('spa:request:start', { ...dispatchEventData });
+		if (shouldTriggerNavigation) {
+			dispatch('spa:navigation:start', { ...dispatchEventData });
 
-			navigationResponse = await ajax(urlString, {
-				signal: abortNavigationController.signal,
-				headers: {
-					Accept: 'text/html, application/xhtml+xml'
-				}
-			});
-			const requestIsWithoutErroor = navigationResponse.error === null;
-
-			if (requestIsWithoutErroor) {
-				try {
-					responseData = navigationResponse.response === null ? '' : await navigationResponse.response.text();
-				} catch (error) {
-					dispatchEventData.error = error;
-					console.error(error);
-				}
+			if (urlIsCached) {
+				responseData = responseCache[urlString];
 			} else {
-				dispatchEventData.error = navigationResponse.error;
-				dispatch('spa:request:error', { ...navigationResponse, ...dispatchEventData });
-			}
+				dispatch('spa:request:start', { ...dispatchEventData });
 
-			dispatch('spa:request:end', { ...navigationResponse, ...dispatchEventData });
+				navigationResponse = await ajax(urlString, {
+					signal: abortNavigationController.signal,
+					headers: {
+						Accept: 'text/html, application/xhtml+xml'
+					}
+				});
+				const requestIsWithoutErroor = navigationResponse.error === null;
+
+				if (requestIsWithoutErroor) {
+					try {
+						responseData = navigationResponse.response === null ? '' : await navigationResponse.response.text();
+					} catch (error) {
+						dispatchEventData.error = error;
+						console.error(error);
+					}
+				} else {
+					dispatchEventData.error = navigationResponse.error;
+					dispatch('spa:request:error', { ...navigationResponse, ...dispatchEventData });
+				}
+
+				dispatch('spa:request:end', { ...navigationResponse, ...dispatchEventData });
+			}
+		}
+
+		/** @param {string} urlHash */
+		const scrollElementIntoView = (urlHash) => {
+			urlHash = urlHash.slice(1);
+			const element = root.querySelector(`[id="${urlHash}"]`);
+			if (element !== null) {
+				element.scrollIntoView({
+					block: 'start',
+					inline: 'nearest'
+				});
+			}
 		}
 
 		const updateDom = async () => {
@@ -202,28 +225,27 @@ export default async ({ params, resolve, root }, config) => {
 
 			if (!navigationScrollStopped) {
 				if (urlHash !== null && urlHash.trim().length > 2) {
-					urlHash = urlHash.slice(1);
-					const element = root.querySelector(`[id="${urlHash}"]`);
-					if (element !== null) {
-						element.scrollIntoView({
-							block: 'start',
-							inline: 'nearest'
-						});
-					}
+					console.log()
+					scrollElementIntoView(url.hash);
 				} else {
 					queueMicrotask(() => {
 						window.scrollTo(data.scrollX ?? 0, data.scrollY ?? 0);
 					});
 				}
 			}
+		} else if (onlyHashChanged) {
+			scrollElementIntoView(url.hash);
 		}
 
 		const error = responseData === null;
 		const navigationEndData = { ...dispatchEventData, error };
-		dispatch('spa:navigation:end', navigationEndData);
 
-		if (error === false) {
-			dispatch('spa:page:ready', navigationEndData);
+		if (shouldTriggerNavigation) {
+			dispatch('spa:navigation:end', navigationEndData);
+
+			if (error === false) {
+				dispatch('spa:page:ready', navigationEndData);
+			}
 		}
 
 		return navigationEndData;
@@ -299,17 +321,12 @@ export default async ({ params, resolve, root }, config) => {
 		if (hrefUrl === null || hrefUrl.toString() === currentLocation.toString()) {
 			event.preventDefault();
 			return;
-		} else {
-			hrefUrl.hash = '';
-			currentLocation.hash = '';
-			if (hrefUrl.toString() === currentLocation.toString()) {
-				return;
-			}
 		}
 
 		const clickCanceled = dispatch('spa:click', { element }, { cancelable: true }) === false;
 
 		if (clickCanceled) {
+			event.preventDefault();
 			return;
 		}
 
@@ -326,7 +343,6 @@ export default async ({ params, resolve, root }, config) => {
 
 			stateAction = stateActionAttribute;
 		}
-
 
 		void navigate({
 			url,
