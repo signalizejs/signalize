@@ -99,7 +99,8 @@ export default async ({ params, resolve, root }, config) => {
 			throw new Error('Error during navigation.');
 		}
 
-		const onlyHashChanged = url.pathname === getCurrentLocation().pathname;
+		const currentLocation = getCurrentLocation();
+		const onlyHashChanged = url.pathname === currentLocation.pathname && url.hash !== currentLocation.hash;
 		const shouldTriggerNavigation = !onlyHashChanged;
 		const urlString = url.toString();
 
