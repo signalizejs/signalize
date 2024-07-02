@@ -45,6 +45,9 @@ export default async ({ resolve, root, params }) => {
 		if (dialog.hasAttribute(dialogModelessAttribute)) {
 			modelessly = dialog.getAttribute(dialogModelessAttribute) === 'true';
 		}
+
+		dialog.setAttribute(dialogClosableAttribute, String(closable));
+
 		modelessly ? dialog.show() : dialog.showModal();
 		const dialogId = dialog.getAttribute(dialogAttribute);
 		if (dialogId) {
@@ -69,7 +72,9 @@ export default async ({ resolve, root, params }) => {
 			dialog.close();
 
 			if (dialog.getAttribute(dialogAttribute) === window.location.hash.substring(1)) {
-				window.history.replaceState(null, '', window.location.href.substring(0, window.location.href.indexOf('#')));
+				window.history.replaceState(
+					null, '', window.location.href.substring(0, window.location.href.indexOf('#'))
+				);
 			}
 
 			off('click', dialog, closeOnBackDropClickListener);
@@ -110,6 +115,14 @@ export default async ({ resolve, root, params }) => {
 
 		if (dialog != null) {
 			openDialog(dialog);
+		}
+	});
+
+	on('keydown', (event) => {
+		if (event.key.toLowerCase() === 'escape'
+			&& document.querySelector(`dialog[open][${dialogClosableAttribute}="false"]`)
+		) {
+			event.preventDefault();
 		}
 	});
 
