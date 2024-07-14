@@ -1,44 +1,36 @@
 /**
  * @type {import('../../types/Signalize').Module<
- *  import('../../types/modules/ajax').AjaxModule,
- *  import('../../types/modules/ajax').AjaxModuleConfig
- * >}
- */
+*  import('../../types/modules/ajax').AjaxModule,
+*  import('../../types/modules/ajax').AjaxModuleConfig
+* >}
+*/
 export default async ({ resolve }, config) => {
 	const { dispatch } = await resolve('event');
 
 	/** @type {import('../../types/modules/ajax').ajax} */
 	const ajax = async (resource, options = {}) => {
-		const customOptions = {...options };
+		const requestOptions = { ...options };
 		/** @type {Response|null} */
 		let response = null;
 		/** @type {Error | null} */
 		let error = null;
 		const isBodyDefined = options?.body !== undefined;
-		/** @type {RequestInit} */
-		let requestOptions = {
-			headers: {
-				'X-Requested-With': config?.requestedWithHeader ?? 'XMLHttpRequest',
-				Accept: config?.acceptHeader ?? '*'
-			}
-		};
 
 		try {
+			requestOptions.headers = {
+				'X-Requested-With': config?.requestedWithHeader ?? 'XMLHttpRequest',
+				Accept: config?.acceptHeader ?? '*',
+				...options.headers ?? {}
+			}
 
 			if (isBodyDefined) {
 				requestOptions.method = 'POST';
-				if (['string', 'number'].includes(typeof options.body)) {
+
+				if (!['string', 'number'].includes(typeof requestOptions.body) && !(requestOptions.body instanceof FormData)) {
 					requestOptions.body = JSON.stringify(options.body);
 					requestOptions.headers['Content-Type'] = 'application/json';
 				}
-
-				if (options?.headers !== undefined) {
-					requestOptions.headers = { ...requestOptions.headers, ...customOptions.headers };
-					delete customOptions.headers;
-				}
 			}
-
-			requestOptions = { ...options, ...requestOptions, ...customOptions };
 
 			const request = fetch(resource, requestOptions);
 
