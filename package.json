@@ -4,7 +4,7 @@
 	"scripts": {
 		"repo:init": "npm i -r && npm run repo:install-playwright",
 		"repo:install-playwright": "npx playwright install --with-deps",
-		"repo:publish": "npm login --auth-type=legacy && npm publish --workspaces",
+		"repo:publish:patch": "npm login --auth-type=legacy && npm version --workspaces patch && npm publish --workspaces",
 		"eslint:check": "eslint eslint.config.mjs packages/signalizejs/src/**/*.js",
 		"eslint:fix": "eslint eslint.config.mjs packages/signalizejs/src/**/*.js --fix",
 		"tests:run": "npx playwright test",
