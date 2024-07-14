@@ -5,17 +5,27 @@ export default async ({ resolve}, options) => {
 
 	/** @type {import('../../types/modules/logger').Levels[]} */
 	const enabledLevels = options?.levels ?? ['error'];
-
+	let handlerProcessingRequest = false;
 	/**
 	 * @param {import('../../types/modules/logger').Log} log
-	 * @returns {void}
+	 * @returns {Promise<void>}
 	 */
-	const handler = (log) => {
-		const body = { log, url: window.location.href };
-		const logStopped = !dispatch(`logger:${log.type}`, body);
-		if (!logStopped) {
-			void ajax(options.url, { body });
+	const handler = async (log) => {
+		if (handlerProcessingRequest) {
+			return;
 		}
+
+		handlerProcessingRequest = true;
+		log.url = window.location.href;
+
+		const body = { log };
+		const logStopped = !dispatch(`logger:${log.type}`, body);
+
+		if (!logStopped) {
+			await ajax(options.url, { body });
+		}
+
+		handlerProcessingRequest = false;
 	};
 
 	for (const level of enabledLevels) {
@@ -25,12 +35,12 @@ export default async ({ resolve}, options) => {
 		 * @returns {void}
 		 */
 		console[level] = (...args) => {
-			handler({ type: 'error', message: args.join(',') });
+			void handler({ type: 'error', message: args.join(',') });
 			originalCall(...args);
 		};
 	}
 
-	if ('error' in enabledLevels) {
+	if (enabledLevels.includes('error')) {
 		/**
 		 * @param {Event | string} message - The error message or event object.
 		 * @param {string} [file] - The file associated with the error (optional).
@@ -45,7 +55,7 @@ export default async ({ resolve}, options) => {
 				return;
 			}
 
-			handler({
+			void handler({
 				type: 'error',
 				message: message instanceof Event ? message.type : message,
 				file: file ?? null,
@@ -53,8 +63,6 @@ export default async ({ resolve}, options) => {
 				columnNumber: columnNumber ?? 0,
 				stack: error?.stack === undefined ? null : error.stack
 			});
-
-			console.error(message, file, lineNumber, columnNumber, error);
 		};
 
 		/**
@@ -65,7 +73,8 @@ export default async ({ resolve}, options) => {
 		 * @returns {void}
 		 */
 		window.addEventListener('unhandledrejection', (event) => {
-			handler({ type: 'error', message: event.reason });
+			console.log(event);
+			void handler({ type: 'error', message: event.reason });
 		});
 	}
 };
