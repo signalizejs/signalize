@@ -73,6 +73,12 @@ export default async ({ params, resolve, root }) => {
 			}
 
 			for (const script of existingSnippet.querySelectorAll('script')) {
+				const scriptTypeAttribute = script.getAttribute('type');
+
+				if (scriptTypeAttribute && !['module', 'text/javascript'].includes(scriptTypeAttribute)) {
+					continue;
+				}
+
 				const scriptElement = document.createElement('script');
 				scriptElement.innerHTML = script.innerHTML;
 				scriptElement.async = false;
