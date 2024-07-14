@@ -21,8 +21,8 @@ export default async ({ params, resolve, root }, config) => {
 
 	/** @type {import('../../types/modules/spa').HistoryState|undefined} */
 	let currentState;
-	/** @type {AbortController} */
-	let abortNavigationController;
+	/** @type {AbortController|undefined} */
+	let abortNavigationRequestController;
 	const spaVersion = null;
 	const host = window.location.host;
 	/** @type {import('../../types/modules/spa').ResponseCache} */
@@ -87,11 +87,11 @@ export default async ({ params, resolve, root }, config) => {
 			error: null
 		};
 
-		if (abortNavigationController !== undefined) {
-			abortNavigationController.abort();
+		if (abortNavigationRequestController !== undefined) {
+			abortNavigationRequestController.abort();
 		}
 
-		abortNavigationController = new AbortController();
+		abortNavigationRequestController = new AbortController();
 		const { stateAction = defaultStateAction } = data;
 		const url = data.url instanceof URL ? data.url : createUrl(data.url);
 
@@ -120,11 +120,12 @@ export default async ({ params, resolve, root }, config) => {
 				dispatch('spa:request:start', { ...dispatchEventData });
 
 				navigationResponse = await ajax(urlString, {
-					signal: abortNavigationController.signal,
+					signal: abortNavigationRequestController.signal,
 					headers: {
 						Accept: 'text/html, application/xhtml+xml'
 					}
 				});
+				abortNavigationRequestController = undefined;
 				const requestIsWithoutErroor = navigationResponse.error === null;
 
 				if (requestIsWithoutErroor) {
