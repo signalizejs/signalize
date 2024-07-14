@@ -73,7 +73,6 @@ export default async ({ resolve}, options) => {
 		 * @returns {void}
 		 */
 		window.addEventListener('unhandledrejection', (event) => {
-			console.log(event);
 			void handler({ type: 'error', message: event.reason });
 		});
 	}
