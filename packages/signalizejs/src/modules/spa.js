@@ -87,8 +87,17 @@ export default async ({ params, resolve, root }, config) => {
 			error: null
 		};
 
+		let navigationRequestIsRunning = false;
+
 		if (abortNavigationRequestController !== undefined) {
 			abortNavigationRequestController.abort();
+
+			if (navigationRequestIsRunning) {
+				navigationRequestIsRunning = false;
+				dispatch('spa:request:end', { ...dispatchEventData, navigationResponse: null });
+			}
+
+			dispatch('spa:navigation:end', dispatchEventData);
 		}
 
 		abortNavigationRequestController = new AbortController();
@@ -119,12 +128,14 @@ export default async ({ params, resolve, root }, config) => {
 			} else {
 				dispatch('spa:request:start', { ...dispatchEventData });
 
+				navigationRequestIsRunning = true;
 				navigationResponse = await ajax(urlString, {
 					signal: abortNavigationRequestController.signal,
 					headers: {
 						Accept: 'text/html, application/xhtml+xml'
 					}
 				});
+				navigationRequestIsRunning = false;
 				abortNavigationRequestController = undefined;
 				const requestIsWithoutErroor = navigationResponse.error === null;
 
