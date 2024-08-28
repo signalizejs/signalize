@@ -35,7 +35,7 @@ export default async ({ resolve}, options) => {
 		 * @returns {void}
 		 */
 		console[level] = (...args) => {
-			void handler({ type: 'error', message: args.join(',') });
+			void handler({ type: level, message: args.join(',') });
 			originalCall(...args);
 		};
 	}
