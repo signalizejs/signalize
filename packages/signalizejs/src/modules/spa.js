@@ -76,6 +76,9 @@ export default async ({ params, resolve, root }, config) => {
 	/** @type {import('../../types/modules/spa').navigate} */
 	const navigate = async (data) => {
 		updateCurrentState();
+		if (typeof data === 'string') {
+			data = { url: data };
+		}
 
 		firstNavigationTriggered = true;
 		/** @type {import('../../types/modules/spa.d.ts').NavigationEventData} */
@@ -135,11 +138,17 @@ export default async ({ params, resolve, root }, config) => {
 						Accept: 'text/html, application/xhtml+xml'
 					}
 				});
+
 				navigationRequestIsRunning = false;
 				abortNavigationRequestController = undefined;
 				const requestIsWithoutErroor = navigationResponse.error === null;
 
 				if (requestIsWithoutErroor) {
+					if (navigationResponse.response.redirected) {
+						window.location = navigationRequestIsRunning.response.url;
+						return;
+					}
+
 					try {
 						responseData = navigationResponse.response === null ? '' : await navigationResponse.response.text();
 					} catch (error) {
