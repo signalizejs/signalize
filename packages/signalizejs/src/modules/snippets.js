@@ -42,7 +42,6 @@ export default async ({ params, resolve, root }) => {
 
 			while(snippetActions.length) {
 				const snippetAction = snippetActions.shift();
-
 				if (snippetAction === 'replace') {
 					newSnippet.setAttribute(snippetStateAttribute, 'redrawing');
 					existingSnippet.replaceWith(newSnippet);
@@ -131,9 +130,24 @@ export default async ({ params, resolve, root }) => {
 
 			while (snippets.length > 0) {
 				const newSnippet = snippets.shift();
+				const parentSnippet = newSnippet?.parentNode?.closest(`[${snippetAttribute}]`);
+				if (parentSnippet) {
+					const parentSnippetActions = parentSnippet.getAttribute(snippetActionAttribute) ?? null;
+					let shouldSkipSnippet = parentSnippetActions === null;
 
-				if (newSnippet?.parentNode?.closest(`[${snippetAttribute}]`) !== null) {
-					continue;
+					if (!shouldSkipSnippet) {
+						for(const action of ['replace', 'replace-children', 'append-children', 'prepend-children']) {
+							shouldSkipSnippet = parentSnippetActions.includes(action);
+
+							if (shouldSkipSnippet) {
+								break;
+							}
+						}
+					}
+
+					if (shouldSkipSnippet) {
+						continue;
+					}
 				}
 
 				redrawPromisses.push(redrawSnippet(newSnippet));
