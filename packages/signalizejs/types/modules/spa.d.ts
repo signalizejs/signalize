@@ -2,6 +2,7 @@
 export type StateAction = 'push' | 'replace';
 
 export interface NavigationData {
+	httpMethod?: string|null
 	/** The URL for navigation. */
 	url: string|URL;
 	/** The scroll position on the X-axis. */
@@ -37,6 +38,7 @@ export interface SpaConfig {
 }
 
 export interface HistoryState {
+	httpMethod?: string
 	/** Current state url. */
 	url: string;
 	/** If the state is triggered by spa */

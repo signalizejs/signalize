@@ -12,6 +12,9 @@ export default async ({ params, resolve, root }, config) => {
 	const spaUrlAttribute = `${spaAttribute}${params.attributeSeparator}url`;
 	const spaIgnoreAttribute = `${spaAttribute}${params.attributeSeparator}ignore`;
 	const spaStateActionAttribute = `${spaAttribute}${params.attributeSeparator}state-action`;
+	const spaProcessingLabelAttribute = `${spaAttribute}${params.attributeSeparator}processing-label`;
+	const spaConfirmAttribute = `${spaAttribute}${params.attributeSeparator}confirm-message`;
+	const spaHttpMethodAttribute = `${spaAttribute}${params.attributeSeparator}http-method`;
 	const spaMetaCacheNameAttribute = `${spaAttribute}${params.attributeSeparator}cache-control`;
 	const spaHeaderPrefix = 'X-Spa-';
 	const spaCacheHeader = config?.cacheHeader ?? `${spaHeaderPrefix}Cache-Control`;
@@ -76,6 +79,7 @@ export default async ({ params, resolve, root }, config) => {
 	/** @type {import('../../types/modules/spa').navigate} */
 	const navigate = async (data) => {
 		updateCurrentState();
+
 		if (typeof data === 'string') {
 			data = { url: data };
 		}
@@ -104,7 +108,7 @@ export default async ({ params, resolve, root }, config) => {
 		}
 
 		abortNavigationRequestController = new AbortController();
-		const { stateAction = defaultStateAction } = data;
+		const { stateAction = defaultStateAction, httpMethod } = data;
 		const url = data.url instanceof URL ? data.url : createUrl(data.url);
 
 		if (url === null) {
@@ -114,7 +118,7 @@ export default async ({ params, resolve, root }, config) => {
 		const currentLocation = getCurrentLocation();
 		const onlyHashChanged = url.pathname === currentLocation.pathname && url.hash !== currentLocation.hash;
 		const shouldTriggerNavigation = !onlyHashChanged;
-		const urlString = url.toString();
+		let urlString = url.toString();
 
 		/** @type {import('../../types/modules/ajax.d.ts').AjaxReturn} */
 		let navigationResponse;
@@ -133,6 +137,7 @@ export default async ({ params, resolve, root }, config) => {
 
 				navigationRequestIsRunning = true;
 				navigationResponse = await ajax(urlString, {
+					method: httpMethod ?? 'GET',
 					signal: abortNavigationRequestController.signal,
 					headers: {
 						Accept: 'text/html, application/xhtml+xml'
@@ -145,8 +150,7 @@ export default async ({ params, resolve, root }, config) => {
 
 				if (requestIsWithoutErroor) {
 					if (navigationResponse.response.redirected) {
-						window.location = navigationRequestIsRunning.response.url;
-						return;
+						urlString = navigationResponse.response.url;
 					}
 
 					try {
@@ -366,10 +370,28 @@ export default async ({ params, resolve, root }, config) => {
 			stateAction = stateActionAttribute;
 		}
 
-		void navigate({
+		const confirmMessage = element.getAttribute(spaConfirmAttribute);
+		if (confirmMessage && !confirm(confirmMessage)) {
+			return;
+		}
+
+		const processingLabel = element.getAttribute(spaProcessingLabelAttribute);
+		let previousLabel = null;
+
+		if (processingLabel) {
+			previousLabel = element.innerHTML;
+			element.innerHTML = processingLabel;
+		}
+
+		await navigate({
+			httpMethod: element.getAttribute(spaHttpMethodAttribute),
 			url,
 			stateAction
 		});
+
+		if (previousLabel !== null) {
+			element.innerHTML = previousLabel;
+		}
 	};
 
 	const updateCurrentState = () => {
