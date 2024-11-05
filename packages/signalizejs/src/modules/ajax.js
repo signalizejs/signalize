@@ -19,6 +19,7 @@ export default async ({ resolve }, config) => {
 		try {
 			requestOptions.headers = {
 				'X-Requested-With': config?.requestedWithHeader ?? 'XMLHttpRequest',
+				'X-Current-Url': window.location.href,
 				Accept: config?.acceptHeader ?? '*',
 				...options.headers ?? {}
 			}
