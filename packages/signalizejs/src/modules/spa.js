@@ -20,6 +20,7 @@ export default async ({ params, resolve, root }, config) => {
 	const spaCacheHeader = config?.cacheHeader ?? `${spaHeaderPrefix}Cache-Control`;
 	const spaAppVersionHeader = config?.appVersionHeader ?? `${spaHeaderPrefix}App-Version`;
 	const spaTransitionsHeader = config?.appVersionHeader ?? `${spaHeaderPrefix}Transitions`;
+	const spaReloadHeader = config?.reloadHeader ?? `${spaHeaderPrefix}Reload`;
 	const defaultStateAction = 'push';
 
 	/** @type {import('../../types/modules/spa').HistoryState|undefined} */
@@ -146,15 +147,26 @@ export default async ({ params, resolve, root }, config) => {
 
 				navigationRequestIsRunning = false;
 				abortNavigationRequestController = undefined;
-				const requestIsWithoutErroor = navigationResponse.error === null;
+				const requestIsWithoutError = navigationResponse.error === null;
 
-				if (requestIsWithoutErroor) {
-					if (navigationResponse.response.redirected) {
-						urlString = navigationResponse.response.url;
-					}
-
+				if (requestIsWithoutError) {
 					try {
-						responseData = navigationResponse.response === null ? '' : await navigationResponse.response.text();
+						const { response } = navigationResponse;
+						const responseIsNull = response === null;
+						responseData = responseIsNull ? '' : await response.text();
+
+						if (!responseIsNull && response.redirected) {
+							const responseUrl = new URL(response.url);
+							if (window.location.protocol !== responseUrl.protocol
+								|| window.location.hostname !== responseUrl.hostname
+								|| spaReloadHeader in response.headers
+							) {
+								window.location = response.url;
+							} else {
+								urlString = responseUrl.toString();
+							}
+						}
+
 					} catch (error) {
 						dispatchEventData.error = error;
 						console.error(error);
@@ -251,7 +263,6 @@ export default async ({ params, resolve, root }, config) => {
 
 			if (!navigationScrollStopped) {
 				if (urlHash !== null && urlHash.trim().length > 2) {
-					console.log()
 					scrollElementIntoView(url.hash);
 				} else {
 					queueMicrotask(() => {
