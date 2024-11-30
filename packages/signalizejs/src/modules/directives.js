@@ -263,7 +263,9 @@ export default async ($, config) => {
 						...trackedSignals,
 						{
 							get, value,
-							set: (value) => trackedSignals[trackedSignals.length - 1](value) ?? null
+							set: (value) => {
+								trackedSignals[trackedSignals.length - 1]?.(value)
+							}
 						}
 					]
 				});
