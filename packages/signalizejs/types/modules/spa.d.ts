@@ -35,6 +35,8 @@ export interface SpaConfig {
 	cacheHeader?: string;
 	/** The app version header name. Used to dispatch event, that SPA version has changed. */
 	appVersionHeader?: string;
+	/** The reload header name. Used to trigger full page reload. */
+	reloadHeader?: string;
 }
 
 export interface HistoryState {
