@@ -94,7 +94,7 @@ This makes the framework small, scalable and flexible.
 - Not dead
 
 ## 💡 Examples, Changelog, Issues
-- Live examples and tutorials: [documentation](https://signalizejs.com/docs/get-started)
+- Live examples and tutorials: [documentation](https://signalizejs.com/docs/introduction)
 - Changelog and release changes: [releases](https://github.com/signalizejs/signalize/releases)
 - Have an idea? Found a bug? Feel free to create an [issue](https://github.com/signalizejs/signalize/issues)
 
