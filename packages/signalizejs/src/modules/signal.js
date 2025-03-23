@@ -4,7 +4,7 @@ export default () => {
 	 * @template T
 	 * @type {import('../../types/modules/signal').Signal<T>}
 	*/
-	class Signal extends Function {
+	class Signal {
 		/** @type {T} */
 		value;
 
@@ -17,19 +17,21 @@ export default () => {
 
 		/** @param {T} defaultValue */
 		constructor(defaultValue) {
-			super();
 			this.value = defaultValue;
 
-			return new Proxy(this, {
-				apply: (target, thisArg, args) => {
-					if (args.length === 1) {
-						this.#set(args[0]);
-						return this.value;
-					}
-
-					return this.#get();
+			// In order to make signal callable and to be able to check if created signal is instanceof Signal
+			// We have to create this function and bind a protype of the Signal to it
+			const callable = (...args) => {
+				if (args.length === 1) {
+					this.#set(args[0]);
+					return this.value;
 				}
-			});
+				return this.#get();
+			};
+
+			Object.setPrototypeOf(callable, this);
+
+			return callable;
 		}
 
 		/**
