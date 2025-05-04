@@ -14,21 +14,22 @@ export default async ({ resolve }, config) => {
 		let response = null;
 		/** @type {Error | null} */
 		let error = null;
-		const isBodyDefined = options?.body !== undefined;
 
 		try {
 			requestOptions.headers = {
 				'X-Requested-With': config?.requestedWithHeader ?? 'XMLHttpRequest',
 				'X-Current-Url': window.location.href,
 				Accept: config?.acceptHeader ?? '*',
-				...options.headers ?? {}
+				...(options.headers ?? {})
 			}
 
-			if (isBodyDefined) {
-				requestOptions.method = 'POST';
+			if (requestOptions?.body !== undefined) {
+				if (requestOptions?.method === undefined) {
+					requestOptions.method = 'POST';
+				}
 
-				if (!['string', 'number'].includes(typeof requestOptions.body) && !(requestOptions.body instanceof FormData)) {
-					requestOptions.body = JSON.stringify(options.body);
+				if (!['string', 'number'].includes(typeof requestOptions.body) && !(requestOptions.body instanceof FormData || requestOptions.body instanceof URLSearchParams)) {
+					requestOptions.body = JSON.stringify(requestOptions.body);
 					requestOptions.headers['Content-Type'] = 'application/json';
 				}
 			}
