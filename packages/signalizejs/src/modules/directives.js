@@ -58,14 +58,19 @@ export default async ($, config) => {
 
 					const matcherReturn = matcher({ element, attribute });
 
+					/** @type {RegExpExecArray|null} */
+					let matches = null;
+
 					if (matcherReturn === undefined) {
 						continue;
-					}
-
-					const matches = new RegExp(`^${matcherReturn.source}$`).exec(attribute.name);
-
-					if (matches === null) {
+					} else if (typeof matcherReturn === 'boolean' && !matcherReturn) {
 						continue;
+
+					} else if (matcherReturn instanceof RegExp) {
+						matches = new RegExp(`^${matcherReturn.source}$`).exec(attribute.name);
+						if (matches === null) {
+							continue;
+						}
 					}
 
 					elementScope = scope(element, (node) => {
@@ -225,6 +230,10 @@ export default async ($, config) => {
 				return;
 			}
 
+			if (attribute.name === ':class') {
+				return;
+			}
+
 			return new RegExp(`(?::|${attributePrefix}bind${attributeSeparator})([\\S-]+)|(\\{([^{}]+)\\})`);
 		},
 		callback: async (data) => {
@@ -333,6 +342,14 @@ export default async ($, config) => {
 		callback: async (data) => {
 			const { forDirective } = await resolve('directives/for');
 			await forDirective(data);
+		}
+	});
+
+	directive('class', {
+		matcher: ({ attribute }) => attribute.name === ':class',
+		callback: async (data) => {
+			const { classDirective } = await resolve('directives/class');
+			await classDirective(data);
 		}
 	});
 

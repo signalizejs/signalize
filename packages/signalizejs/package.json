@@ -46,6 +46,9 @@
 		"./directives/if": {
 			"import": "./src/modules/directives/if.js"
 		},
+		"./directives/class": {
+			"import": "./src/modules/directives/class.js"
+		},
 		"./dom/ready": {
 			"import": "./src/modules/dom/ready.js"
 		},
@@ -96,6 +99,9 @@
 		},
 		"./strings/cases": {
 			"import": "./src/modules/strings/cases.js"
+		},
+		"./strings/tokenizer": {
+			"import": "./src/modules/strings/tokenizer.js"
 		},
 		"./task": {
 			"import": "./src/modules/task.js"

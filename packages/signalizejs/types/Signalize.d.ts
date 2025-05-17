@@ -66,6 +66,7 @@ export interface ResolvableFunctionality extends
 	SnippetsModule,
 	SpaModule,
 	StringsCasesModule,
+	TokenizerModule,
 	TaskModule,
 	ViewportModule,
 	VisibilityModule { }
